@@ -11,6 +11,11 @@ function register_routes(app) {
     app.get('/:username/logout', routes.post_logout);
     app.post('/register', routes.post_register); 
 
+    app.get('/mostPopularHashtags', routes.most_popular_hashtags); 
+    app.get('/:username/getProfile', routes.get_profile); 
+    app.post('/:username/setProfilePhoto', routes.set_profile_photo); 
+    app.post('/:username/setProfileHashTags', routes.set_profile_hashtags); 
+
 
 
     //friends

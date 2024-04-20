@@ -54,10 +54,16 @@ var postRegister = async function(req, res) {
 
     // Insert the new user into the database
     var insertQuery = `
-      INSERT INTO users (username, hashed_password, firstName, lastName, email, birthday, affiliation, profilePhoto, hashtagInterests) 
-      VALUES ('${username}', '${hashed_password}', '${firstName}', '${lastName}', '${email}', '${birthday}', '${affiliation}', '${profilePhoto}', '${hashtagInterests}')
+      INSERT INTO users (username, hashed_password, firstName, lastName, email, birthday, affiliation) 
+      VALUES ('${username}', '${hashed_password}', '${firstName}', '${lastName}', '${email}', '${birthday}', '${affiliation}')
     `;
     await db.send_sql(insertQuery);
+    if (hashtagInterests){
+      //call set hashtag interests
+    }
+    if (profilePhoto){
+      //call set profile photo
+    }
 
     return res.status(200).json({ username: username });
     } catch (error) {
@@ -130,8 +136,8 @@ var postLogout = async function(req, res) {
 
 
 
-// POST /setHashTags
-var postSetHashTags = async function(req, res) {
+// POST /setProfileHashTags
+var set_profile_hashtags = async function(req, res) {
   var username = req.params.username;
   if (username == null){
     return res.status(403).json({ error: 'Not logged in.' });
@@ -139,12 +145,34 @@ var postSetHashTags = async function(req, res) {
   if (!helper.isLoggedIn(req,username)) {
       return res.status(403).json({ error: 'Not logged in.' });
   }
+  //if hashtag is new then add to database of hashtags,
+  //otherwise increment the hashtag data base count 
+  //then update user database with user's new hashtags
+
   
 };
 
 
+// POST /mostPopularHashtags
+var most_popular_hashtags = async function(req, res) {
+  var username = req.params.username;
+  if (username == null){
+    return res.status(403).json({ error: 'Not logged in.' });
+  }
+  if (!helper.isLoggedIn(req,username)) {
+      return res.status(403).json({ error: 'Not logged in.' });
+  }
+  //if hashtag is new then add to database of hashtags,
+  //otherwise increment the hashtag data base count 
+  //then update user database with user's new hashtags
+
+  
+};
+
+
+
 // POST /setProfilePhoto
-var postSetProfilePhoto = async function(req, res) {
+var set_profile_photo = async function(req, res) {
   //upload to s3
   //then reset in user db
   
@@ -152,7 +180,7 @@ var postSetProfilePhoto = async function(req, res) {
 
 
 // GET /getProfile
-var getProfile = async function(req, res) {
+var get_profile = async function(req, res) {
   var username = req.params.username;
   if (username == null){
     return res.status(403).json({ error: 'Not logged in.' });
