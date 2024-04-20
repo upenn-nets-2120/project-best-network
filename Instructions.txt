@@ -1,0 +1,27 @@
+
+EC2 Instance:
+
+Each person will have individual key pair
+mv best-network-key.pem ~/.ssh
+chmod 600 ~/.ssh/best-network-key.pem
+
+
+ssh -i ~/.ssh/best-network-key.pem -4 -L 3306:best-network-rdd.cltsivkjdhkr.us-east-1.rds.amazonaws.com:3306 ubuntu@ec2-3-88-167-28.compute-1.amazonaws.com
+
+
+
+RDD password=best-network
+RDD database=bestnetworkDB
+
+
+//one time
+//install mysql 
+sudo apt update
+sudo apt install mysql-client-core-8.0
+//make database
+mysql --host=best-network-rdd.cltsivkjdhkr.us-east-1.rds.amazonaws.com --user=admin --password=best-network
+create database bestnetworkDB;
+exit
+
+
+

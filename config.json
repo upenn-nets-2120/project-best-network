@@ -1,0 +1,8 @@
+{
+    "database": {
+      "host": "localhost",
+      "port": "3306",
+      "database": "best-networkDB"
+    },
+    "serverPort": "8080"
+  }
