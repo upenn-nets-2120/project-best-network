@@ -2,7 +2,10 @@
     "database": {
       "host": "localhost",
       "port": "3306",
-      "database": "best-networkDB"
+      "name": "bestnetworkDB"
+    },
+    "s3":{
+      "bucketName": "best-network-nets212-sp24"
     },
     "serverPort": "8080"
   }

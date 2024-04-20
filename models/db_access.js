@@ -7,15 +7,28 @@ let the_db = null;
 
 module.exports = {
     get_db_connection,
-    close_db,
-    execute_query
+    set_db_connection,
+    create_tables,
+    insert_items,
+    send_sql,
+    close_db
 }
+
 
 function close_db() {
     if (the_db) {
         the_db.end();
         the_db = null;
     }
+}
+
+/**
+ * For mocking
+ * 
+ * @param {*} db 
+ */
+function set_db_connection(db) {
+    the_db = db;
 }
 
 /**
@@ -26,8 +39,7 @@ function close_db() {
 async function get_db_connection() {
     if (the_db) {
         return the_db;
-    }
-
+    }   
     const dbConfig = {
         host: config.database.host,
         user: process.env.RDS_USER,

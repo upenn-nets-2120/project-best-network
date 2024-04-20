@@ -15,22 +15,35 @@ function sendQueryOrCommand(db, query, params = []) {
 
 async function create_tables(db) {
     //users table
-    var q1 = db.create_tables(`CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      username VARCHAR(255) UNIQUE,
-      password VARCHAR(255),
-      firstName VARCHAR(255),
-      lastName VARCHAR(255),
-      email VARCHAR(255),
-      birthday DATE,
-      affiliation VARCHAR(255),
-      profilePhoto VARCHAR(255),
-      hashtagInterests TEXT[]
-    );`);
+    const q1 = db.create_tables(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(255) UNIQUE,
+                password VARCHAR(255),
+                firstName VARCHAR(255),
+                lastName VARCHAR(255),
+                email VARCHAR(255),
+                birthday DATE,
+                affiliation VARCHAR(255),
+                profilePhoto VARCHAR(255),
+                linked_nconst VARCHAR(10),
+                hashtagInterests VARCHAR(255)
+            );
+    `);
 
+    const q2 = db.create_tables(`
+    CREATE TABLE IF NOT EXISTS hashtags (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        text VARCHAR(255) UNIQUE,
+        count INT DEFAULT 0
+    );
+  `);
 
+  await Promise.all([q1,q2]);
+    
+   
+  dbaccess.close_db()
 
-    return await Promise.all([q1]);
 }
 
 // Database connection setup
@@ -38,7 +51,7 @@ const db = dbaccess.get_db_connection();
 
 var result =create_tables(dbaccess);
 console.log('Tables created');
-dbaccess.close_db();
+
 
 const PORT = config.serverPort;
 

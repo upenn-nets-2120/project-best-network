@@ -6,12 +6,13 @@
   "scripts": {
     "start": "node --experimental-vm-modules app.js",
     "create_tables": "node models/create_tables.js",
-    "create_buckets": "node models/create_s3_buckets.js",
+    "create_s3buckets": "node models/create_s3_buckets.js",
     "chroma": "node --experimental-vm-modules models/chroma_access.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.556.0",
     "@langchain/openai": "^0.0.14",
     "aws-sdk": "^2.1534.0",
     "axios": "^0.28.1",

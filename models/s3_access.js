@@ -9,9 +9,9 @@ module.exports = {
     get_s3_client,
     close_s3_client,
     create_bucket,
-    upload_photo,
-    get_photo,
-    delete_photo
+    put_by_key,
+    get_by_key,
+    delete_by_key
 };
 
 function close_s3_client() {
@@ -20,36 +20,40 @@ function close_s3_client() {
     }
 }
 
+
+
 async function get_s3_client() {
     if (!s3Client) {
-        const awsCredentials = fromIni({
-            profile: config.awsProfile,
-            credentialsFile: config.awsCredentialsFile
-        });
+        const awsCredentials = {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+            sessionToken : process.env.AUTH_TOKEN
+        };
         s3Client = new S3Client({
-            region: config.awsRegion,
+            region: 'us-east-1',
             credentials: awsCredentials
         });
+        return s3Client;
     }
-    return s3Client;
+
 }
+
 
 async function create_bucket(bucketName) {
     const s3 = await get_s3_client();
-
     const createBucketParams = { Bucket: bucketName };
-
     try {
         const data = await s3.send(new CreateBucketCommand(createBucketParams));
         console.log('Bucket created:', data.Location);
         return true;
     } catch (err) {
+        
         console.error('Error creating bucket:', err);
         return false;
     }
 }
 
-async function upload_photo(bucketName, objectKey, fileContent, contentType) {
+async function put_by_key(bucketName, objectKey, fileContent, contentType) {
     const s3 = await get_s3_client();
 
     const uploadParams = {
@@ -69,7 +73,7 @@ async function upload_photo(bucketName, objectKey, fileContent, contentType) {
     }
 }
 
-async function get_photo(bucketName, objectKey) {
+async function get_by_key(bucketName, objectKey) {
     const s3 = await get_s3_client();
 
     const getParams = {
@@ -86,7 +90,7 @@ async function get_photo(bucketName, objectKey) {
     }
 }
 
-async function delete_photo(bucketName, objectKey) {
+async function delete_by_key(bucketName, objectKey) {
     const s3 = await get_s3_client();
 
     const deleteParams = {
