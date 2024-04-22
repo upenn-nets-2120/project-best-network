@@ -18,13 +18,20 @@ var getHelloWorld = function(req, res) {
 
 
 // POST /register 
-var postRegister = async function(req, res) {
-  const { username, password, firstName, lastName, email, birthday, affiliation, profilePhoto, hashtagInterests } = req.body;
-  if (!username || !password || !firstName || !lastName || !email || !birthday || !affiliation) {
-    return res.status(400).json({ error: 'One or more of the fields you entered was empty, please try again.' });
-  }
+/*  Example body: 
+    {
+      "username": "vavali",
+      "password": "1234",
+      "firstName": "Vedha",
+      "lastName": "Avali",
+      "email": "vedha.avali@gmail.com",
+      "birthday": "2004-08-08",
+      "affiliation": "Penn",
+      "profilePhoto": "profile.jpg", -> this should be S3 URL(?); can be null
+      "hashtagInterests": ["hello", "bye"] -> this should be in list format, can be null
+    }
 
-  // POST /register 
+*/
 var postRegister = async function(req, res) {
   const { username, password, firstName, lastName, email, birthday, affiliation, profilePhoto, hashtagInterests } = req.body;
 
@@ -46,7 +53,7 @@ var postRegister = async function(req, res) {
     });
 
     // Check if the username already exists
-    var query = "SELECT * FROM users WHERE username = '" + username + "'";
+    var query = `SELECT * FROM users WHERE username = '${username}'`;
     var result = await db.send_sql(query);
     if (result.length > 0) {
       return res.status(409).json({ error: 'An account with this username already exists, please try again.' });
@@ -58,21 +65,55 @@ var postRegister = async function(req, res) {
       VALUES ('${username}', '${hashed_password}', '${firstName}', '${lastName}', '${email}', '${birthday}', '${affiliation}')
     `;
     await db.send_sql(insertQuery);
+
+    //Retrieve userID from databse for purposes of inserting hashtags/images
+    const userIDQuery = `SELECT id FROM users WHERE username = '${username}'`;
+    const [userIDQueryResult] = await db.send_sql(userIDQuery);
+    const userID = userIDQueryResult.id;
+
+
     if (hashtagInterests){
-      //call set hashtag interests
+      var hashtagID = ""
+
+      var hashtagInsertQuery = ``;
+      var hashtagInterestQuery = `'`
+
+      if (Array.isArray(hashtagInterests) && hashtagInterests.length > 0) {
+        for (let i = 0; i < hashtagInterests.length; i++) {
+          var hashtag = hashtagInterests[i];
+
+          // Dealing with the hashtag database
+          var hashtagExistsQuery = `SELECT * FROM hashtags WHERE text = '${hashtag}'`;
+          var hashtagData = await db.send_sql(hashtagExistsQuery);
+
+          if(hashtagData.length > 0) {
+          // If hashtag exists in the database -> get ID, increment count
+            hashtagID = hashtagData.id;
+            const incrementQuery = `UPDATE hashtags SET count = count + 1 WHERE text = ${hashtag}`;
+
+          } else {
+          // Otherwise insert into database -> get ID, increment count
+
+          }
+
+
+
+          //Dealing with hashtag interests database -> insert hashtag into that database w/ corresponding userID and hashtagID
+        }
+
+      }
     }
     if (profilePhoto){
-      //call set profile photo
+      //TODO: call set profile photo
     }
 
     return res.status(200).json({ username: username });
-    } catch (error) {
-      console.error('Error:', error);
-      return res.status(500).json({ error: 'Error querying database.' });
-    }
-  };
-
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({ error: 'Error querying database.' });
+  }
 };
+
 
 
 
@@ -136,7 +177,7 @@ var postLogout = async function(req, res) {
 
 
 
-// POST /setProfileHashTags
+// /setProfileHashTags
 var set_profile_hashtags = async function(req, res) {
   var username = req.params.username;
   if (username == null){

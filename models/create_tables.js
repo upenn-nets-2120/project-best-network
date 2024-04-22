@@ -26,8 +26,6 @@ async function create_tables(db) {
                 birthday DATE,
                 affiliation VARCHAR(255),
                 profilePhoto VARCHAR(255),
-                linked_nconst VARCHAR(10),
-                hashtagInterests VARCHAR(255)
             );
     `);
 
@@ -39,7 +37,17 @@ async function create_tables(db) {
     );
   `);
 
-  await Promise.all([q1,q2]);
+    const q3 = db.create_tables(`
+    CREATE TABLE IF NOT EXISTS hashtagInterests (
+        hashtagID INT,
+        userID INT,
+        FOREIGN KEY (hashtagID) REFERENCES hashtags(id),
+        FOREIGN KEY (userID) REFERENCES users(userID)
+    )
+    
+    `)
+
+  await Promise.all([q1,q2,q3]);
     
    
   dbaccess.close_db()
