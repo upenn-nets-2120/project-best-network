@@ -26,6 +26,7 @@ async function create_tables(db) {
                 birthday DATE,
                 affiliation VARCHAR(255),
                 profilePhoto VARCHAR(255),
+                actor_nconst VARCHAR(255)
             );
     `);
 

@@ -10,6 +10,8 @@ function register_routes(app) {
     app.post('/login', routes.post_login);
     app.get('/:username/logout', routes.post_logout);
     app.post('/register', routes.post_register); 
+    app.get(':username/getActors', routes.get_actors);
+    app.post(':username/setActor', routes.post_actor);
 
     app.get('/mostPopularHashtags', routes.most_popular_hashtags); 
     app.get('/:username/getProfile', routes.get_profile); 

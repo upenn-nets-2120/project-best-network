@@ -3,6 +3,8 @@ const config = require('../config.json'); // Load configuration
 const bcrypt = require('bcrypt'); 
 const helper = require('./login_route_helper.js');
 const process = require('process');
+const s3Access = require('./s3_access'); 
+
 
 
 // Database connection setup
@@ -27,7 +29,7 @@ var getHelloWorld = function(req, res) {
       "email": "vedha.avali@gmail.com",
       "birthday": "2004-08-08",
       "affiliation": "Penn",
-      "profilePhoto": "profile.jpg", -> probably not in this format this has to be uploaded to S3
+      "profilePhoto": profile.jpg, -> should be provided as an image file to upload to S3 can be null
       "hashtagInterests": ["hello", "bye"] -> this should be in list format, can be null
     }
 
@@ -110,8 +112,10 @@ var postRegister = async function(req, res) {
       }
     }
     if (profilePhoto){
-      //TODO: call set profile photo
+      //TODO: set profile photo
       //https://github.com/upenn-nets-2120/homework-2-ms1-vavali08/blob/main/src/main/java/org/nets2120/imdbIndexer/S3Setup.java Reference - Note that this is Java
+      await s3Access.put_by_key("best-network-nets212-sp24", userID, profilePhoto, 'image/*');
+      
     }
 
     return res.status(200).json({ username: username });
@@ -248,7 +252,13 @@ var get_profile = async function(req, res) {
 
 
 
+var getActors = async function(req, res) {
 
+}
+
+var postActor = async function(req, res) {
+  
+}
 
 
 
@@ -263,7 +273,9 @@ var routes = {
     get_helloworld: getHelloWorld,
     post_login: postLogin,
     post_register: postRegister,
-    post_logout: postLogout, 
+    post_logout: postLogout,
+    get_actors: getActors,
+    post_actor: postActor
   };
 
 
