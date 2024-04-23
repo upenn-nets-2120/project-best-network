@@ -27,7 +27,7 @@ var getHelloWorld = function(req, res) {
       "email": "vedha.avali@gmail.com",
       "birthday": "2004-08-08",
       "affiliation": "Penn",
-      "profilePhoto": "profile.jpg", -> this should be S3 URL(?); can be null
+      "profilePhoto": "profile.jpg", -> probably not in this format this has to be uploaded to S3
       "hashtagInterests": ["hello", "bye"] -> this should be in list format, can be null
     }
 
@@ -75,9 +75,6 @@ var postRegister = async function(req, res) {
     if (hashtagInterests){
       var hashtagID = ""
 
-      var hashtagInsertQuery = ``;
-      var hashtagInterestQuery = `'`
-
       if (Array.isArray(hashtagInterests) && hashtagInterests.length > 0) {
         for (let i = 0; i < hashtagInterests.length; i++) {
           var hashtag = hashtagInterests[i];
@@ -90,21 +87,31 @@ var postRegister = async function(req, res) {
           // If hashtag exists in the database -> get ID, increment count
             hashtagID = hashtagData.id;
             const incrementQuery = `UPDATE hashtags SET count = count + 1 WHERE text = ${hashtag}`;
+            await db.send_sql(incrementQuery);
+
 
           } else {
-          // Otherwise insert into database -> get ID, increment count
+          // Otherwise insert into database -> get ID, increment count (set to 1 since this is first instance of the hashtag)
+            var insertQuery = `INSERT INTO hashtags (text, count) 
+            VALUES ('${hashtag}', '1')`;
 
+            await db.send_sql(insertQuery);
+            
+            //getting ID
+            var idQuery = `SELECT * FROM hashtags WHERE text = '${hashtag}'`;
+            var hashtagData = await db.send_sql(idQuery);
+            hashtagID = hashtagData.id;
           }
-
-
-
           //Dealing with hashtag interests database -> insert hashtag into that database w/ corresponding userID and hashtagID
+          var interestQuery = `INSERT INTO hashtags (hashtagID, userID) 
+          VALUES ('${hashtagID}', '${userID}')`;
         }
 
       }
     }
     if (profilePhoto){
       //TODO: call set profile photo
+      //https://github.com/upenn-nets-2120/homework-2-ms1-vavali08/blob/main/src/main/java/org/nets2120/imdbIndexer/S3Setup.java Reference - Note that this is Java
     }
 
     return res.status(200).json({ username: username });
@@ -125,7 +132,7 @@ var postLogin = async function(req, res) {
   if (!username || !password) {
       return res.status(400).json({ error: 'One or more of the fields you entered was empty, please try again.' });
   }
-  var query = "SELECT * FROM users WHERE username = '" + username + "'";
+  var query = `SELECT hashed_password FROM users WHERE username = '${username}'`;
   try {
       var result = await db.send_sql(query);
 
@@ -238,6 +245,8 @@ var get_profile = async function(req, res) {
       res.status(500).json({ error: 'Error querying database.' });
   }
 };
+
+
 
 
 
