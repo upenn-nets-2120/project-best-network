@@ -7,11 +7,9 @@ import ChatInterface from "./pages/ChatInterface";
 import ChatPage from "./pages/ChatPage";
 import config from '../config.json';
 
-// import socketIO from 'socket.io-client';
-// const socket = socketIO.connect('http://192.168.3.104:4000');
-// interface AppProps {
-//   socket: SocketIOClient.Socket;
-// }
+import { io, Socket } from "socket.io-client";
+const socket = io();
+socket.emit('join', { name: 'Paola', room: '1' }, () => {});
 
 function App() {
   return (
@@ -22,7 +20,7 @@ function App() {
         <Route path='/:username/home' element={<Home />} />
         <Route path='/:username/friends' element={<Friends />} />
         <Route path="/:username/chat" element={<ChatInterface />} />
-        {/* <Route path="/chat" element={<ChatPage socket={socket} />} /> */}
+        <Route path="/chat" element={<ChatPage/>} />
       </Routes>
     </BrowserRouter>
   )

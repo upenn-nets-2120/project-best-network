@@ -7,10 +7,9 @@ import config from '../../config.json';
 
 // Define the type for the props expected by the ChatPage component
 type ChatPageProps = {
-  socket: WebSocket;  // or use 'any' if the type is not specifically WebSocket
 };
 
-const ChatPage: React.FC<ChatPageProps> = ({ socket }) => {
+const ChatPage: React.FC<ChatPageProps> = ({  }) => {
   return (
     <div className="chat">
       <div className="chat__main">
