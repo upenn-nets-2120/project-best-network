@@ -1,23 +1,34 @@
-// POST /:username/leaveChat
-var leaveChat = function(req, res) {
-    // Implementation to leave a chat
-  };
+const Server = require('socket.io');
+
+// Create a socket.io server
+const ioHandler = (req, res) => {
+    if (!res.socket.server.io) {
+        console.log('*First use, starting Socket.IO');
+        const io = new Server(res.socket.server);
+
+        // Listen for connection events
+        io.on('connection', (socket) => {
+            console.log(`Socket ${socket.id} connected.`);
+
+            // Listen for incoming messages and broadcast to all clients
+            socket.on('message', (message) => {
+                io.emit('message', message);
+            });
+
+            // Clean up the socket on disconnect
+            socket.on('disconnect', () => {
+                console.log(`Socket ${socket.id} disconnected.`);
+            });
+        });
+        res.socket.server.io = io;
+    }
+    res.end();
+};
+
+
   
-  // POST /:username/joinChat
-  var joinChat = function(req, res) {
-    // Implementation to join a chat
-  };
-  
-  // POST /:username/writeToChat
-  var writeToChat = function(req, res) {
-    // Implementation to write to a chat
-  };
-  
-  var chatRoutes = { 
-    leaveChat: leaveChat,
-    joinChat: joinChat,
-    writeToChat: writeToChat,
-  };
-  
-  module.exports = chatRoutes;
-  
+var chatRoutes = { 
+    io : ioHandler
+};
+
+module.exports = chatRoutes;

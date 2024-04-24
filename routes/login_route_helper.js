@@ -48,15 +48,15 @@ var login_route_helper = function() {
 };
 
 var encryptPassword = function(password, callback) {
-    return route_helper().encryptPassword(password, callback);
+    return login_route_helper().encryptPassword(password, callback);
 }
 
 var isOK = function(req) {
-    return route_helper().isOK(req);
+    return login_route_helper().isOK(req);
 }
 
 var isLoggedIn = function(req, obj) {
-    return route_helper().isLoggedIn(req, obj);
+    return login_route_helper().isLoggedIn(req, obj);
 }
 
 

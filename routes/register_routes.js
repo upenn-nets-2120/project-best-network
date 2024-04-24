@@ -1,33 +1,36 @@
-const routes = require('./login_routes.js');
+const login_routes = require('./login_routes.js');
+const multer = require('multer');
+const chat_routes = require('./chat_routes.js');
+const friend_routes = require('./friend_routes.js');
+const s3Access = require('../models/s3_access.js'); 
+
+const storage = multer.memoryStorage(); // Store files in memory
+const upload = multer({ storage: storage });
 
 module.exports = {
     register_routes
 }
 
 function register_routes(app) {
-    //login
-    app.get('/hello', routes.get_helloworld);
-    app.post('/login', routes.post_login);
-    app.get('/:username/logout', routes.post_logout);
-    app.post('/register', routes.post_register); 
-
-    app.get('/mostPopularHashtags', routes.most_popular_hashtags); 
-    app.get('/:username/getProfile', routes.get_profile); 
-    app.post('/:username/setProfilePhoto', routes.set_profile_photo); 
-    app.post('/:username/setProfileHashTags', routes.set_profile_hashtags); 
+    //login UPDATE
+    app.get('/hello', login_routes.get_helloworld);
+    app.post('/login', login_routes.post_login);
+    app.get('/:username/logout', login_routes.post_logout);
+    app.post('/register', login_routes.post_register);
+    app.post('/:username/setProfilePhoto', upload.single('profilePhoto'), login_routes.post_set_profile_photo); 
+    app.get('/:username/getActors', login_routes.get_actors);
+    app.post('/:username/setActor', login_routes.post_actor);
 
 
 
-    //friends
-    app.get('/:username/feed', routes.get_friends);
-    app.post('/:username/addFriend', routes.get_friends);
-    app.post('/:username/removeFriend', routes.get_friends);
+    //friends UPDATE
+    app.post('/:username/createPost', friend_routes.create_post); 
+    app.get('/:username/feed', friend_routes.get_feed);
+    app.post('/:username/addFriend', friend_routes.add_friend);
+    app.post('/:username/removeFriend', friend_routes.remove_friend);
 
     //chat
-    app.post('/:username/leaveChat', routes.get_friend_recs);
-    app.post('/:username/joinChat', routes.create_post); 
-    app.post('/:username/writeToChat', routes.get_feed);
-
+    app.get('/:username/chat', chat_routes.io);
 
   }
   

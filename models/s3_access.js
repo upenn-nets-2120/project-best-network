@@ -33,8 +33,9 @@ async function get_s3_client() {
             region: 'us-east-1',
             credentials: awsCredentials
         });
-        return s3Client;
     }
+    return s3Client;
+
 
 }
 
