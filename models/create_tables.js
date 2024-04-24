@@ -17,7 +17,7 @@ async function create_tables(db) {
     //users table
     const q1 = db.create_tables(`
             CREATE TABLE IF NOT EXISTS users (
-                id INT PRIMARY KEY,
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 username VARCHAR(255) UNIQUE,
                 hashed_password VARCHAR(255),
                 firstName VARCHAR(255),
