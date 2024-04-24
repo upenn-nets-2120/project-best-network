@@ -146,23 +146,25 @@ var setProfilePhoto = async function(req, res) {
   //upload to s3
   //then reset in user db
 
-  console.log(req.body);
-  console.log(req.data.body) 
-
 
   //TODO: set profile photo
   //https://github.com/upenn-nets-2120/homework-2-ms1-vavali08/blob/main/src/main/java/org/nets2120/imdbIndexer/S3Setup.java Reference - Note that this is Java
-  if (!req.file) {
+
+  const profilePhoto = req.file;
+  console.log(profilePhoto);
+  const userID = req.session.user_id;
+
+  if (!profilePhoto) {
     return res.status(400).json({ error: 'No profile photo uploaded.' });
   }
-
-  const profilePhoto = req.file;    
+  if (!userID) {
+    return res.status(403).json({ error: 'Not logged in.' });
+  }
 
   try {
-    await s3Access.put_by_key("bucket_name", "/profilePictures/" + userID, profilePhoto.buffer, profilePhoto.mimetype);
+    await s3Access.put_by_key("best-network-nets212-sp24", "/profilePictures/" + userID, profilePhoto.buffer, profilePhoto.mimetype);
     // Get the photo URL from S3
-    const photoURL = await s3Access.get_by_key("/profilePictures/" + userID);
-    console.log(photoURL);
+    const photoURL = `s3://best-network-nets212-sp24//profilePictures/${userID}`
 
     // Update the user's profile photo URL in the database
     const pfpQuery = `UPDATE users SET profilePhoto = '${photoURL}' WHERE id = '${userID}';`;
@@ -188,7 +190,7 @@ var postLogin = async function(req, res) {
   if (!username || !password) {
       return res.status(400).json({ error: 'One or more of the fields you entered was empty, please try again.' });
   }
-  var query = `SELECT hashed_password FROM users WHERE username = '${username}'`;
+  var query = `SELECT * FROM users WHERE username = '${username}'`;
   try {
       var result = await db.send_sql(query);
 
@@ -202,7 +204,7 @@ var postLogin = async function(req, res) {
           }
 
           if (result) {
-              req.session.user_id = user.user_id; 
+              req.session.user_id = user.id; 
               req.session.username = user.username;
               console.log(req.session);
               console.log("success");
