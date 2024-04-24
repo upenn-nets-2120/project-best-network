@@ -1,7 +1,7 @@
 const dbsingleton = require('../models/db_access.js');
 const config = require('../config.json'); // Load configuration
 const bcrypt = require('bcrypt'); 
-const helper = require('./login_route_helper.js');
+const helper = require('../routes/login_route_helper.js');
 const process = require('process');
 const s3Access = require('../models/s3_access.js'); 
 
@@ -70,8 +70,8 @@ var postRegister = async function(req, res) {
 
     //Retrieve userID from databse for purposes of inserting hashtags/images
     const userIDQuery = `SELECT id FROM users WHERE username = '${username}'`;
-    const [userIDQueryResult] = await db.send_sql(userIDQuery);
-    const userID = userIDQueryResult.id;
+    const userIDQueryResult = await db.send_sql(userIDQuery);
+    const userID = userIDQueryResult[0].id;
 
 
     if (hashtagInterests){
@@ -87,34 +87,58 @@ var postRegister = async function(req, res) {
 
           if(hashtagData.length > 0) {
           // If hashtag exists in the database -> get ID, increment count
-            hashtagID = hashtagData.id;
-            const incrementQuery = `UPDATE hashtags SET count = count + 1 WHERE text = ${hashtag}`;
+          hashtagID = hashtagData[0].id;
+          const incrementQuery = `UPDATE hashtags SET count = count + 1 WHERE text = '${hashtag}'`;
             await db.send_sql(incrementQuery);
+
+            //Dealing with hashtag interests database -> insert hashtag into that database w/ corresponding userID and hashtagID
+            var interestQuery = `INSERT INTO hashtagInterests (hashtagID, userID) 
+            VALUES ('${hashtagID}', '${userID}')`;
+
+            await db.send_sql(interestQuery);
 
 
           } else {
           // Otherwise insert into database -> get ID, increment count (set to 1 since this is first instance of the hashtag)
             var insertQuery = `INSERT INTO hashtags (text, count) 
             VALUES ('${hashtag}', '1')`;
-
+            console.log(insertQuery);
             await db.send_sql(insertQuery);
             
             //getting ID
             var idQuery = `SELECT * FROM hashtags WHERE text = '${hashtag}'`;
+            console.log(idQuery);
             var hashtagData = await db.send_sql(idQuery);
-            hashtagID = hashtagData.id;
+            console.log(hashtagData);
+
+            hashtagID = hashtagData[0].id;
+            console.log(hashtagID);
+
+            //Dealing with hashtag interests database -> insert hashtag into that database w/ corresponding userID and hashtagID
+            var interestQuery = `INSERT INTO hashtagInterests (hashtagID, userID) 
+            VALUES ('${hashtagID}', '${userID}')`;
+            console.log(interestQuery);
+
+            await db.send_sql(interestQuery);
           }
-          //Dealing with hashtag interests database -> insert hashtag into that database w/ corresponding userID and hashtagID
-          var interestQuery = `INSERT INTO hashtags (hashtagID, userID) 
-          VALUES ('${hashtagID}', '${userID}')`;
+
+          
+
         }
 
       }
     }
+    console.log(profilePhoto);
     if (profilePhoto){
       //TODO: set profile photo
       //https://github.com/upenn-nets-2120/homework-2-ms1-vavali08/blob/main/src/main/java/org/nets2120/imdbIndexer/S3Setup.java Reference - Note that this is Java
-      await s3Access.put_by_key("best-network-nets212-sp24", userID, profilePhoto, 'image/*');
+      await s3Access.put_by_key("best-network-nets212-sp24", "/profilePictures/" + userID, profilePhoto, 'image/*');
+      const photoURL = await s3Access.get_by_key("/profilePictures/" + userID);
+      console.log(photoURL);
+      pfpQuery = `UPDATE users SET profilePhoto = ${photoURL} WHERE id = '${userID}';`
+      console.log(pfpQuery);
+      await db.send_sql(pfpQuery);
+
       
     }
 
