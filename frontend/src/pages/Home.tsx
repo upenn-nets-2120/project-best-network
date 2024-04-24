@@ -27,7 +27,7 @@ export default function Home() {
     const fetchData = async () => {
       try {
         const response = await axios.get(`${rootURL}/${username}/feed`, { withCredentials: true });
-          setPosts(response.data.results); // Adjust based on your actual API response
+          setPosts(response.data.results); 
       } catch (error) {
           console.error('Error fetching posts:', error);
       }
@@ -44,7 +44,6 @@ export default function Home() {
     useEffect(() => {
         const fetchData = async () => {
             // TODO: fetch posts data and set appropriate state variables 
-   
             try {
               const response = await axios.get(`${rootURL}/${username}/feed`, { withCredentials: true });
               console.log(response)

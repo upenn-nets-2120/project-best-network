@@ -8,16 +8,36 @@ export default function Signup() {
     
     // TODO: set appropriate state variables 
 
+     // POST /register 
+/*  Example body: 
+    {
+      "username": "vavali",
+      "password": "1234",
+      "firstName": "Vedha",
+      "lastName": "Avali",
+      "email": "vedha.avali@gmail.com",
+      "birthday": "2004-08-08",
+      "affiliation": "Penn",
+      "hashtagInterests": ["hello", "bye"] -> this should be in list format, can be null
+    }
+
+*/
+
     const rootURL = config.serverRootURL;
 
     const [username, setUsername] = useState('');
-    const [linked_nconst, setLinkedNconst] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [email, setEmail] = useState('');
+    const [birthday, setBirthday] = useState('');
+    const [affiliation, setAffiliation] = useState('');
+    const [hashtagInterests, setHashtagInterests] = useState<string[]>([]);
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();  // This will stop the default form submission
+        event.preventDefault();  
 
         if (password !== confirmPassword) {
             alert('Passwords do not match.');
@@ -27,8 +47,13 @@ export default function Signup() {
         try {
             var response = await axios.post(`${rootURL}/register`, {
                 username: username,
-                linked_id: linked_nconst,
-                password: password
+                password: password,
+                firstName: firstName, 
+                lastName: lastName, 
+                email: email, 
+                birthday: birthday, 
+                affiliation: affiliation, 
+                hashtagInterests: hashtagInterests
             }, { withCredentials: true });
 
             if (response.status === 200) {
@@ -38,7 +63,9 @@ export default function Signup() {
                 },{ withCredentials: true });
           
                 if (response.status === 200) {
-                  navigate("/"+ username+"/home");
+                    // response.render('homepage.ejs', {data: null, comments: null, message: 'Getting friends unsuccessful.', user: user});
+                navigate ("/" + username +"/setProfilePhoto'")
+                //   navigate("/"+ username+"/home");
                 }
                 
             } else {
@@ -68,16 +95,6 @@ export default function Signup() {
                         />
                     </div>
                     <div className='flex space-x-4 items-center justify-between'>
-                        <label htmlFor="linked_nconst" className='font-semibold'>Linked nconst</label>
-                        <input
-                            id="linked_nconst"
-                            type="text"
-                            className='outline-none bg-white rounded-md border border-slate-100 p-2'
-                            value={linked_nconst}
-                            onChange={(e) => setLinkedNconst(e.target.value)}
-                        />
-                    </div>
-                    <div className='flex space-x-4 items-center justify-between'>
                         <label htmlFor="password" className='font-semibold'>Password</label>
                         <input
                             id="password"
@@ -95,6 +112,66 @@ export default function Signup() {
                             className='outline-none bg-white rounded-md border border-slate-100 p-2'
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
+                        />
+                    </div>
+                    <div className='flex space-x-4 items-center justify-between'>
+                        <label htmlFor="firstName" className='font-semibold'>First Name</label>
+                        <input
+                            id="firstName"
+                            type="text"
+                            className='outline-none bg-white rounded-md border border-slate-100 p-2'
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                        />
+                    </div>
+                    <div className='flex space-x-4 items-center justify-between'>
+                        <label htmlFor="lastName" className='font-semibold'>Last Name</label>
+                        <input
+                            id="lastName"
+                            type="text"
+                            className='outline-none bg-white rounded-md border border-slate-100 p-2'
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                        />
+                    </div>
+                    <div className='flex space-x-4 items-center justify-between'>
+                        <label htmlFor="email" className='font-semibold'>Email</label>
+                        <input
+                            id="email"
+                            type="email"
+                            className='outline-none bg-white rounded-md border border-slate-100 p-2'
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                    </div>
+                    <div className='flex space-x-4 items-center justify-between'>
+                        <label htmlFor="birthday" className='font-semibold'>Birthday</label>
+                        <input
+                            id="birthday"
+                            type="date"
+                            className='outline-none bg-white rounded-md border border-slate-100 p-2'
+                            value={birthday}
+                            onChange={(e) => setBirthday(e.target.value)}
+                        />
+                    </div>
+                    <div className='flex space-x-4 items-center justify-between'>
+                        <label htmlFor="affiliation" className='font-semibold'>Affiliation</label>
+                        <input
+                            id="affiliation"
+                            type="text"
+                            className='outline-none bg-white rounded-md border border-slate-100 p-2'
+                            value={affiliation}
+                            onChange={(e) => setAffiliation(e.target.value)}
+                        />
+                    </div>
+                    <div className='flex space-x-4 items-center justify-between'>
+                        <label htmlFor="hashtagInterests" className='font-semibold'>Hashtag Interests</label>
+                        <input
+                            id="hashtagInterests"
+                            type="text"
+                            className='outline-none bg-white rounded-md border border-slate-100 p-2'
+                            value={hashtagInterests}
+                            onChange={(e) => setHashtagInterests(e.target.value.split(',').map(item => item.trim()))}
                         />
                     </div>
                     <div className='w-full flex justify-center'>
