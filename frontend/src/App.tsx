@@ -5,10 +5,6 @@ import Signup from "./pages/Signup";
 import Friends from "./pages/Friends";
 import ChatInterface from "./pages/ChatInterface";
 import ChatPage from "./pages/ChatPage";
-// import config from '../config.json';
-// import { io } from "socket.io-client";
-// const rootURL = config.serverRootURL;
-// const socket = io(rootURL);
 
 function App() {
   return (
