@@ -30,7 +30,7 @@ function register_routes(app) {
     app.post('/:username/removeFriend', friend_routes.remove_friend);
 
     //chat
-    app.get('/:username/chat', chat_routes.io);
-
+    app.get('/:username/isLoggedIn', chat_routes.is_logged_in);
+    app.get('/roomMessages', chat_routes.room_messages);
   }
   

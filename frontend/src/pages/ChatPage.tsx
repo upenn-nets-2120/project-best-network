@@ -1,25 +1,37 @@
 import { useState, useEffect, ChangeEvent } from 'react';
-// import { io } from "socket.io-client";
-// import config from '../../config.json';
+import { useParams } from 'react-router-dom';
+import { io } from "socket.io-client";
+import axios from 'axios';
+import config from '../../config.json';
+const rootURL = config.serverRootURL;
+const socket = io(rootURL);
 
-// const rootURL = config.serverRootURL;
-// const socket = io(rootURL);
-// socket.on('connect', () => {
-//   console.log('Connected to server');
-//   // Now that the connection is established, join the room
-//   socket.emit('join_room', { room: '1' });
-// });
-import { Socket } from "socket.io-client";
 
-interface ChatPageProps {
-  socket: Socket;  // Using Socket type for the socket instance
-}
-const ChatPage: React.FC<ChatPageProps> = ({ socket }) => {
+// import { Socket } from "socket.io-client";
+// interface ChatPageProps {
+//   socket: Socket;  // Using Socket type for the socket instance
+// }
+
+
+
+
+const ChatPage = ({  }) => {
     const [messages, setMessages] = useState<string[]>([]);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [currentMessage, setCurrentMessage] = useState('');
     const [room, setRoom] = useState('1'); // Set the default room on state initialization
+    const { username } = useParams();
 
     useEffect(() => {
+        //check if logged in 
+        axios.get(`${rootURL}/${username}/isLoggedIn`, { withCredentials: true })
+        .then((response) => {
+            setIsLoggedIn(response.data.loggedIn);
+        })
+        .catch((error) => {
+            console.error('Error checking login status:', error);
+        });
+
         // Listen for incoming messages specific to a room
         socket.on('room_message', (message) => {
             console.log("Message received:", message);
@@ -34,8 +46,17 @@ const ChatPage: React.FC<ChatPageProps> = ({ socket }) => {
 
     useEffect(() => {
         if (room) {
-            console.log("Joining room:", room);
-            socket.emit('join_room', { room });
+            console.log("Joining room:", room)
+            socket.emit('join_room', { room_name: room, username: username });
+            
+            axios.get(`${rootURL}/${username}/messages`, { params: { room: room } })
+            .then(response => {
+              setMessages(response.data.messages);
+            })
+            .catch(error => {
+              console.error('Error fetching messages:', error);
+              // Handle error appropriately
+            });
 
             // Leave the room when the component unmounts or room changes
             return () => {
@@ -58,6 +79,14 @@ const ChatPage: React.FC<ChatPageProps> = ({ socket }) => {
     const handleRoomJoin = (e: ChangeEvent<HTMLInputElement>) => {
         setRoom(e.target.value);
     };
+
+    const sendInvite = (inviteeId : string) => {
+      socket.emit('send_invite', { room, inviteeId });
+    };
+  
+    if (!isLoggedIn) {
+      return <div>Page can't be accessed. Please log in first.</div>;
+    }
 
     return (
         <div>

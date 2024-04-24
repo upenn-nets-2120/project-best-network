@@ -6,7 +6,7 @@ const session = require('express-session');
 const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
-
+const socketHandler = require('./routes/socketHandlers.js'); 
 const server = http.createServer(app);
 
 const io = socketIo(server, {
@@ -17,29 +17,7 @@ const io = socketIo(server, {
   }
 });
 
-io.on('connection', (socket) => {
-    console.log('New client connected:', socket.id);
-
-    socket.on('join_room', (data) => {
-        socket.join(data.room);
-        console.log(`Socket ${socket.id} joined room ${data.room}`);
-    });
-
-    socket.on('leave_room', (data) => {
-        socket.leave(data.room);
-        console.log(`Socket ${socket.id} left room ${data.room}`);
-    });
-
-    socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id);
-    });
-
-    socket.on('send_room_message', (data) => {
-        console.log('Message received in room', data.room, ':', data.message);
-        io.to(data.room).emit('room_message', data.message);
-    });
-});
-
+socketHandler.socketHandler(io);
 
 
 
