@@ -12,6 +12,20 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
+  // POST /register 
+/*  Example body: 
+    {
+      "username": "vavali",
+      "password": "1234",
+      "firstName": "Vedha",
+      "lastName": "Avali",
+      "email": "vedha.avali@gmail.com",
+      "birthday": "2004-08-08",
+      "affiliation": "Penn",
+      "hashtagInterests": ["hello", "bye"] -> this should be in list format, can be null
+    }
+
+*/
 
   const handleLogin = async () => {
     // TODO: check username and password using /login route 
