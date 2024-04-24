@@ -1,6 +1,8 @@
 const login_routes = require('./login_routes.js');
 const chat_routes = require('./chat_routes.js');
 const friend_routes = require('./friend_routes.js');
+const s3Access = require('../models/s3_access.js'); 
+
 
 module.exports = {
     register_routes
@@ -18,12 +20,12 @@ function register_routes(app) {
 
 
     //friends UPDATE
-    app.get('/:username/feed', friend_routes.get_friends);
-    app.post('/:username/addFriend', friend_routes.get_friends);
-    app.post('/:username/removeFriend', friend_routes.get_friends);
+    app.get('/:username/feed', friend_routes.feed);
+    app.post('/:username/addFriend', friend_routes.add_friend);
+    app.post('/:username/removeFriend', friend_routes.remove_friend);
 
     //chat
-    app.ws('/:username/chat', chat_routes.chat);
+    //app.ws('/:username/chat', chat_routes.chat);
 
   }
   
