@@ -164,8 +164,7 @@ var setProfilePhoto = async function(req, res) {
   try {
     await s3Access.put_by_key("best-network-nets212-sp24", "/profilePictures/" + userID, profilePhoto.buffer, profilePhoto.mimetype);
     // Get the photo URL from S3
-    const photoURL = await s3Access.get_by_key("best-network-nets212-sp24", "/profilePictures/" + userID);
-    console.log("photoURL" + photoURL);
+    const photoURL = `s3://best-network-nets212-sp24//profilePictures/${userID}`
 
     // Update the user's profile photo URL in the database
     const pfpQuery = `UPDATE users SET profilePhoto = '${photoURL}' WHERE id = '${userID}';`;
