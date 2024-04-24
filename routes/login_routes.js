@@ -138,8 +138,6 @@ var postRegister = async function(req, res) {
       pfpQuery = `UPDATE users SET profilePhoto = ${photoURL} WHERE id = '${userID}';`
       console.log(pfpQuery);
       await db.send_sql(pfpQuery);
-
-      
     }
 
     return res.status(200).json({ username: username });
@@ -160,7 +158,8 @@ var postLogin = async function(req, res) {
   if (!username || !password) {
       return res.status(400).json({ error: 'One or more of the fields you entered was empty, please try again.' });
   }
-  var query = `SELECT hashed_password FROM users WHERE username = '${username}'`;
+  //var query = `SELECT hashed_password FROM users WHERE username = '${username}'`;
+  var query = `SELECT * FROM users WHERE username = '${username}'`;
   try {
       var result = await db.send_sql(query);
 
@@ -174,7 +173,8 @@ var postLogin = async function(req, res) {
           }
 
           if (result) {
-              req.session.user_id = user.user_id; 
+              req.session.user_id = user.id;
+              //req.session.user_id = user.user_id; 
               req.session.username = user.username
               console.log(req.session)
               console.log("success")
