@@ -149,17 +149,23 @@ var setProfilePhoto = async function(req, res) {
 
   //TODO: set profile photo
   //https://github.com/upenn-nets-2120/homework-2-ms1-vavali08/blob/main/src/main/java/org/nets2120/imdbIndexer/S3Setup.java Reference - Note that this is Java
-  if (!req.files) {
+
+  const profilePhoto = req.file;
+  console.log(profilePhoto);
+  const userID = req.session.user_id;
+
+  if (!profilePhoto) {
     return res.status(400).json({ error: 'No profile photo uploaded.' });
   }
-
-  const profilePhoto = req.files['profilePhoto'];    
+  if (!userID) {
+    return res.status(403).json({ error: 'Not logged in.' });
+  }
 
   try {
-    await s3Access.put_by_key("bucket_name", "/profilePictures/" + userID, profilePhoto.buffer, profilePhoto.mimetype);
+    await s3Access.put_by_key("best-network-nets212-sp24", "/profilePictures/" + userID, profilePhoto.buffer, profilePhoto.mimetype);
     // Get the photo URL from S3
-    const photoURL = await s3Access.get_by_key("/profilePictures/" + userID);
-    console.log(photoURL);
+    const photoURL = await s3Access.get_by_key("best-network-nets212-sp24", "/profilePictures/" + userID);
+    console.log("photoURL" + photoURL);
 
     // Update the user's profile photo URL in the database
     const pfpQuery = `UPDATE users SET profilePhoto = '${photoURL}' WHERE id = '${userID}';`;
