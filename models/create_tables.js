@@ -17,7 +17,7 @@ async function create_tables(db) {
     //users table
     const q1 = db.create_tables(`
             CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
+                id INT PRIMARY KEY,
                 username VARCHAR(255) UNIQUE,
                 hashed_password VARCHAR(255),
                 firstName VARCHAR(255),
@@ -46,33 +46,40 @@ async function create_tables(db) {
         FOREIGN KEY (userID) REFERENCES users(id)
     )
     
-    `);
-      // TODO: create posts table
-    const q4 = db.create_tables('CREATE TABLE IF NOT EXISTS posts( \
-        post_id INT AUTO_INCREMENT NOT NULL, \
-        parent_post INT, \
-        title VARCHAR(255), \
-        content VARCHAR(255), \
-        author_id INT, \
-        FOREIGN KEY (parent_post) REFERENCES posts(post_id), \
-        FOREIGN KEY (author_id) REFERENCES users(id), \
-        PRIMARY KEY (post_id) \
-      );');
-    // create friends tables
-    const q5 = db.create_tables('CREATE TABLE IF NOT EXISTS friends ( \
-      followed INT, \
-      follower INT, \
-      FOREIGN KEY (follower) REFERENCES users(id), \
-      FOREIGN KEY (followed) REFERENCES users(id) \
-    );')
-    // create hashtag table
-    const q6 = db.create_tables('CREATE TABLE IF NOT EXISTS post_to_hashtags ( \
-      post_id INT, \
-      hashtag_id INT, \
-      FOREIGN KEY (post_id) REFERENCES posts(post_id), \
-      FOREIGN KEY (hashtag_id) REFERENCES hashtags(id) \
-    );')
-  await Promise.all([q1,q2,q3,q4,q5,q6]);
+    `)
+
+
+
+  const q4 = db.create_tables(`
+  CREATE TABLE IF NOT EXISTS chatRooms (
+    roomID INT AUTO_INCREMENT PRIMARY KEY
+  );`)
+
+  const q5 = db.create_tables(`
+  CREATE TABLE IF NOT EXISTS chatRoomUsers (
+    roomID INT,
+    userID INT,
+    PRIMARY KEY (roomID, userID),
+    FOREIGN KEY (roomID) REFERENCES chatRooms(roomID),
+    FOREIGN KEY (userID) REFERENCES users(id)
+  );`)
+
+ 
+  const q6 = db.create_tables(`
+    CREATE TABLE IF NOT EXISTS chatRoomMessages (
+      messageID INT AUTO_INCREMENT PRIMARY KEY,
+      roomID INT,
+      textMessage TEXT,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (roomID) REFERENCES chatRooms(roomID)
+    );`)
+
+  //   const q7 = db.send_sql(`
+  //   DROP TABLE IF EXISTS chatRoomMessages, chatRoomUsers, chatRooms;
+  // `);
+
+
+  await Promise.all([q1,q2,q3, q4, q5, q6 ]);
     
    
   dbaccess.close_db()

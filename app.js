@@ -4,21 +4,22 @@ const port = 8080;
 const registry = require('./routes/register_routes.js');
 const session = require('express-session');
 const cors = require('cors');
-const http = require('http').createServer(app); // Create an HTTP server passing in the Express app
+const http = require('http');
+const socketIo = require('socket.io');
+const socketHandler = require('./routes/socketHandlers.js'); 
+const server = http.createServer(app);
 
-const socketIO = require('socket.io')(http, {  // Attach Socket.IO to the HTTP server, not the express instance
-    cors: {
-        origin: "http://localhost:4567", // Make sure this is the correct client URL
-        methods: ["GET", "POST"] // Specify which methods are allowed
-    }
+const io = socketIo(server, {
+  cors: {
+      origin: "http://localhost:4567", // Specify allowed origins
+      methods: ["GET", "POST"], // Specify allowed methods
+      credentials: true // Optional: Allow credentials
+  }
 });
 
-socketIO.on('connection', (socket) => {
-    console.log(`⚡: ${socket.id} user just connected!`);
-    socket.on('disconnect', () => {
-      console.log('🔥: A user disconnected');
-    });
-});
+socketHandler.socketHandler(io);
+
+
 
 app.use(cors({
   origin: 'http://localhost:4567', // Ensure this matches your front-end URL
@@ -37,6 +38,6 @@ app.use(session({
 
 registry.register_routes(app);
 
-http.listen(port, () => {  // Use http.listen instead of app.listen
+server.listen(port, () => {  // Use http.listen instead of app.listen
   console.log(`Main app listening on port ${port}`)
 });
