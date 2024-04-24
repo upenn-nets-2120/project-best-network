@@ -20,7 +20,7 @@ function register_routes(app) {
 
 
     //friends UPDATE
-    app.get('/:username/feed', friend_routes.feed);
+    app.get('/:username/feed', friend_routes.get_feed);
     app.post('/:username/addFriend', friend_routes.add_friend);
     app.post('/:username/removeFriend', friend_routes.remove_friend);
 

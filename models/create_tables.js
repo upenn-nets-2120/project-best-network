@@ -46,9 +46,33 @@ async function create_tables(db) {
         FOREIGN KEY (userID) REFERENCES users(userID)
     )
     
-    `)
-
-  await Promise.all([q1,q2,q3]);
+    `);
+      // TODO: create posts table
+    const q4 = db.create_tables('CREATE TABLE IF NOT EXISTS posts( \
+        post_id int AUTO_INCREMENT NOT NULL, \
+        parent_post int, \
+        title VARCHAR(255), \
+        content VARCHAR(255), \
+        author_id int, \
+        FOREIGN KEY (parent_post) REFERENCES posts(post_id), \
+        FOREIGN KEY (author_id) REFERENCES users(id), \
+        PRIMARY KEY (post_id) \
+      );');
+    // create friends tables
+    const q5 = db.create_tables('CREATE TABLE IF NOT EXISTS friends ( \
+      followed VARCHAR(10), \
+      follower VARCHAR(10), \
+      FOREIGN KEY (follower) REFERENCES users(id), \
+      FOREIGN KEY (followed) REFERENCES users(id) \
+    );')
+    // create hashtag table
+    const q6 = db.create_tables('CREATE TABLE IF NOT EXISTS post_to_hashtags ( \
+      post_id VARCHAR(10), \
+      hashtag_id VARCHAR(10), \
+      FOREIGN KEY (post_id) REFERENCES posts(post_id), \
+      FOREIGN KEY (hashtag_id) REFERENCES hashtags(id) \
+    );')
+  await Promise.all([q1,q2,q3,q4,q5,q6]);
     
    
   dbaccess.close_db()

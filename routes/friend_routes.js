@@ -1,26 +1,27 @@
 
-const PORT = config.serverPort;
+//const PORT = config.serverPort;
 
-var getHelloWorld = function(req, res) {
-  res.status(200).send({message: "Hello, world!"});
-}
 // POST /addFriend
 var addFriend = async function(req, res) {
     // Implementation to add a friend
+    return res.status(200).send({message: "unimplemented"});
   };
   
   // POST /removeFriend
   var removeFriend = async function(req, res) {
     // Implementation to remove a friend
     // Check if a user is logged in
-    
+    /*
     if (!req.session.user_id) {
       return res.status(403).json({ error: 'Not logged in.' });
     }
+    */
+    return res.status(200).send({message: "unimplemented"});
   };
   
   // GET /feed
-  var feed = function(req, res) {
+  var getFeed = async function(req, res) {
+    //res.status(200).send({message: "unimplemented"});
     // Implementation to fetch feed data
     // Check if a user is logged in
     
@@ -60,13 +61,10 @@ var addFriend = async function(req, res) {
   };
   
   var routes = { 
-    addFriend: addFriend,
-    removeFriend: removeFriend,
-    feed: feed,
     add_friend: addFriend,
     remove_friend: removeFriend,
+    get_feed: getFeed,
   };
-
-
+  
   module.exports = routes;
   
