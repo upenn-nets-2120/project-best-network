@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import config from '../../config.json';
 
 export default function SetProfilePhoto() {
+    const { username } = useParams();
     const navigate = useNavigate();
     const rootURL = config.serverRootURL;
 
@@ -39,8 +40,8 @@ export default function SetProfilePhoto() {
 
             // Handle the response
             if (response.status === 200) {
-                // Photo upload successful, navigate to the user's profile page
-                navigate(`/home`); // Change this URL if you want to navigate elsewhere
+                // Photo upload successful, navigate to the user's home page
+                navigate(`/${username}/home`);
             } else {
                 alert('Photo upload failed.');
             }
