@@ -52,8 +52,7 @@ async function create_tables(db) {
 
   const q4 = db.create_tables(`
   CREATE TABLE IF NOT EXISTS chatRooms (
-    roomID INT AUTO_INCREMENT PRIMARY KEY,
-    roomName VARCHAR(255)
+    roomID INT AUTO_INCREMENT PRIMARY KEY
   );`)
 
   const q5 = db.create_tables(`
@@ -75,8 +74,12 @@ async function create_tables(db) {
       FOREIGN KEY (roomID) REFERENCES chatRooms(roomID)
     );`)
 
+  //   const q7 = db.send_sql(`
+  //   DROP TABLE IF EXISTS chatRoomMessages, chatRoomUsers, chatRooms;
+  // `);
 
-  await Promise.all([q1,q2,q3, q4, q5, q6]);
+
+  await Promise.all([q1,q2,q3, q4, q5, q6 ]);
     
    
   dbaccess.close_db()

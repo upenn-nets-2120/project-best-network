@@ -1,8 +1,9 @@
 const dbsingleton = require('../models/db_access.js');
 const config = require('../config.json'); // Load configuration
-const bcrypt = require('bcrypt'); 
-const helper = require('../routes/login_route_helper.js');
-const process = require('process');
+const helper = require('../routes/chat_route_helper.js');
+
+const db = dbsingleton;
+db.get_db_connection();
 
 // get /isLoggedIn
 var is_logged_in = async function(req, res) {
@@ -13,27 +14,58 @@ var is_logged_in = async function(req, res) {
     // if (!helper.isLoggedIn(req,username)) {
     //     return res.status(403).json({ error: 'Not logged in.' });
     // }
-    res.status(200).json({ isloggedIn : true });
+    res.status(200).json({ isLoggedIn : true });
 };
 
 // get /roomMessages
-var room_messages = async function(req, res) {
-    var room = req.params.room;
-    var room_name = req.params.room_name;
+var chat_room_messages = async function(req, res) {
+    // var username = req.params.username;
+    // //check if chat room exists
+    // helper.checkIfChatRoomExists
+    // //get user id from username
+    // helper.getUserId
+    // //check if user belongs to room
+    // helper.getUsersInRoom
+
+    var room_id = req.params.room_name;
     var query = `
-        SELECT cr.roomName, cr.roomID, crm.messageID, crm.textMessage, crm.timestamp
+        SELECT cr.roomID, crm.messageID, crm.textMessage, crm.timestamp
         FROM chatRooms cr
         INNER JOIN chatRoomMessages crm ON cr.roomID = crm.roomID
-        WHERE cr.roomName = '${room_name}'
+        WHERE cr.roomID = '${room_id}'
         ORDER BY crm.timestamp DESC`; 
     var result = await db.send_sql(query);
     res.json(result);
 };
 
+// get /chatRoomsForUser
+var chat_rooms_for_user = async function(req, res) {
+    // var username = req.params.username;
+    // //check if chat room exists
+    // helper.checkIfChatRoomExists
+    // //get user id from username
+    // helper.getUserId
+    // //check if user belongs to room
+    // helper.getUsersInRoom
+
+    var room_id = req.params.room_name;
+    var query = `
+        SELECT cr.roomID, crm.messageID, crm.textMessage, crm.timestamp
+        FROM chatRooms cr
+        INNER JOIN chatRoomMessages crm ON cr.roomID = crm.roomID
+        WHERE cr.roomID = '${room_id}'
+        ORDER BY crm.timestamp DESC`; 
+    var result = await db.send_sql(query);
+    res.json(result);
+};
+
+
+
   
 var chatRoutes = { 
     is_logged_in : is_logged_in,
-    room_messages : room_messages
+    chat_room_messages : chat_room_messages,
+    chat_rooms_for_user : chat_rooms_for_user
 };
 
 module.exports = chatRoutes;

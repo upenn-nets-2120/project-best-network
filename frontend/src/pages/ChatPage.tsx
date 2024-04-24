@@ -6,30 +6,31 @@ import config from '../../config.json';
 const rootURL = config.serverRootURL;
 const socket = io(rootURL);
 
-
-// import { Socket } from "socket.io-client";
-// interface ChatPageProps {
-//   socket: Socket;  // Using Socket type for the socket instance
-// }
-
-
-
-
-const ChatPage = ({  }) => {
+const ChatPage = () => {
     const [messages, setMessages] = useState<string[]>([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [currentMessage, setCurrentMessage] = useState('');
     const [room, setRoom] = useState('1'); // Set the default room on state initialization
+    const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
     const { username } = useParams();
 
     useEffect(() => {
-        //check if logged in 
+        // Check if logged in 
         axios.get(`${rootURL}/${username}/isLoggedIn`, { withCredentials: true })
-        .then((response) => {
-            setIsLoggedIn(response.data.loggedIn);
-        })
-        .catch((error) => {
-            console.error('Error checking login status:', error);
+            .then((response) => {
+                console.log(response)
+                setIsLoggedIn(response.data.isLoggedIn);
+            })
+            .catch((error) => {
+                console.error('Error checking login status:', error);
+            });
+
+        // Emit 'connected' event with username
+        socket.emit("connected", { username: username });
+
+        // Listen for 'user_connected' event to update connected users
+        socket.on('user_connected', ({ username }) => {
+            setConnectedUsers(prevUsers => [...prevUsers, username]);
         });
 
         // Listen for incoming messages specific to a room
@@ -38,34 +39,19 @@ const ChatPage = ({  }) => {
             setMessages(prevMessages => [...prevMessages, message]);
         });
 
-        // Clean up: remove the message listener
+        // Clean up: remove the message and user_connected listeners
         return () => {
             socket.off('room_message');
+            socket.off('user_connected');
         };
     }, []);
 
-    useEffect(() => {
-        if (room) {
-            console.log("Joining room:", room)
-            socket.emit('join_room', { room_name: room, username: username });
-            
-            axios.get(`${rootURL}/${username}/messages`, { params: { room: room } })
-            .then(response => {
-              setMessages(response.data.messages);
-            })
-            .catch(error => {
-              console.error('Error fetching messages:', error);
-              // Handle error appropriately
-            });
+    // Function to handle room join
+    const handleRoomJoin = (e: ChangeEvent<HTMLInputElement>) => {
+        setRoom(e.target.value);
+    };
 
-            // Leave the room when the component unmounts or room changes
-            return () => {
-                console.log("Leaving room:", room);
-                socket.emit('leave_room', { room });
-            };
-        }
-    }, [room]); // This effect runs when 'room' changes
-
+    // Function to send a message
     const sendMessage = () => {
         console.log("Sending message to room:", room);
         if (room) {
@@ -76,20 +62,33 @@ const ChatPage = ({  }) => {
         }
     };
 
-    const handleRoomJoin = (e: ChangeEvent<HTMLInputElement>) => {
-        setRoom(e.target.value);
+    // Function to send invite to a room
+    const sendInviteToRoom = (inviteeId: string) => {
+        socket.emit('send_invite_to_room', { room, inviteeId });
+        console.log(`Invite sent to user with ID ${inviteeId} for room ${room}`);
     };
 
-    const sendInvite = (inviteeId : string) => {
-      socket.emit('send_invite', { room, inviteeId });
+    // Function to send a chat invitation
+    const sendChatInvite = (userId: string) => {
+        socket.emit('send_chat_invite', { userId });
+        console.log(`Chat invite sent to user ID ${userId}`);
     };
-  
+
+    // Render UI
     if (!isLoggedIn) {
-      return <div>Page can't be accessed. Please log in first.</div>;
+        return <div>Page can't be accessed. Please log in first.</div>;
     }
 
     return (
         <div>
+            {/* Display connected users */}
+            <div>
+                <h2>Connected Users:</h2>
+                {connectedUsers.map((user, index) => (
+                    <p key={index}>{user}</p>
+                ))}
+            </div>
+
             {/* Input field for specifying the room to join */}
             <input
                 type="text"
@@ -113,8 +112,22 @@ const ChatPage = ({  }) => {
                 placeholder="Type a message..."
             />
       
-            {/* Button to submit the new message */}
+            {/* Button to send message */}
             <button onClick={sendMessage}>Send</button>
+
+            {/* Input field for sending invite to room */}
+            <input
+                type="text"
+                placeholder="Enter User ID to Invite to Room"
+                onChange={(e) => sendInviteToRoom(e.target.value)}
+            />
+
+            {/* Input field for sending chat invite */}
+            <input
+                type="text"
+                placeholder="Enter User ID to Send Chat Invite"
+                onChange={(e) => sendChatInvite(e.target.value)}
+            />
         </div>
     );
 };
