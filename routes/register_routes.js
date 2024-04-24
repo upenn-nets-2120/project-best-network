@@ -25,7 +25,7 @@ function register_routes(app) {
     app.post('/:username/removeFriend', friend_routes.remove_friend);
 
     //chat
-    //app.ws('/:username/chat', chat_routes.chat);
+    app.get('/:username/chat', chat_routes.io);
 
   }
   
