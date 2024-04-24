@@ -4,21 +4,44 @@ const port = 8080;
 const registry = require('./routes/register_routes.js');
 const session = require('express-session');
 const cors = require('cors');
-const http = require('http').createServer(app); // Create an HTTP server passing in the Express app
+const http = require('http');
+const socketIo = require('socket.io');
 
-const socketIO = require('socket.io')(http, {  // Attach Socket.IO to the HTTP server, not the express instance
-    cors: {
-        origin: "http://localhost:4567", // Make sure this is the correct client URL
-        methods: ["GET", "POST"] // Specify which methods are allowed
-    }
+const server = http.createServer(app);
+
+const io = socketIo(server, {
+  cors: {
+      origin: "http://localhost:4567", // Specify allowed origins
+      methods: ["GET", "POST"], // Specify allowed methods
+      credentials: true // Optional: Allow credentials
+  }
 });
 
-socketIO.on('connection', (socket) => {
-    console.log(`⚡: ${socket.id} user just connected!`);
+io.on('connection', (socket) => {
+    console.log('New client connected:', socket.id);
+
+    socket.on('join_room', (data) => {
+        socket.join(data.room);
+        console.log(`Socket ${socket.id} joined room ${data.room}`);
+    });
+
+    socket.on('leave_room', (data) => {
+        socket.leave(data.room);
+        console.log(`Socket ${socket.id} left room ${data.room}`);
+    });
+
     socket.on('disconnect', () => {
-      console.log('🔥: A user disconnected');
+        console.log('Client disconnected:', socket.id);
+    });
+
+    socket.on('send_room_message', (data) => {
+        console.log('Message received in room', data.room, ':', data.message);
+        io.to(data.room).emit('room_message', data.message);
     });
 });
+
+
+
 
 app.use(cors({
   origin: 'http://localhost:4567', // Ensure this matches your front-end URL
@@ -37,6 +60,6 @@ app.use(session({
 
 registry.register_routes(app);
 
-http.listen(port, () => {  // Use http.listen instead of app.listen
+server.listen(port, () => {  // Use http.listen instead of app.listen
   console.log(`Main app listening on port ${port}`)
 });

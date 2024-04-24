@@ -9,7 +9,6 @@ import config from '../config.json';
 import { io } from "socket.io-client";
 const rootURL = config.serverRootURL;
 const socket = io(rootURL);
-socket.emit('join', { name: 'Paola', room: '1' }, () => {});
 
 function App() {
   return (
@@ -20,7 +19,7 @@ function App() {
         <Route path='/:username/home' element={<Home />} />
         <Route path='/:username/friends' element={<Friends />} />
         <Route path="/:username/chat" element={<ChatInterface />} />
-        <Route path="/chat" element={<ChatPage/>} />
+        <Route path="/chat" element={<ChatPage socket={socket}/>} />
       </Routes>
     </BrowserRouter>
   )
