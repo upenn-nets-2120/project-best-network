@@ -13,9 +13,10 @@ function register_routes(app) {
     app.get('/hello', login_routes.get_helloworld);
     app.post('/login', login_routes.post_login);
     app.get('/:username/logout', login_routes.post_logout);
-    app.post('/register', login_routes.post_register); 
-    app.get(':username/getActors', login_routes.get_actors);
-    app.post(':username/setActor', login_routes.post_actor);
+    app.post('/register', login_routes.post_register);
+    app.post('/:username/setProfilePhoto', login_routes.post_set_profile_photo); 
+    app.get('/:username/getActors', login_routes.get_actors);
+    app.post('/:username/setActor', login_routes.post_actor);
 
 
 

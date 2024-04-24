@@ -17,7 +17,7 @@ async function create_tables(db) {
     //users table
     const q1 = db.create_tables(`
             CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
+                id INT PRIMARY KEY,
                 username VARCHAR(255) UNIQUE,
                 hashed_password VARCHAR(255),
                 firstName VARCHAR(255),
@@ -43,7 +43,7 @@ async function create_tables(db) {
         hashtagID INT,
         userID INT,
         FOREIGN KEY (hashtagID) REFERENCES hashtags(id),
-        FOREIGN KEY (userID) REFERENCES users(userID)
+        FOREIGN KEY (userID) REFERENCES users(id)
     )
     
     `)
