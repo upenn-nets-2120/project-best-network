@@ -4,11 +4,11 @@ import Home from "./pages/Home";
 import Signup from "./pages/Signup";
 import Friends from "./pages/Friends";
 import ChatInterface from "./pages/ChatInterface";
+import config from '../config.json';
 
-
-import socketIO from 'socket.io-client';
-const socket = socketIO.connect('http://localhost:8080');
-
+import { io } from "socket.io-client";
+const rootURL = config.serverRootURL;
+const socket = io(rootURL);
 
 function App() {
   return (
