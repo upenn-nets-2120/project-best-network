@@ -250,6 +250,47 @@ var createPost = async function(req, res) {
       return res.status(500).json({ error: 'Error querying database.' });
   }
 };
+// POST /uploadPost
+var uploadPost = async function(req, res) {
+  //upload to s3
+  //then reset in user db
+
+
+  //TODO: set profile photo
+  //https://github.com/upenn-nets-2120/homework-2-ms1-vavali08/blob/main/src/main/java/org/nets2120/imdbIndexer/S3Setup.java Reference - Note that this is Java
+  const getLastPost = `SELECT * FROM posts WHERE post_id = LAST_INSERT_ID()`;
+  const last_post = await db.send_sql(getLastPost);
+  const last_id = last_post[0].post_id;
+
+  const post = req.file;
+  console.log(post);
+  const userID = req.session.user_id;
+
+  if (!post) {
+    return res.status(400).json({ error: 'No profile photo uploaded.' });
+  }
+  if (!userID) {
+    return res.status(403).json({ error: 'Not logged in.' });
+  }
+
+  try {
+    await s3Access.put_by_key("best-network-nets212-sp24", "/posts/" + last_id, post.buffer, post.mimetype);
+    // Get the photo URL from S3
+    const photoURL = `s3://best-network-nets212-sp24//posts/${last_id}`
+
+    // Update the user's profile photo URL in the database
+    const pfpQuery = `UPDATE posts SET content = '${photoURL}' WHERE id = ${last_id};`;
+    await db.send_sql(pfpQuery);
+
+    return res.status(200).json({ message: 'Profile photo uploaded successfully.' });
+  } catch (error) {
+
+    return res.status(500).json({ error: 'Error uploading profile photo.' });
+  }
+  
+  
+};
+
 
   
   var routes = { 
@@ -257,6 +298,7 @@ var createPost = async function(req, res) {
     add_friend: addFriend,
     remove_friend: removeFriend,
     get_feed: feed,
+    upload_post: uploadPost
   };
   
   module.exports = routes;
