@@ -5,12 +5,12 @@ var getHelloWorld = function(req, res) {
   res.status(200).send({message: "Hello, world!"});
 }
 // POST /addFriend
-var addFriend = function(req, res) {
+var addFriend = async function(req, res) {
     // Implementation to add a friend
   };
   
   // POST /removeFriend
-  var removeFriend = function(req, res) {
+  var removeFriend = async function(req, res) {
     // Implementation to remove a friend
     // Check if a user is logged in
     
@@ -20,7 +20,7 @@ var addFriend = function(req, res) {
   };
   
   // GET /feed
-  var feed = async function(req, res) {
+  var feed = function(req, res) {
     // Implementation to fetch feed data
     // Check if a user is logged in
     
@@ -60,11 +60,13 @@ var addFriend = function(req, res) {
   };
   
   var routes = { 
-    getHelloWorld: getHelloWorld,
     addFriend: addFriend,
     removeFriend: removeFriend,
     feed: feed,
+    add_friend: addFriend,
+    remove_friend: removeFriend,
   };
-  
+
+
   module.exports = routes;
   

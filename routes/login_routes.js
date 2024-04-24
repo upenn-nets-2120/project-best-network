@@ -3,7 +3,7 @@ const config = require('../config.json'); // Load configuration
 const bcrypt = require('bcrypt'); 
 const helper = require('./login_route_helper.js');
 const process = require('process');
-const s3Access = require('./s3_access'); 
+const s3Access = require('../models/s3_access.js'); 
 
 
 
@@ -12,7 +12,7 @@ const db = dbsingleton;
 db.get_db_connection();
 const PORT = config.serverPort;
 
-vectorStore = await helper.getVectorStore(null);
+//vectorStore = await helper.getVectorStore(null);
 
 var getHelloWorld = function(req, res) {
     res.status(200).send({message: "Hello, world!"});
