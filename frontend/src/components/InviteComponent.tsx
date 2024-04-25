@@ -9,7 +9,9 @@ interface Invite {
 
 interface Room {
     roomID: number;
-    users: string[]
+    users: string[];
+    notification: boolean; 
+    notificationMessage: string;
 }
 
 interface InviteComponentProps {

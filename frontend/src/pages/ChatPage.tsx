@@ -18,13 +18,16 @@ interface Invite {
 
 interface Room {
     roomID: number;
-    users: string[]
+    users: string[];
+    notification: boolean; 
+    notificationMessage: string;
 }
 
 interface Message {
     sender: string;
     message: string;
     timestamp: number;
+    roomID: number;
 }
 
 
@@ -38,8 +41,9 @@ const ChatPage = () => {
     const [rooms, setRooms] = useState<Room[]>([]);
 
     const [currentRoom, setCurrentRoom] = useState<Room>();
+    var currentRoomID = -1;
     const { username } = useParams();
-
+    
     const navigate = useNavigate(); 
     const home = () => {
         navigate("/");
@@ -71,7 +75,6 @@ const ChatPage = () => {
 
     useEffect(() => {
         // Check if logged in 
-        console.log(currentRoom)
         axios.get(`${rootURL}/${username}/isLoggedIn`, { withCredentials: true })
             .then((response) => {
                 setIsLoggedIn(response.data.isLoggedIn);
@@ -108,11 +111,14 @@ const ChatPage = () => {
         socket.on('user_disconnected', ({ username }) => {
             setConnectedUsers(prevUsers => prevUsers.filter(user => user !== username));
         });
-
+        
         socket.on('chat_rooms', async (rooms:Room[]) => {
             setRooms(rooms)
-            setCurrentRoom(rooms[0])
-            await getRoomMessages(rooms[0])
+            if (rooms.length > 0){
+                await setCurrentRoom(rooms[0])
+                currentRoomID = rooms[0].roomID
+                await getRoomMessages(rooms[0])
+            }
         });
         
         socket.on('join_room', (roomID) => {
@@ -135,15 +141,33 @@ const ChatPage = () => {
             });
             
             setCurrentRoom(room)
+            currentRoomID = room.roomID
             getRoomMessages(room)
         });
 
 
         // Listen for incoming messages specific to a room
-        socket.on('receive_room_message', (message) => {
+        socket.on('receive_room_message', async ( message ) => {
+            console.log(currentRoomID)
+            if (message.roomID == currentRoomID) {
+                setMessages(prevMessages => [...prevMessages, message]);
+            } else {
+                setRooms(prevRooms => 
+                    prevRooms.map(room => {
+                        console.log(room.roomID)
+                        if (room.roomID == message.roomID) {
+                            room.notification = true
+                           room.notificationMessage = message.message
+                        }
+                        return room;
+                    })
+                );
+                
+            }
             console.log("Message received:", message);
-            setMessages(prevMessages => [...prevMessages, message]);
         });
+        
+        
 
         socket.on('receive_chat_invite', (invite:Invite) => {
             console.log("Received chat invite:", invite);
@@ -160,9 +184,12 @@ const ChatPage = () => {
         });
 
         socket.on('user_left_room', ({ room, username: leaverUsername }) => {
-            if (currentRoom && currentRoom.roomID === room.roomID) {
-                setCurrentRoom(room);
-            }
+            setCurrentRoom(prevCurrentRoom => {
+                if (prevCurrentRoom && prevCurrentRoom.roomID === room.roomID) {
+                    return room;
+                }
+                return prevCurrentRoom;
+            });
             setRooms(prevRooms => 
                 prevRooms.map(room => {
                     if (room.roomID === room.roomID) {
@@ -185,11 +212,19 @@ const ChatPage = () => {
     }, []);
 
     const switchCurrentRoom = async(room:Room) => {
+        setRooms(rooms.map(r => {
+            if (r.roomID === room.roomID) {
+                return { ...r, notification: false, notificationMessage: "" };
+            }
+            return r;
+        }));
         setCurrentRoom(room)
+        currentRoomID = room.roomID
         getRoomMessages(room)
     }
     const sendLeaveRoom = async() => {
-        setCurrentRoom(undefined);
+        let room: Room | undefined = undefined;
+        setCurrentRoom(room);
         setMessages([]);
         setRooms(rooms.filter(room => room.roomID !== currentRoom?.roomID));
         socket.emit('leave_room', { room: currentRoom, username: username });
@@ -206,7 +241,7 @@ const ChatPage = () => {
     }
 
     const sendMessage = () => {
-        if (true) {
+        if (currentRoom != null) {
             socket.emit('send_room_message', { room: currentRoom , message: currentMessage, senderUsername: username });
             setCurrentMessage('');
         } else {
@@ -276,15 +311,19 @@ const ChatPage = () => {
                     >
                         <strong>Room ID:</strong> {room.roomID}
                         <ul>
-                        {room.users.map((user, index) => (
-                            user !== username && (
-                                <li key={index}>{user}</li>
-                            )
-                        ))}
+                            {room.users.map((user, index) => (
+                                user !== username && (
+                                    <li key={index}>{user}</li>
+                                )
+                            ))}
                         </ul>
                     </button>
+                    {room.notification && (
+                        <div className="notification">Notification: {room.notificationMessage}</div>
+                    )}
                 </li>
             ))}
+
             </ul>
 
             </div>
@@ -330,12 +369,15 @@ const ChatPage = () => {
         </div>
         {currentRoom && currentRoom.users && (
             <div className={'font-bold text-3xl'}>
+                Room ID {currentRoom.roomID}:
                 {currentRoom.users.filter(user => user !== username).join(', ')}
             </div>
         )}
-        <button onClick={sendLeaveRoom} className="bg-red-500 text-white px-4 py-2 rounded">
-            Leave Current Room
-        </button>
+       {currentRoom !== undefined && (
+            <button onClick={sendLeaveRoom} className="bg-red-500 text-white px-4 py-2 rounded">
+                Leave Current Room
+            </button>
+        )}
             <div className='h-[40rem] w-[30rem] bg-slate-100 p-3'>
                 <div className='h-[90%] overflow-scroll'>
                     <div className='space-y-2'>

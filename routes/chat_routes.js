@@ -49,7 +49,8 @@ var chat_room_messages = async function(req, res) {
     const response = result.map((row, index) => ({
         message: row.textMessage,
         timestamp: row.timestamp,
-        sender: usernames[index] 
+        sender: usernames[index],
+        roomID: room_id
     }));
 
     return res.status(200).json(result);

@@ -45,6 +45,9 @@ const socketHandlers = (io) => {
         });
 
         socket.on('leave_room', async ({room, username}) => {
+            if (room == undefined){
+                return;
+            }
             var user_id = await helper.getUserId(username)
             var room_id = room.roomID
             await chat_route_helper.deleteUserFromRoom(room_id, user_id)
@@ -52,7 +55,7 @@ const socketHandlers = (io) => {
             //update users in room
             var user_ids = await chat_route_helper.getUsersInRoom(room_id)
             var users =  await  chat_route_helper.getUsernamesFromUserIds(user_ids)
-            room.users = users
+            room.users = users.filter(user => user !== username)
 
             socket.leave(room_id);
             io.to(room.roomID).emit('user_left_room', {room, username});
@@ -61,7 +64,6 @@ const socketHandlers = (io) => {
         socket.on('accept_invite', async ({ invite }) => {
             const senderSocketId = await helper.getSocketIdByUsername(connectedUsers, invite.senderUsername);
             var receiverUserId = await helper.getUserId(invite.inviteUsername);
-            io.to(senderSocketId).emit('invite_accepted', invite);
             if (invite.room == null){
                 var senderUserId = await helper.getUserId(invite.senderUsername);
                 var user_ids = [senderUserId, receiverUserId]
@@ -77,6 +79,7 @@ const socketHandlers = (io) => {
             var user_ids = await helper.getUsersInRoom(room_id)
             var users =  await helper.getUsernamesFromUserIds(user_ids)
             io.to(room_id).emit('chat_room', { roomID: room_id, users });
+            io.to(senderSocketId).emit('invite_accepted', invite);
         });
 
         socket.on('decline_invite', async ({ invite }) => {
@@ -91,7 +94,6 @@ const socketHandlers = (io) => {
 
         socket.on('send_chat_invite', async ({ senderUsername, inviteUsername }) => {
             const invitedSocketId = await helper.getSocketIdByUsername(connectedUsers, inviteUsername);
-            console.log("here")
             if (invitedSocketId) {
                 console.log(invitedSocketId)
                 const inviteID = Date.now().toString(); 
@@ -121,7 +123,7 @@ const socketHandlers = (io) => {
             var user_id = await chat_route_helper.getUserId(senderUsername)
             await helper.sendMessageToDatabase(user_id, room.roomID, message, timestamp)
             var users = await helper.getUsersInRoom(room.roomID)
-            io.to(room.roomID).emit('receive_room_message', {sender: senderUsername, timestamp: timestamp, message: message });
+            io.to(room.roomID).emit('receive_room_message', {roomID:room.roomID, sender: senderUsername, timestamp: timestamp, message: message });
         });
 
     });
