@@ -19,15 +19,21 @@ var is_logged_in = async function(req, res) {
 
 // get /roomMessages
 var chat_room_messages = async function(req, res) {
-    // var username = req.params.username;
-    // //check if chat room exists
-    // helper.checkIfChatRoomExists
-    // //get user id from username
-    // helper.getUserId
-    // //check if user belongs to room
-    // helper.getUsersInRoom
+    var username = req.body.username;
+    var room_id = req.body.room_id
 
-    var room_id = req.params.room_name;
+    // //check if chat room exists
+    var result = await helper.checkIfChatRoomExists(room_id)
+    if (!result){
+        res.status(403).json({ error: 'room does not exist' });
+    }
+    // //get user id from username
+    var user_id = await helper.getUserId(username)
+        // //check if user belongs to room
+    var result = await helper.checkIfUserBelongsToRoom(room_id,user_id)
+    if (!result){
+        res.status(403).json({ error: 'illegal room access: user not in room' });
+    }
     var query = `
         SELECT cr.roomID, crm.messageID, crm.textMessage, crm.timestamp
         FROM chatRooms cr
@@ -47,16 +53,15 @@ var chat_rooms_for_user = async function(req, res) {
     // helper.getUserId
     // //check if user belongs to room
     // helper.getUsersInRoom
-
-    var room_id = req.params.room_name;
-    var query = `
-        SELECT cr.roomID, crm.messageID, crm.textMessage, crm.timestamp
-        FROM chatRooms cr
-        INNER JOIN chatRoomMessages crm ON cr.roomID = crm.roomID
-        WHERE cr.roomID = '${room_id}'
-        ORDER BY crm.timestamp DESC`; 
-    var result = await db.send_sql(query);
-    res.json(result);
+    // var room_id = req.params.room_name;
+    // var query = `
+    //     SELECT cr.roomID, crm.messageID, crm.textMessage, crm.timestamp
+    //     FROM chatRooms cr
+    //     INNER JOIN chatRoomMessages crm ON cr.roomID = crm.roomID
+    //     WHERE cr.roomID = '${room_id}'
+    //     ORDER BY crm.timestamp DESC`; 
+    // var result = await db.send_sql(query);
+    // res.json(result);
 };
 
 

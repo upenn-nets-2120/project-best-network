@@ -5,16 +5,46 @@ import axios from 'axios';
 import config from '../../config.json';
 const rootURL = config.serverRootURL;
 const socket = io(rootURL);
+import InviteComponent from '../components/InviteComponent'
+
+interface Invite {
+    inviteID: number;
+    inviteUsername: string;
+    senderUsername: string;
+    roomID: string;
+}
+
+interface Room {
+    roomID: number;
+    users: string[]
+}
 
 const ChatPage = () => {
     const [messages, setMessages] = useState<string[]>([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [currentMessage, setCurrentMessage] = useState('');
-    const [room, setRoom] = useState('1'); // Set the default room on state initialization
     const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
+    const [rooms, setRooms] = useState<Room[]>([]);
+    const [currentRoomID, setCurrentRoomID] = useState<number>();
     const { username } = useParams();
 
+
+    const [incomingInvites, setIncomingInvites] = useState<Invite[]>([]); // Specify the type as Invite[]
+   // Function to accept an invite by ID
+    const acceptInvite = (invite: Invite) => {
+        console.log("Invite accepted:", invite);
+        socket.emit('accept_invite', { invite });
+        setIncomingInvites(prevInvites => prevInvites.filter(invite => invite !== invite));
+    };
+    const declineInvite = (invite: Invite) => {
+        console.log("Invite declined:", invite);
+        socket.emit('decline_invite', { invite }); 
+        setIncomingInvites(prevInvites => prevInvites.filter(invite => invite !== invite));
+    };
+
+
     useEffect(() => {
+        console.log(currentRoomID)
         // Check if logged in 
         axios.get(`${rootURL}/${username}/isLoggedIn`, { withCredentials: true })
             .then((response) => {
@@ -25,18 +55,53 @@ const ChatPage = () => {
                 console.error('Error checking login status:', error);
             });
 
-        // Emit 'connected' event with username
-        socket.emit("connected", { username: username });
+        // Emit 'send_username' event with username
+        socket.emit("send_username", { username: username });
+        
+        socket.on('connected_users', (users: string[]) => {
+            setConnectedUsers(users);
+        });
+
+        socket.on('invite_accepted', (invite:Invite) => {
+            console.log("invite accepted")
+        });
 
         // Listen for 'user_connected' event to update connected users
         socket.on('user_connected', ({ username }) => {
             setConnectedUsers(prevUsers => [...prevUsers, username]);
         });
 
+        socket.on('user_disconnected', ({ username }) => {
+            setConnectedUsers(prevUsers => prevUsers.filter(user => user !== username));
+        });
+
+        socket.on('chat_rooms', (rooms:Room[]) => {
+            setRooms(rooms)
+        });
+
+        socket.on('chat_room', ({ roomID, users }: { roomID: number; users: string[] }) => {
+            setRooms((prevRooms) => [...prevRooms, { roomID, users }]);
+            setCurrentRoomID(roomID)
+            axios.get(`${rootURL}/${username}/roomMessages`, {
+                params: { room_id: currentRoomID, username: username}, 
+            }).then((response) => {
+                    setMessages(response.data.messages);
+                })
+                .catch((error) => {
+                    console.error('Error fetching room messages:', error);
+                });
+        });
+
+
         // Listen for incoming messages specific to a room
         socket.on('room_message', (message) => {
             console.log("Message received:", message);
             setMessages(prevMessages => [...prevMessages, message]);
+        });
+
+        socket.on('receive_chat_invite', (invite:Invite) => {
+            console.log("Received chat invite:", invite);
+            setIncomingInvites(prevInvites => [...prevInvites, invite]);
         });
 
         // Clean up: remove the message and user_connected listeners
@@ -46,16 +111,12 @@ const ChatPage = () => {
         };
     }, []);
 
-    // Function to handle room join
-    const handleRoomJoin = (e: ChangeEvent<HTMLInputElement>) => {
-        setRoom(e.target.value);
-    };
 
-    // Function to send a message
+
     const sendMessage = () => {
-        console.log("Sending message to room:", room);
-        if (room) {
-            socket.emit('send_room_message', { room, message: currentMessage });
+        console.log("Sending message to room:", currentRoomID);
+        if (true) {
+            socket.emit('send_room_message', { roomID: currentRoomID, message: currentMessage });
             setCurrentMessage('');
         } else {
             alert("Please join a room first.");
@@ -63,15 +124,18 @@ const ChatPage = () => {
     };
 
     // Function to send invite to a room
-    const sendInviteToRoom = (inviteeId: string) => {
-        socket.emit('send_invite_to_room', { room, inviteeId });
-        console.log(`Invite sent to user with ID ${inviteeId} for room ${room}`);
+    const sendInviteToCurrentRoom = (inviteUsername: string) => {
+        if (currentRoomID != null){
+            socket.emit('send_group_chat_invite', { room_id: currentRoomID, senderUsername: username, inviteUsername });
+            console.log(`Invite sent to user with ID ${inviteUsername} for room ${currentRoomID}`);
+        }
+        
     };
 
     // Function to send a chat invitation
-    const sendChatInvite = (userId: string) => {
-        socket.emit('send_chat_invite', { userId });
-        console.log(`Chat invite sent to user ID ${userId}`);
+    const sendChatInvite = (inviteUsername: string) => {
+        socket.emit('send_chat_invite', { senderUsername: username, inviteUsername });
+        console.log(`Chat invite sent to user ID ${inviteUsername}`);
     };
 
     // Render UI
@@ -87,16 +151,33 @@ const ChatPage = () => {
                 {connectedUsers.map((user, index) => (
                     <p key={index}>{user}</p>
                 ))}
+
+            <h2>Rooms and Users:</h2>
+            <ul>
+                {rooms.map((room) => (
+                    <li key={room.roomID}>
+                        <strong>Room ID:</strong> {room.roomID}
+                        <ul>
+                            {room.users.map((user, index) => (
+                                <li key={index}>{user}</li>
+                            ))}
+                        </ul>
+                    </li>
+                ))}
+            </ul>
+
             </div>
 
-            {/* Input field for specifying the room to join */}
-            <input
-                type="text"
-                placeholder="Enter Room ID"
-                value={room}
-                onChange={handleRoomJoin}
-            />
+            {incomingInvites.map((invite, index) => (
+                <InviteComponent
+                    key={index}
+                    invite={invite}
+                    onAccept={acceptInvite}
+                    onDecline={declineInvite}
+                />
+            ))}
 
+            
             {/* Display the messages */}
             <div>
                 {messages.map((message, index) => (
@@ -118,14 +199,14 @@ const ChatPage = () => {
             {/* Input field for sending invite to room */}
             <input
                 type="text"
-                placeholder="Enter User ID to Invite to Room"
-                onChange={(e) => sendInviteToRoom(e.target.value)}
+                placeholder="Invite User to Current Room"
+                onChange={(e) => sendInviteToCurrentRoom(e.target.value)}
             />
 
             {/* Input field for sending chat invite */}
             <input
                 type="text"
-                placeholder="Enter User ID to Send Chat Invite"
+                placeholder="Enter Username to Send Chat Invite"
                 onChange={(e) => sendChatInvite(e.target.value)}
             />
         </div>
