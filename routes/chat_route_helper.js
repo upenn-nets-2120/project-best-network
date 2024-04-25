@@ -112,7 +112,17 @@ const chat_route_helper = () => {
                 throw error;
             }
         },
+        getUsernameBySocketId: async (connectedUsers, socket_id) => {
+            try {
+                var user = connectedUsers.find(user => user.socket_id === socket_id);
+                return user ? user.username : null;
+            } catch (error) {
+                console.error('Error finding username by socketID:', error);
+                throw error;
+            }
+        },
 
+        
         deleteUserFromRoom: async (userid) => {
             try {
                 const deleteQuery = `
@@ -142,17 +152,31 @@ const chat_route_helper = () => {
             }
         },
 
-        adUserToRoom: async (userid) => {
+        addUserToRoom: async (user_id) => {
             try {
                 const insertQuery = `
                     INSERT INTO chatRoomUsers (roomID, userID) 
                     VALUES (${roomId}, ${userId})
                 `;
                 const insertResult = await db.send_sql(insertQuery);
-                console.log(`User with ID ${userId} added to room ${roomId}`);
+                console.log(`User with ID ${user_id} added to room ${roomId}`);
                 return insertResult;
             } catch (error) {
                 console.error('Error adding user to room:', error);
+                throw error;
+            }
+        },
+        sendMessageToDatabase: async (user_id, room_id, message, timestamp) => {
+            try {
+                const insertQuery = `
+                    INSERT INTO chatRoomMessages (roomID, message, userID, timestamp)
+                    VALUES (${room_id}, '${message}', ${user_id}, '${timestamp}')
+                `;
+                const insertResult = await db.send_sql(insertQuery);
+                console.log(`Message added to room ${room_id} by user with ID ${user_id}`);
+                return insertResult;
+            } catch (error) {
+                console.error('Error adding message to room:', error);
                 throw error;
             }
         }
@@ -172,7 +196,12 @@ module.exports = {
     getUserId: chat_route_helper().getUserId,
     getUsername: chat_route_helper().getUsername,
     getUsersInRoom : chat_route_helper().getUsersInRoom,
+
     getSocketIdByUsername: chat_route_helper().getSocketIdByUsername,
-    deleteUserFromRoom: chat_route_helper().deleteUserFromRoom
+    getUsernameBySocketId: chat_route_helper().getUsernameBySocketId,
+
+    deleteUserFromRoom: chat_route_helper().deleteUserFromRoom,
+    addToRoom: chat_route_helper().addToRoom,
+    sendMessageToDatabase: chat_route_helper().sendMessageToDatabase
 };
 

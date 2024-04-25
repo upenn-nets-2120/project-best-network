@@ -69,9 +69,11 @@ async function create_tables(db) {
     CREATE TABLE IF NOT EXISTS chatRoomMessages (
       messageID INT AUTO_INCREMENT PRIMARY KEY,
       roomID INT,
-      textMessage TEXT,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (roomID) REFERENCES chatRooms(roomID)
+      message TEXT,
+      userID INT,
+      timestamp DATETIME,
+      FOREIGN KEY (roomID) REFERENCES chatRooms(roomID),
+      FOREIGN KEY (userID) REFERENCES users(id)
     );`)
 
   //   const q7 = db.send_sql(`

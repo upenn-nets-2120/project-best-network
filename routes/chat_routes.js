@@ -35,13 +35,20 @@ var chat_room_messages = async function(req, res) {
         res.status(403).json({ error: 'illegal room access: user not in room' });
     }
     var query = `
-        SELECT cr.roomID, crm.messageID, crm.textMessage, crm.timestamp
+        SELECT cr.roomID, crm.messageID, crm.textMessage, crm.timestamp, crm.user_id
         FROM chatRooms cr
         INNER JOIN chatRoomMessages crm ON cr.roomID = crm.roomID
         WHERE cr.roomID = '${room_id}'
         ORDER BY crm.timestamp DESC`; 
     var result = await db.send_sql(query);
-    res.json(result);
+    const userIds = result.map(row => row.user_id);
+    const usernames = userIds.map(async user_id => {return await helper.getUsername(user_id)})
+    const response = result.map((row, index) => ({
+        message: row.textMessage,
+        timestamp: row.timestamp,
+        username: usernames[index] 
+    }));
+    res.status(200).json(result);
 };
 
 // get /chatRoomsForUser
