@@ -184,12 +184,9 @@ const ChatPage = () => {
         });
 
         socket.on('user_left_room', ({ room, username: leaverUsername }) => {
-            setCurrentRoom(prevCurrentRoom => {
-                if (prevCurrentRoom && prevCurrentRoom.roomID === room.roomID) {
-                    return room;
-                }
-                return prevCurrentRoom;
-            });
+            if (currentRoomID == room.roomID){
+                setCurrentRoom(room);
+            }
             setRooms(prevRooms => 
                 prevRooms.map(room => {
                     if (room.roomID === room.roomID) {
