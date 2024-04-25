@@ -155,6 +155,24 @@ const ChatPage = () => {
             }
         });
 
+        socket.on('user_left_room', ({ room, username: leaverUsername }) => {
+            if (currentRoom && currentRoom.roomID === room.roomID) {
+                setCurrentRoom(room);
+            }
+            setRooms(prevRooms => 
+                prevRooms.map(room => {
+                    if (room.roomID === room.roomID) {
+                        return {
+                            ...room,
+                            users: room.users.filter(user => user !== leaverUsername)
+                        };
+                    }
+                    return room;
+                })
+            );
+        });
+        
+
         // Clean up: remove the message and user_connected listeners
         return () => {
             socket.off('room_message');
@@ -166,7 +184,10 @@ const ChatPage = () => {
         setCurrentRoom(room)
         getRoomMessages(room)
     }
-    const leaveCurrentRoom = async() => {
+    const sendLeaveRoom = async() => {
+        setCurrentRoom(undefined);
+        setMessages([]);
+        setRooms(rooms.filter(room => room.roomID !== currentRoom?.roomID));
         socket.emit('leave_room', { room: currentRoom, username: username });
     }
 
@@ -191,16 +212,28 @@ const ChatPage = () => {
 
     // Function to send invite to a room
     const sendInviteToCurrentRoom = () => {
-        //check if valid invite ie invite username not in current room
-        if (currentRoom != null  && currentRoom.users.indexOf(inviteUsername) === -1){
-            socket.emit('send_group_chat_invite', { room: currentRoom, senderUsername: username, inviteUsername });
+        if (connectedUsers.includes(inviteUsername)) {
+            //check if valid invite ie invite username not in current room
+            if (currentRoom != null  && currentRoom.users.indexOf(inviteUsername) === -1){
+                socket.emit('send_group_chat_invite', { room: currentRoom, senderUsername: username, inviteUsername });
+                alert(`invite sent to:${inviteUsername}`)
+            }else{
+                alert("no current room set")
+            }
+        } else {
+            alert("Invalid invite username");
         }
         
     };
 
     // Function to send a chat invitation
     const sendChatInvite = () => {
-        socket.emit('send_chat_invite', { senderUsername: username, inviteUsername });
+        if (connectedUsers.includes(inviteUsername)) {
+            socket.emit('send_chat_invite', { senderUsername: username, inviteUsername });
+            alert(`invite sent to:${inviteUsername}`)
+        } else {
+            alert("Invalid invite username");
+        }
     };
 
     // Render UI
@@ -227,9 +260,11 @@ const ChatPage = () => {
                     >
                         <strong>Room ID:</strong> {room.roomID}
                         <ul>
-                            {room.users.map((user, index) => (
+                        {room.users.map((user, index) => (
+                            user !== username && (
                                 <li key={index}>{user}</li>
-                            ))}
+                            )
+                        ))}
                         </ul>
                     </button>
                 </li>
@@ -248,19 +283,22 @@ const ChatPage = () => {
             ))}
 
             <div className="flex items-center mb-4">
-                <input
-                    type="text"
-                    placeholder="Invite User to Current Room"
-                    value={inviteUsername}
-                    onChange={(e) => setInviteUsername(e.target.value)}
-                    className="border border-gray-300 rounded px-3 py-2 mr-2 flex-grow"
-                />
-                <button onClick={sendInviteToCurrentRoom} className="bg-blue-500 text-white px-4 py-2 rounded">
-                    Send Invite to Current Room
-                </button>
-                <button onClick={sendChatInvite} className="bg-blue-500 text-white px-4 py-2 rounded">
-                    Send New Chat Invite
-                </button>
+            <select
+                value={inviteUsername}
+                onChange={(e) => setInviteUsername(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-2 mr-2 flex-grow"
+            >
+                <option value="">Invite User to Current Room</option>
+                {connectedUsers.map((user, index) => (
+                    <option key={index} value={user}>{user}</option>
+                ))}
+            </select>
+            <button onClick={sendInviteToCurrentRoom} className="bg-blue-500 text-white px-4 py-2 rounded">
+                Send Invite to Current Room
+            </button>
+            <button onClick={sendChatInvite} className="bg-blue-500 text-white px-4 py-2 rounded">
+                Send New Chat Invite
+            </button>
 
             </div>
             
@@ -275,9 +313,11 @@ const ChatPage = () => {
             </div>
         </div>
         {currentRoom && currentRoom.users && (
-            <div className={'font-bold text-3xl'}>{currentRoom.users.join(', ')}</div>
+            <div className={'font-bold text-3xl'}>
+                {currentRoom.users.filter(user => user !== username).join(', ')}
+            </div>
         )}
-        <button onClick={handleLeaveRoom} className="bg-red-500 text-white px-4 py-2 rounded">
+        <button onClick={sendLeaveRoom} className="bg-red-500 text-white px-4 py-2 rounded">
             Leave Current Room
         </button>
             <div className='h-[40rem] w-[30rem] bg-slate-100 p-3'>

@@ -14,7 +14,9 @@ const socketHandlers = (io) => {
         socket.on('send_username', async ({ username }) => {
             var user_id = await helper.getUserId(username)
             var rooms = await helper.getRoomsForUser(user_id)
-            
+            rooms.forEach(room => {
+                socket.join(room.roomID);
+            });
             socket.emit('chat_rooms', rooms);
             socket.emit('connected_users', connectedUsers.filter(user =>  user.username != username).map(user => user.username))
             var userExists = false;
@@ -42,9 +44,18 @@ const socketHandlers = (io) => {
             console.log(`User with socket ID ${socket.id} disconnected`);
         });
 
-        socket.on('leave_room', async (username) => {
+        socket.on('leave_room', async ({room, username}) => {
             var user_id = await helper.getUserId(username)
-            chat_route_helper.deleteUserFromRoom(user_id)
+            var room_id = room.roomID
+            await chat_route_helper.deleteUserFromRoom(room_id, user_id)
+
+            //update users in room
+            var user_ids = await chat_route_helper.getUsersInRoom(room_id)
+            var users =  await  chat_route_helper.getUsernamesFromUserIds(user_ids)
+            room.users = users
+
+            socket.leave(room_id);
+            io.to(room.roomID).emit('user_left_room', {room, username});
         });
 
         socket.on('accept_invite', async ({ invite }) => {
@@ -55,16 +66,17 @@ const socketHandlers = (io) => {
                 var senderUserId = await helper.getUserId(invite.senderUsername);
                 var user_ids = [senderUserId, receiverUserId]
                 console.log(user_ids)
-                var roomID = await helper.createChatRoom(user_ids)
-                socket.join(roomID);
-                io.to(senderSocketId).emit('join_room', roomID);
+                var room_id = await helper.createChatRoom(user_ids)
+                socket.join(room_id);
+                io.to(senderSocketId).emit('join_room', room_id);
             } else {
-                await helper.addUserToRoom(receiverUserId, invite.room.roomID);
-                socket.join(roomID);
+                var room_id = invite.room.roomID
+                await helper.addUserToRoom(room_id, receiverUserId);
+                socket.join(room_id);
             }
-            var user_ids = await helper.getUsersInRoom(roomID)
-            var users=  helper.getUsernamesFromUserIds(user_ids)
-            io.to(roomID).emit('chat_room', { roomID, users });
+            var user_ids = await helper.getUsersInRoom(room_id)
+            var users =  await helper.getUsernamesFromUserIds(user_ids)
+            io.to(room_id).emit('chat_room', { roomID: room_id, users });
         });
 
         socket.on('join_room', (roomID) => {
@@ -104,14 +116,14 @@ const socketHandlers = (io) => {
             var user_id = await chat_route_helper.getUserId(senderUsername)
             await helper.sendMessageToDatabase(user_id, room.roomID, message, timestamp)
             var users = await helper.getUsersInRoom(room.roomID)
-            users.forEach(async user_id => {
-                var username = await helper.getUsername(user_id)
-                var socketId = await helper.getSocketIdByUsername(connectedUsers,username)
-                console.log(socketId)
-                if (socketId){
-                    io.to(socketId).emit('receive_room_message', {sender: username, timestamp: timestamp, message: message });
-                }
-            })
+            io.to(room.roomID).emit('receive_room_message', {sender: senderUsername, timestamp: timestamp, message: message });
+            // users.forEach(async user_id => {
+            //     var username = await helper.getUsername(user_id)
+            //     var socketId = await helper.getSocketIdByUsername(connectedUsers,username)
+            //     if (socketId){
+            //         io.to(room.roomID).emit('receive_room_message', {sender: username, timestamp: timestamp, message: message });
+            //     }
+            // })
         });
 
     });
