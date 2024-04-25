@@ -79,6 +79,11 @@ const socketHandlers = (io) => {
             io.to(room_id).emit('chat_room', { roomID: room_id, users });
         });
 
+        socket.on('decline_invite', async ({ invite }) => {
+            const senderSocketId = await helper.getSocketIdByUsername(connectedUsers, invite.senderUsername);
+            io.to(senderSocketId).emit('invite_declined', invite);
+        });
+
         socket.on('join_room', (roomID) => {
             socket.join(roomID);
             console.log(`Socket ${socket.id} joined room ${roomID}`);
@@ -117,13 +122,6 @@ const socketHandlers = (io) => {
             await helper.sendMessageToDatabase(user_id, room.roomID, message, timestamp)
             var users = await helper.getUsersInRoom(room.roomID)
             io.to(room.roomID).emit('receive_room_message', {sender: senderUsername, timestamp: timestamp, message: message });
-            // users.forEach(async user_id => {
-            //     var username = await helper.getUsername(user_id)
-            //     var socketId = await helper.getSocketIdByUsername(connectedUsers,username)
-            //     if (socketId){
-            //         io.to(room.roomID).emit('receive_room_message', {sender: username, timestamp: timestamp, message: message });
-            //     }
-            // })
         });
 
     });

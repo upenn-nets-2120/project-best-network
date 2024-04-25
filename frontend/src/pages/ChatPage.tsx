@@ -88,7 +88,11 @@ const ChatPage = () => {
         });
 
         socket.on('invite_accepted', (invite:Invite) => {
-            console.log("invite accepted")
+            alert(`invite accepted by ${invite.inviteUsername}`)
+        });
+
+        socket.on('invite_declined', (invite:Invite) => {
+            alert(`invite declined by ${invite.inviteUsername}`)
         });
 
         // Listen for 'user_connected' event to update connected users
@@ -218,7 +222,11 @@ const ChatPage = () => {
                 socket.emit('send_group_chat_invite', { room: currentRoom, senderUsername: username, inviteUsername });
                 alert(`invite sent to:${inviteUsername}`)
             }else{
-                alert("no current room set")
+                if (currentRoom != null){
+                    alert("user already in room")
+                }else{
+                    alert("no current room set")
+                } 
             }
         } else {
             alert("Invalid invite username");
@@ -228,7 +236,15 @@ const ChatPage = () => {
 
     // Function to send a chat invitation
     const sendChatInvite = () => {
-        if (connectedUsers.includes(inviteUsername)) {
+        const existingRoom = rooms.find(room => 
+            room.users.length === 2 &&
+            room.users.includes(username || '') &&
+            room.users.includes(inviteUsername)
+        );
+    
+        if (existingRoom) {
+            alert(`You are already in a room with ${inviteUsername}`);
+        } else if (connectedUsers.includes(inviteUsername)) {
             socket.emit('send_chat_invite', { senderUsername: username, inviteUsername });
             alert(`invite sent to:${inviteUsername}`)
         } else {
