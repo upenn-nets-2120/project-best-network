@@ -5,7 +5,7 @@ const helper = require('../routes/chat_route_helper.js');
 const db = dbsingleton;
 db.get_db_connection();
 
-let roomInvitations = []; // Store room invitations as objects { inviteId, senderId, receiverId, room }
+let roomInvites = []; // Store room invitations as objects { inviteId, senderId, receiverId, room }
 let connectedUsers = []; // Store connected users as objects { socketId, username }
 
 const socketHandlers = (io) => {
@@ -51,10 +51,10 @@ const socketHandlers = (io) => {
         socket.on('accept_invite', async ({ invite }) => {
             const senderSocketId = await helper.getSocketIdByUsername(connectedUsers, invite.senderUsername);
             io.to(senderSocketId).emit('invite_accepted', invite);
-            if (invitation.roomID == null){
-                var senderUserId = await helper.getUserId(invitation.senderUsername);
-                var receiverUserId = await helper.getUserId(invitation.receiverUsername);
-                var user_ids = [senderUserId, recieverUserId]
+            if (invite.roomID == null){
+                var senderUserId = await helper.getUserId(invite.senderUsername);
+                var receiverUserId = await helper.getUserId(invite.receiverUsername);
+                var user_ids = [senderUserId, receiverUserId]
                 var roomID = await helper.createChatRoom(user_ids)
                 socket.join(roomID);
                 io.to(senderSocketId).join(roomID)
@@ -73,7 +73,7 @@ const socketHandlers = (io) => {
                 console.log(invitedSocketId)
                 const inviteID = Date.now().toString(); 
                 const invite = { inviteID, senderUsername, inviteUsername, roomID:null };
-                roomInvitations.push(invite);
+                roomInvites.push(invite);
                 io.to(invitedSocketId).emit('receive_chat_invite', invite);
             } else {
                 console.log(`User ${inviteUsername} not found or not connected.`);
@@ -85,7 +85,7 @@ const socketHandlers = (io) => {
             if (invitedSocketId) {
                 const inviteID = Date.now().toString(); 
                 const invite = { inviteID, senderUsername, inviteUsername, roomID };
-                roomInvitations.push(invite);
+                roomInvites.push(invite);
                 io.to(invitedSocketId).emit('receive_chat_invite', invite);
             } else {
                 console.log(`User ${inviteUsername} not found or not connected.`);
