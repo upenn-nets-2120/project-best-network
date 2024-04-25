@@ -46,17 +46,27 @@ const ChatPage = () => {
     };
 
     const [incomingInvites, setIncomingInvites] = useState<Invite[]>([]); // Specify the type as Invite[]
-   // Function to accept an invite by ID
-    const acceptInvite = (invite: Invite) => {
-        console.log("Invite accepted:", invite);
-        socket.emit('accept_invite', { invite });
-        setIncomingInvites(prevInvites => prevInvites.filter(invite => invite !== invite));
+
+   const acceptInvite = (invite: Invite) => {
+    console.log("Invite accepted:", invite);
+    socket.emit('accept_invite', { invite });
+    setIncomingInvites(prevInvites => 
+        prevInvites.filter(prevInvite => 
+            prevInvite !== invite || (prevInvite.room?.roomID !== invite.room?.roomID && (prevInvite.room !== null || invite.room !== null))
+        )
+        );
     };
+
     const declineInvite = (invite: Invite) => {
         console.log("Invite declined:", invite);
-        socket.emit('decline_invite', { invite }); 
-        setIncomingInvites(prevInvites => prevInvites.filter(invite => invite !== invite));
+        socket.emit('decline_invite', { invite });
+        setIncomingInvites(prevInvites => 
+            prevInvites.filter(prevInvite => 
+                prevInvite !== invite || (prevInvite.room?.roomID !== invite.room?.roomID && (prevInvite.room !== null || invite.room !== null))
+            )
+        );
     };
+
 
 
     useEffect(() => {
@@ -106,7 +116,20 @@ const ChatPage = () => {
         });
 
         socket.on('chat_room', async (room:Room) => {
-            setRooms((prevRooms) => [...prevRooms, room]);
+            setRooms(prevRooms => {
+                const existingRoom = prevRooms.find(existingRoom => existingRoom.roomID === room.roomID);
+                if (existingRoom) {
+                    return prevRooms.map(existingRoom => {
+                        if (existingRoom.roomID === room.roomID) {
+                            return room; 
+                        }
+                        return existingRoom; 
+                    });
+                } else {
+                    return [...prevRooms, room];
+                }
+            });
+            
             setCurrentRoom(room)
             getRoomMessages(room)
         });
@@ -120,7 +143,16 @@ const ChatPage = () => {
 
         socket.on('receive_chat_invite', (invite:Invite) => {
             console.log("Received chat invite:", invite);
-            setIncomingInvites(prevInvites => [...prevInvites, invite]);
+            const existingInviteIndex = incomingInvites.findIndex(existingInvite => 
+            (existingInvite.room?.roomID === invite.room?.roomID || existingInvite.room === null) 
+            && existingInvite.senderUsername === invite.senderUsername
+            );
+
+            if (existingInviteIndex !== -1) {
+                console.log("Duplicate invite received.");
+            } else {
+                setIncomingInvites(prevInvites => [...prevInvites, invite]);
+            }
         });
 
         // Clean up: remove the message and user_connected listeners
@@ -133,6 +165,9 @@ const ChatPage = () => {
     const switchCurrentRoom = async(room:Room) => {
         setCurrentRoom(room)
         getRoomMessages(room)
+    }
+    const leaveCurrentRoom = async() => {
+        socket.emit('leave_room', { room: currentRoom, username: username });
     }
 
     const getRoomMessages = async (room: Room) => {
@@ -156,8 +191,8 @@ const ChatPage = () => {
 
     // Function to send invite to a room
     const sendInviteToCurrentRoom = () => {
-        console.log(currentRoom)
-        if (currentRoom != null){
+        //check if valid invite ie invite username not in current room
+        if (currentRoom != null  && currentRoom.users.indexOf(inviteUsername) === -1){
             socket.emit('send_group_chat_invite', { room: currentRoom, senderUsername: username, inviteUsername });
         }
         
@@ -184,18 +219,21 @@ const ChatPage = () => {
 
             <h2>Rooms and Users:</h2>
             <ul>
-                {rooms.map((room) => (
-                    <li key={room.roomID}>
-                        <button onClick={() => switchCurrentRoom(room)} className="bg-blue-500 text-white px-4 py-2 rounded">
-                            <strong>Room ID:</strong> {room.roomID}
-                            <ul>
-                                {room.users.map((user, index) => (
-                                    <li key={index}>{user}</li>
-                                ))}
-                            </ul>
-                        </button>
-                    </li>
-                ))}
+            {rooms.map((room) => (
+                <li key={room.roomID}>
+                    <button 
+                        onClick={() => switchCurrentRoom(room)} 
+                        className={`px-4 py-2 rounded ${currentRoom && currentRoom.roomID === room.roomID ? 'bg-blue-500 text-white' : 'bg-white text-black'}`}
+                    >
+                        <strong>Room ID:</strong> {room.roomID}
+                        <ul>
+                            {room.users.map((user, index) => (
+                                <li key={index}>{user}</li>
+                            ))}
+                        </ul>
+                    </button>
+                </li>
+            ))}
             </ul>
 
             </div>
@@ -239,6 +277,9 @@ const ChatPage = () => {
         {currentRoom && currentRoom.users && (
             <div className={'font-bold text-3xl'}>{currentRoom.users.join(', ')}</div>
         )}
+        <button onClick={handleLeaveRoom} className="bg-red-500 text-white px-4 py-2 rounded">
+            Leave Current Room
+        </button>
             <div className='h-[40rem] w-[30rem] bg-slate-100 p-3'>
                 <div className='h-[90%] overflow-scroll'>
                     <div className='space-y-2'>

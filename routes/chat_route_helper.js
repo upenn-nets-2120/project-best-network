@@ -76,6 +76,16 @@ const chat_route_helper = () => {
                 throw error;
             }
         },
+         getUsernamesFromUserIds: async (user_ids) => {
+            try {
+                const usernamePromises = user_ids.map(userid => getUsername(userid));
+                const usernames = await Promise.all(usernamePromises);
+                return usernames;
+            } catch (error) {
+                console.error('Error getting usernames from user IDs:', error);
+                throw error;
+            }
+        },
         
         getUsersInRoom: async (room_id) => {
             try {
@@ -220,9 +230,13 @@ module.exports = {
     checkIfChatRoomExists: chat_route_helper().checkIfChatRoomExists,
     checkIfUserBelongsToRoom: chat_route_helper().checkIfUserBelongsToRoom,
     getRoomsForUser: chat_route_helper().getRoomsForUser,
+    
     getUserId: chat_route_helper().getUserId,
     getUsername: chat_route_helper().getUsername,
+    getUsernamesFromUserIds: chat_route_helper().getUsernamesFromUserIds,
+
     getUsersInRoom : chat_route_helper().getUsersInRoom,
+
 
     getSocketIdByUsername: chat_route_helper().getSocketIdByUsername,
     getUsernameBySocketId: chat_route_helper().getUsernameBySocketId,

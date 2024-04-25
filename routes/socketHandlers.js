@@ -51,7 +51,7 @@ const socketHandlers = (io) => {
             const senderSocketId = await helper.getSocketIdByUsername(connectedUsers, invite.senderUsername);
             var receiverUserId = await helper.getUserId(invite.inviteUsername);
             io.to(senderSocketId).emit('invite_accepted', invite);
-            if (invite.room.roomID == null){
+            if (invite.room == null){
                 var senderUserId = await helper.getUserId(invite.senderUsername);
                 var user_ids = [senderUserId, receiverUserId]
                 console.log(user_ids)
@@ -59,10 +59,11 @@ const socketHandlers = (io) => {
                 socket.join(roomID);
                 io.to(senderSocketId).emit('join_room', roomID);
             } else {
-                await helper.addUserToRoom(receiverUserId, invite.roomID);
+                await helper.addUserToRoom(receiverUserId, invite.room.roomID);
                 socket.join(roomID);
             }
-            var users = await helper.getUsersInRoom(roomID)
+            var user_ids = await helper.getUsersInRoom(roomID)
+            var users=  helper.getUsernamesFromUserIds(user_ids)
             io.to(roomID).emit('chat_room', { roomID, users });
         });
 

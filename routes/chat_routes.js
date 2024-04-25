@@ -42,7 +42,7 @@ var chat_room_messages = async function(req, res) {
         FROM chatRooms cr
         INNER JOIN chatRoomMessages crm ON cr.roomID = crm.roomID
         WHERE cr.roomID = '${room_id}'
-        ORDER BY crm.timestamp DESC`; 
+        ORDER BY crm.timestamp ASC`; 
     var result = await db.send_sql(query);
     const userIds = result.map(row => row.userID);
     const usernames = userIds.map(async user_id => {return await helper.getUsername(user_id)})
