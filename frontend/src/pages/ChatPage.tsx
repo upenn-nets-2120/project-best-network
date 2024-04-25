@@ -13,7 +13,7 @@ interface Invite {
     inviteID: number;
     inviteUsername: string;
     senderUsername: string;
-    roomID: string;
+    room: Room;
 }
 
 interface Room {
@@ -37,7 +37,7 @@ const ChatPage = () => {
     const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
 
-    const [currentRoomID, setCurrentRoomID] = useState<number>();
+    const [currentRoom, setCurrentRoom] = useState<Room>();
     const { username } = useParams();
 
     const navigate = useNavigate(); 
@@ -60,11 +60,9 @@ const ChatPage = () => {
 
 
     useEffect(() => {
-        console.log(currentRoomID)
         // Check if logged in 
         axios.get(`${rootURL}/${username}/isLoggedIn`, { withCredentials: true })
             .then((response) => {
-                console.log(response)
                 setIsLoggedIn(response.data.isLoggedIn);
             })
             .catch((error) => {
@@ -91,26 +89,26 @@ const ChatPage = () => {
             setConnectedUsers(prevUsers => prevUsers.filter(user => user !== username));
         });
 
-        socket.on('chat_rooms', (rooms:Room[]) => {
+        socket.on('chat_rooms', async (rooms:Room[]) => {
             setRooms(rooms)
+            setCurrentRoom(rooms[0])
+            await getRoomMessages(rooms[0])
+        });
+        
+        socket.on('join_room', (roomID) => {
+            socket.emit('join_room', roomID);
         });
 
-        socket.on('chat_room', ({ roomID, users }: { roomID: number; users: string[] }) => {
-            setRooms((prevRooms) => [...prevRooms, { roomID, users }]);
-            setCurrentRoomID(roomID)
-            axios.get(`${rootURL}/${username}/roomMessages`, {
-                params: { room_id: currentRoomID, username: username}, 
-            }).then((response) => {
-                    setMessages(response.data.messages);
-                })
-                .catch((error) => {
-                    console.error('Error fetching room messages:', error);
-                });
+        socket.on('chat_room', async (room:Room) => {
+            setRooms((prevRooms) => [...prevRooms, room]);
+            setCurrentRoom(room)
+            getRoomMessages(room)
         });
 
 
         // Listen for incoming messages specific to a room
-        socket.on('room_message', (message) => {
+        socket.on('receive_room_message', (message) => {
+            console.log("here")
             console.log("Message received:", message);
             setMessages(prevMessages => [...prevMessages, message]);
         });
@@ -128,11 +126,19 @@ const ChatPage = () => {
     }, []);
 
 
+    const getRoomMessages = async (room: Room) => {
+        await axios.post(`${rootURL}/${username}/roomMessages`, {
+            room_id: room.roomID
+        }).then((response) => {
+            setMessages(response.data);
+        }).catch((error) => {
+            console.error('Error fetching room messages:', error);
+        });
+    }
 
     const sendMessage = () => {
-        console.log("Sending message to room:", currentRoomID);
         if (true) {
-            socket.emit('send_room_message', { roomID: currentRoomID, message: currentMessage });
+            socket.emit('send_room_message', { room: currentRoom , message: currentMessage, senderUsername: username });
             setCurrentMessage('');
         } else {
             alert("Please join a room first.");
@@ -141,9 +147,8 @@ const ChatPage = () => {
 
     // Function to send invite to a room
     const sendInviteToCurrentRoom = () => {
-        if (currentRoomID != null){
-            socket.emit('send_group_chat_invite', { room_id: currentRoomID, senderUsername: username, inviteUsername });
-            console.log(`Invite sent to user with ID ${inviteUsername} for room ${currentRoomID}`);
+        if (currentRoom != null){
+            socket.emit('send_group_chat_invite', { room: currentRoom, senderUsername: username, inviteUsername });
         }
         
     };
@@ -220,13 +225,15 @@ const ChatPage = () => {
        
             </div>
         </div>
-            <div className='font-bold text-3xl'>Internet Movie DB Chat</div>
+        {currentRoom && currentRoom.users && (
+            <div className={'font-bold text-3xl'}>{currentRoom.users.join(', ')}</div>
+        )}
             <div className='h-[40rem] w-[30rem] bg-slate-100 p-3'>
                 <div className='h-[90%] overflow-scroll'>
                     <div className='space-y-2'>
-                        {messages.map(msg => {
+                        {messages.map((msg, index) => {
                             return (
-                                <MessageComponent sender={msg.sender} message={msg.message} timestamp={msg.timestamp} />
+                                <MessageComponent key={index} sender={msg.sender} message={msg.message} timestamp={msg.timestamp} />
                             )
                         })}
                     </div>

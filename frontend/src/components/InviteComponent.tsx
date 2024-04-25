@@ -4,7 +4,12 @@ interface Invite {
     inviteID: number;
     inviteUsername: string;
     senderUsername: string;
-    roomID: string;
+    room: Room;
+}
+
+interface Room {
+    roomID: number;
+    users: string[]
 }
 
 interface InviteComponentProps {
@@ -27,7 +32,7 @@ const InviteComponent: React.FC<InviteComponentProps> = ({ invite, onAccept, onD
         <div className={`text-left max-w-[70%] p-3 rounded-md break-words ${invite.senderUsername === 'user' ? 'bg-blue-100' : 'bg-slate-200'}`}>
             <h2>New Invite</h2>
             <p>Invite from: {invite.senderUsername}</p>
-            {invite.roomID !== null && <p>Room ID: {invite.roomID}</p>}
+            {invite.room && invite.room.roomID !== null && <p>Room ID: {invite.room.roomID}</p>}
             <p>Invitee: {invite.inviteUsername}</p>
             {/* Add buttons or other UI elements to accept or decline the invite */}
             <button onClick={handleAccept} className="bg-blue-500 text-white px-4 py-2 rounded">Accept</button>

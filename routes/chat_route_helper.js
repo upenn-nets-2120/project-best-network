@@ -7,21 +7,25 @@ const chat_route_helper = () => {
         createChatRoom: async (user_ids) => {
             try {
                 // Insert a placeholder room into chatRooms table to generate auto-incremented roomId
-                const insertRoomQuery = `
-                    INSERT INTO chatRooms DEFAULT VALUES
-                `;
+                const insertRoomQuery = `INSERT INTO chatRooms (roomID) VALUES (DEFAULT)`;
                 const roomInsertResult = await db.send_sql(insertRoomQuery);
-                const roomId = roomInsertResult.insertId;
+                
+                // Now, retrieve the last inserted ID
+                const lastInsertIdQuery = `SELECT LAST_INSERT_ID() AS roomID`;
+                const lastInsertIdResult = await db.send_sql(lastInsertIdQuery);
+                
+                const room_id = lastInsertIdResult[0].roomID;
+                console.log(room_id);                
 
                 // Insert users into chatRoomUsers table
                 const insertUsersQuery = `
                     INSERT INTO chatRoomUsers (roomID, userID) 
-                    VALUES ${user_ids.map(userId => `(${roomId}, ${userId})`).join(', ')}
+                    VALUES ${user_ids.map(user_id => `(${room_id}, ${user_id})`).join(', ')}
                 `;
                 const usersInsertResult = await db.send_sql(insertUsersQuery);
 
                 // Return the room ID
-                return { roomId };
+                return room_id;
             } catch (error) {
                 console.error('Error creating chat room:', error);
                 throw error;
@@ -44,9 +48,14 @@ const chat_route_helper = () => {
         
         getUserId: async (username) => {
             try {
+                console.log(username)
                 const query = `SELECT id FROM users WHERE username = '${username}'`;
                 const result = await db.send_sql(query);
-                return result;
+                if (result.length > 0) {
+                    return result[0].id;
+                } else {
+                    return null; //id not found
+                }
             } catch (error) {
                 console.error('Error getting user ID:', error);
                 throw error;
@@ -57,7 +66,11 @@ const chat_route_helper = () => {
             try {
                 const query = `SELECT username FROM users WHERE id = '${userid}'`;
                 const result = await db.send_sql(query);
-                return result;
+                if (result.length > 0) {
+                    return result[0].username;
+                } else {
+                    return null; //username not found
+                }
             } catch (error) {
                 console.error('Error getting user ID:', error);
                 throw error;
@@ -79,9 +92,9 @@ const chat_route_helper = () => {
             }
         },
 
-        checkIfUserBelongsToRoom: async(room_id, usr_id) => {
+        checkIfUserBelongsToRoom: async(room_id, user_id) => {
             try {
-                const usersInRoom = await getUsersInRoom(room_id);
+                const usersInRoom = await chat_route_helper().getUsersInRoom(room_id);
                 return usersInRoom.includes(user_id);
             } catch (error) {
                 console.error('Error checking if user belongs to room:', error);
@@ -92,11 +105,25 @@ const chat_route_helper = () => {
         getRoomsForUser: async (user_id) => {
             try {
                 const query = `
-                    SELECT DISTINCT roomID FROM chatRoomUsers
+                SELECT DISTINCT cru.roomID, GROUP_CONCAT(u.username SEPARATOR ', ') AS other_users
+                FROM chatRoomUsers cru
+                INNER JOIN users u ON cru.userID = u.id
+                WHERE cru.roomID IN (
+                    SELECT DISTINCT roomID
+                    FROM chatRoomUsers
                     WHERE userID = '${user_id}'
-                `;
-                const roomsForUser = await db.send_sql(query);
-                return roomsForUser.map(row => row.roomID);
+                )
+                AND cru.userID != '${user_id}'
+                GROUP BY cru.roomID;
+            `;
+            const roomsForUser = await db.send_sql(query);
+            const rooms = roomsForUser.map(room => ({
+                roomID: room.roomID,
+                users: room.other_users.split(', ')
+            }));
+            console.log(rooms)
+            return rooms;
+
             } catch (error) {
                 console.error('Error getting rooms for user:', error);
                 throw error;

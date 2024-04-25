@@ -17,38 +17,43 @@ var is_logged_in = async function(req, res) {
     res.status(200).json({ isLoggedIn : true });
 };
 
-// get /roomMessages
+// post /roomMessages
 var chat_room_messages = async function(req, res) {
-    var username = req.body.username;
+    console.log(req.body)
+    var username = req.params.username;
     var room_id = req.body.room_id
+
 
     // //check if chat room exists
     var result = await helper.checkIfChatRoomExists(room_id)
     if (!result){
-        res.status(403).json({ error: 'room does not exist' });
+        return res.status(403).json({ error: 'room does not exist' });
     }
     // //get user id from username
     var user_id = await helper.getUserId(username)
         // //check if user belongs to room
     var result = await helper.checkIfUserBelongsToRoom(room_id,user_id)
     if (!result){
-        res.status(403).json({ error: 'illegal room access: user not in room' });
+        return  res.status(403).json({ error: 'illegal room access: user not in room' });
+        
     }
     var query = `
-        SELECT cr.roomID, crm.messageID, crm.textMessage, crm.timestamp, crm.user_id
+        SELECT cr.roomID, crm.messageID, crm.message, crm.timestamp, crm.userID
         FROM chatRooms cr
         INNER JOIN chatRoomMessages crm ON cr.roomID = crm.roomID
         WHERE cr.roomID = '${room_id}'
         ORDER BY crm.timestamp DESC`; 
     var result = await db.send_sql(query);
-    const userIds = result.map(row => row.user_id);
+    const userIds = result.map(row => row.userID);
     const usernames = userIds.map(async user_id => {return await helper.getUsername(user_id)})
     const response = result.map((row, index) => ({
         message: row.textMessage,
         timestamp: row.timestamp,
-        username: usernames[index] 
+        sender: usernames[index] 
     }));
-    res.status(200).json(result);
+    console.log(result)
+    return res.status(200).json(result);
+    
 };
 
 // get /chatRoomsForUser
