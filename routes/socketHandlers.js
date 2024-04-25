@@ -49,17 +49,17 @@ const socketHandlers = (io) => {
 
         socket.on('accept_invite', async ({ invite }) => {
             const senderSocketId = await helper.getSocketIdByUsername(connectedUsers, invite.senderUsername);
+            var receiverUserId = await helper.getUserId(invite.inviteUsername);
             io.to(senderSocketId).emit('invite_accepted', invite);
             if (invite.room.roomID == null){
                 var senderUserId = await helper.getUserId(invite.senderUsername);
-                var receiverUserId = await helper.getUserId(invite.inviteUsername);
                 var user_ids = [senderUserId, receiverUserId]
                 console.log(user_ids)
                 var roomID = await helper.createChatRoom(user_ids)
                 socket.join(roomID);
                 io.to(senderSocketId).emit('join_room', roomID);
             } else {
-                await helper.addUserToRoom(user, invite.roomID);
+                await helper.addUserToRoom(receiverUserId, invite.roomID);
                 socket.join(roomID);
             }
             var users = await helper.getUsersInRoom(roomID)
@@ -85,8 +85,8 @@ const socketHandlers = (io) => {
             }
         });
 
-        socket.on('group_chat_invite', ({ room, senderUsername, inviteUsername }) => {
-            const invitedSocketId = helper.getSocketIdByUsername(connectedUsers, inviteUsername);
+        socket.on('send_group_chat_invite', async ({ room, senderUsername, inviteUsername }) => {
+            const invitedSocketId = await helper.getSocketIdByUsername(connectedUsers, inviteUsername);
             if (invitedSocketId) {
                 const inviteID = Date.now().toString(); 
                 const invite = { inviteID, senderUsername, inviteUsername, room };

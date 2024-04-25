@@ -61,6 +61,7 @@ const ChatPage = () => {
 
     useEffect(() => {
         // Check if logged in 
+        console.log(currentRoom)
         axios.get(`${rootURL}/${username}/isLoggedIn`, { withCredentials: true })
             .then((response) => {
                 setIsLoggedIn(response.data.isLoggedIn);
@@ -82,7 +83,12 @@ const ChatPage = () => {
 
         // Listen for 'user_connected' event to update connected users
         socket.on('user_connected', ({ username }) => {
-            setConnectedUsers(prevUsers => [...prevUsers, username]);
+            setConnectedUsers(prevUsers => {
+                if (!prevUsers.includes(username)) {
+                    return [...prevUsers, username];
+                }
+                return prevUsers;
+            });
         });
 
         socket.on('user_disconnected', ({ username }) => {
@@ -108,7 +114,6 @@ const ChatPage = () => {
 
         // Listen for incoming messages specific to a room
         socket.on('receive_room_message', (message) => {
-            console.log("here")
             console.log("Message received:", message);
             setMessages(prevMessages => [...prevMessages, message]);
         });
@@ -125,6 +130,10 @@ const ChatPage = () => {
         };
     }, []);
 
+    const switchCurrentRoom = async(room:Room) => {
+        setCurrentRoom(room)
+        getRoomMessages(room)
+    }
 
     const getRoomMessages = async (room: Room) => {
         await axios.post(`${rootURL}/${username}/roomMessages`, {
@@ -147,6 +156,7 @@ const ChatPage = () => {
 
     // Function to send invite to a room
     const sendInviteToCurrentRoom = () => {
+        console.log(currentRoom)
         if (currentRoom != null){
             socket.emit('send_group_chat_invite', { room: currentRoom, senderUsername: username, inviteUsername });
         }
@@ -156,7 +166,6 @@ const ChatPage = () => {
     // Function to send a chat invitation
     const sendChatInvite = () => {
         socket.emit('send_chat_invite', { senderUsername: username, inviteUsername });
-        console.log(`Chat invite sent to user ID ${inviteUsername}`);
     };
 
     // Render UI
@@ -177,12 +186,14 @@ const ChatPage = () => {
             <ul>
                 {rooms.map((room) => (
                     <li key={room.roomID}>
-                        <strong>Room ID:</strong> {room.roomID}
-                        <ul>
-                            {room.users.map((user, index) => (
-                                <li key={index}>{user}</li>
-                            ))}
-                        </ul>
+                        <button onClick={() => switchCurrentRoom(room)} className="bg-blue-500 text-white px-4 py-2 rounded">
+                            <strong>Room ID:</strong> {room.roomID}
+                            <ul>
+                                {room.users.map((user, index) => (
+                                    <li key={index}>{user}</li>
+                                ))}
+                            </ul>
+                        </button>
                     </li>
                 ))}
             </ul>

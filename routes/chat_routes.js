@@ -51,7 +51,7 @@ var chat_room_messages = async function(req, res) {
         timestamp: row.timestamp,
         sender: usernames[index] 
     }));
-    console.log(result)
+
     return res.status(200).json(result);
     
 };
