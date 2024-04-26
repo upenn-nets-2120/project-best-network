@@ -93,6 +93,7 @@ const socketHandlers = (io) => {
         });
 
         socket.on('send_chat_invite', async ({ senderUsername, inviteUsername }) => {
+            console.log("hey")
             const invitedSocketId = await helper.getSocketIdByUsername(connectedUsers, inviteUsername);
             if (invitedSocketId) {
                 console.log(invitedSocketId)

@@ -1,4 +1,4 @@
-import { useState, useEffect, ChangeEvent } from 'react';
+import { useState, useEffect, ChangeEvent, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { io } from "socket.io-client";
@@ -41,7 +41,6 @@ const ChatPage = () => {
     const [rooms, setRooms] = useState<Room[]>([]);
 
     const [currentRoom, setCurrentRoom] = useState<Room>();
-    var currentRoomID = -1;
     const { username } = useParams();
     
     const navigate = useNavigate(); 
@@ -54,11 +53,16 @@ const ChatPage = () => {
    const acceptInvite = (invite: Invite) => {
     console.log("Invite accepted:", invite);
     socket.emit('accept_invite', { invite });
+    console.log(incomingInvites)
     setIncomingInvites(prevInvites => 
         prevInvites.filter(prevInvite => 
-            prevInvite !== invite || (prevInvite.room?.roomID !== invite.room?.roomID && (prevInvite.room !== null || invite.room !== null))
+            prevInvite.inviteID !== invite.inviteID
+        ).filter(prevInvite => 
+           prevInvite.room?.roomID !== invite.room?.roomID
         )
+        
         );
+    
     };
 
     const declineInvite = (invite: Invite) => {
@@ -72,8 +76,10 @@ const ChatPage = () => {
     };
 
 
+    const currentRoomIDRef = useRef<number | null>(null);
 
     useEffect(() => {
+        currentRoomIDRef.current = currentRoom?.roomID ?? null;
         // Check if logged in 
         axios.get(`${rootURL}/${username}/isLoggedIn`, { withCredentials: true })
             .then((response) => {
@@ -86,18 +92,34 @@ const ChatPage = () => {
         // Emit 'send_username' event with username
         socket.emit("send_username", { username: username });
         
+        socket.on('receive_chat_invite', async (invite:Invite) => {
+            console.log("Received chat invite:", invite);
+            const existingInviteIndex = incomingInvites.findIndex(existingInvite => 
+            (existingInvite.room?.roomID === invite.room?.roomID || existingInvite.room === null) 
+            && existingInvite.senderUsername === invite.senderUsername
+            );
+            console.log(incomingInvites)
+            console.log(invite)
+            if (existingInviteIndex !== -1) {
+                console.log("Duplicate invite received.");
+            } else {
+                await setIncomingInvites(prevInvites => [...prevInvites, invite]);
+            }
+        });
+
+
         socket.on('connected_users', (users: string[]) => {
             setConnectedUsers(users);
         });
-
+    
         socket.on('invite_accepted', (invite:Invite) => {
             alert(`invite accepted by ${invite.inviteUsername}`)
         });
-
+    
         socket.on('invite_declined', (invite:Invite) => {
             alert(`invite declined by ${invite.inviteUsername}`)
         });
-
+    
         // Listen for 'user_connected' event to update connected users
         socket.on('user_connected', ({ username }) => {
             setConnectedUsers(prevUsers => {
@@ -107,7 +129,7 @@ const ChatPage = () => {
                 return prevUsers;
             });
         });
-
+    
         socket.on('user_disconnected', ({ username }) => {
             setConnectedUsers(prevUsers => prevUsers.filter(user => user !== username));
         });
@@ -116,7 +138,6 @@ const ChatPage = () => {
             setRooms(rooms)
             if (rooms.length > 0){
                 await setCurrentRoom(rooms[0])
-                currentRoomID = rooms[0].roomID
                 await getRoomMessages(rooms[0])
             }
         });
@@ -124,7 +145,7 @@ const ChatPage = () => {
         socket.on('join_room', (roomID) => {
             socket.emit('join_room', roomID);
         });
-
+    
         socket.on('chat_room', async (room:Room) => {
             setRooms(prevRooms => {
                 const existingRoom = prevRooms.find(existingRoom => existingRoom.roomID === room.roomID);
@@ -141,13 +162,31 @@ const ChatPage = () => {
             });
             
             setCurrentRoom(room)
-            currentRoomID = room.roomID
             getRoomMessages(room)
         });
-
-
+    
+    
+    
+        socket.on('user_left_room', ({ room, username: leaverUsername }) => {
+            const currentRoomID = currentRoomIDRef.current;
+            if (currentRoomID == room.roomID){
+                setCurrentRoom(room);
+            }
+            setRooms(prevRooms => 
+                prevRooms.map(room => {
+                    if (room.roomID === room.roomID) {
+                        return {
+                            ...room,
+                            users: room.users.filter(user => user !== leaverUsername)
+                        };
+                    }
+                    return room;
+                })
+            );
+        });
         // Listen for incoming messages specific to a room
         socket.on('receive_room_message', async ( message ) => {
+            const currentRoomID = currentRoomIDRef.current;
             console.log(currentRoomID)
             if (message.roomID == currentRoomID) {
                 setMessages(prevMessages => [...prevMessages, message]);
@@ -168,46 +207,44 @@ const ChatPage = () => {
         });
         
         
+    
 
-        socket.on('receive_chat_invite', (invite:Invite) => {
-            console.log("Received chat invite:", invite);
-            const existingInviteIndex = incomingInvites.findIndex(existingInvite => 
-            (existingInvite.room?.roomID === invite.room?.roomID || existingInvite.room === null) 
-            && existingInvite.senderUsername === invite.senderUsername
-            );
-
-            if (existingInviteIndex !== -1) {
-                console.log("Duplicate invite received.");
-            } else {
-                setIncomingInvites(prevInvites => [...prevInvites, invite]);
-            }
-        });
-
-        socket.on('user_left_room', ({ room, username: leaverUsername }) => {
-            if (currentRoomID == room.roomID){
-                setCurrentRoom(room);
-            }
-            setRooms(prevRooms => 
-                prevRooms.map(room => {
-                    if (room.roomID === room.roomID) {
-                        return {
-                            ...room,
-                            users: room.users.filter(user => user !== leaverUsername)
-                        };
-                    }
-                    return room;
-                })
-            );
-        });
-        
-
-        // Clean up: remove the message and user_connected listeners
         return () => {
-            socket.off('room_message');
-            socket.off('user_connected');
+            
         };
     }, []);
 
+    useEffect(() => {
+        // Inside the useEffect hook, update the ref when currentRoomID changes
+        currentRoomIDRef.current = currentRoom?.roomID ?? null;
+
+        // Register the socket event listener
+        socket.on('receive_room_message', async (message) => {
+            // Access the latest value of currentRoomID using the ref
+            const currentRoomID = currentRoomIDRef.current;
+            
+            if (message.roomID === currentRoomID) {
+                setMessages(prevMessages => [...prevMessages, message]);
+            } else {
+                setRooms(prevRooms => 
+                    prevRooms.map(room => {
+                        if (room.roomID === message.roomID) {
+                            return { ...room, notification: true, notificationMessage: message.message };
+                        }
+                        return room;
+                    })
+                );
+            }
+            console.log("Message received:", message);
+        });
+
+        // Clean up the event listener when the component unmounts
+        return () => {
+            socket.off('receive_room_message');
+        };
+    }, [currentRoom]);
+
+    
     const switchCurrentRoom = async(room:Room) => {
         setRooms(rooms.map(r => {
             if (r.roomID === room.roomID) {
@@ -216,7 +253,6 @@ const ChatPage = () => {
             return r;
         }));
         setCurrentRoom(room)
-        currentRoomID = room.roomID
         getRoomMessages(room)
     }
     const sendLeaveRoom = async() => {
