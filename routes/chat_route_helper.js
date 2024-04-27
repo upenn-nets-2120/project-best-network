@@ -151,6 +151,7 @@ const chat_route_helper = () => {
         getUsernameBySocketId: async (connectedUsers, socket_id) => {
             try {
                 var user = connectedUsers.find(user => user.socket_id === socket_id);
+                console.log(user)
                 return user ? user.username : null;
             } catch (error) {
                 console.error('Error finding username by socketID:', error);
@@ -166,6 +167,7 @@ const chat_route_helper = () => {
                     WHERE roomID = ${room_id} AND userID = ${user_id}
                 `;
                 const deleteResult = await db.send_sql(deleteQuery);
+                console.log(deleteResult)
                 console.log(`User with ID ${user_id} deleted from room ${room_id}`);
                 const checkEmptyQuery = `
                 SELECT COUNT(*) AS userCount FROM chatRoomUsers
@@ -198,7 +200,6 @@ const chat_route_helper = () => {
                 return insertResult;
             } catch (error) {
                 console.error('Error adding user to room:', error);
-                throw error;
             }
         },
         sendMessageToDatabase: async (user_id, room_id, message, timestamp) => {
@@ -214,7 +215,8 @@ const chat_route_helper = () => {
                 console.error('Error adding message to room:', error);
                 throw error;
             }
-        }
+        },
+        
         
     };
 };

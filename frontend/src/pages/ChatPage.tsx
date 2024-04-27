@@ -8,27 +8,7 @@ const rootURL = config.serverRootURL;
 const socket = io(rootURL);
 import InviteComponent from '../components/InviteComponent'
 import MessageComponent from '../components/MessageComponent'
-
-interface Invite {
-    inviteID: number;
-    inviteUsername: string;
-    senderUsername: string;
-    room: Room;
-}
-
-interface Room {
-    roomID: number;
-    users: string[];
-    notification: boolean; 
-    notificationMessage: string;
-}
-
-interface Message {
-    sender: string;
-    message: string;
-    timestamp: number;
-    roomID: number;
-}
+import { Invite, Room, Message } from '../components/chatRoomInterfaces';
 
 
 
@@ -53,7 +33,15 @@ const ChatPage = () => {
    const acceptInvite = (invite: Invite) => {
     console.log("Invite accepted:", invite);
     socket.emit('accept_invite', { invite });
-    console.log(incomingInvites)
+    const sameRoomInvites = incomingInvites.filter(i => 
+        i.room?.roomID === invite.room?.roomID
+    );
+    sameRoomInvites.forEach(i => {
+        if (i.inviteID != invite.inviteID){
+            socket.emit('accept_invite', { invite });
+        }
+    });
+
     setIncomingInvites(prevInvites => 
         prevInvites.filter(prevInvite => 
             prevInvite.inviteID !== invite.inviteID
@@ -70,16 +58,17 @@ const ChatPage = () => {
         socket.emit('decline_invite', { invite });
         setIncomingInvites(prevInvites => 
             prevInvites.filter(prevInvite => 
-                prevInvite !== invite || (prevInvite.room?.roomID !== invite.room?.roomID && (prevInvite.room !== null || invite.room !== null))
+                prevInvite.inviteID !== invite.inviteID
+            ).filter(prevInvite => 
+               prevInvite.room?.roomID !== invite.room?.roomID
             )
-        );
+            
+            );
     };
 
 
-    const currentRoomIDRef = useRef<number | null>(null);
-
+   
     useEffect(() => {
-        currentRoomIDRef.current = currentRoom?.roomID ?? null;
         // Check if logged in 
         axios.get(`${rootURL}/${username}/isLoggedIn`, { withCredentials: true })
             .then((response) => {
@@ -92,21 +81,6 @@ const ChatPage = () => {
         // Emit 'send_username' event with username
         socket.emit("send_username", { username: username });
         
-        socket.on('receive_chat_invite', async (invite:Invite) => {
-            console.log("Received chat invite:", invite);
-            const existingInviteIndex = incomingInvites.findIndex(existingInvite => 
-            (existingInvite.room?.roomID === invite.room?.roomID || existingInvite.room === null) 
-            && existingInvite.senderUsername === invite.senderUsername
-            );
-            console.log(incomingInvites)
-            console.log(invite)
-            if (existingInviteIndex !== -1) {
-                console.log("Duplicate invite received.");
-            } else {
-                await setIncomingInvites(prevInvites => [...prevInvites, invite]);
-            }
-        });
-
 
         socket.on('connected_users', (users: string[]) => {
             setConnectedUsers(users);
@@ -120,7 +94,6 @@ const ChatPage = () => {
             alert(`invite declined by ${invite.inviteUsername}`)
         });
     
-        // Listen for 'user_connected' event to update connected users
         socket.on('user_connected', ({ username }) => {
             setConnectedUsers(prevUsers => {
                 if (!prevUsers.includes(username)) {
@@ -141,11 +114,7 @@ const ChatPage = () => {
                 await getRoomMessages(rooms[0])
             }
         });
-        
-        socket.on('join_room', (roomID) => {
-            socket.emit('join_room', roomID);
-        });
-    
+
         socket.on('chat_room', async (room:Room) => {
             setRooms(prevRooms => {
                 const existingRoom = prevRooms.find(existingRoom => existingRoom.roomID === room.roomID);
@@ -160,16 +129,24 @@ const ChatPage = () => {
                     return [...prevRooms, room];
                 }
             });
-            
             setCurrentRoom(room)
             getRoomMessages(room)
+        })
+        
+        socket.on('join_room', (roomID) => {
+            socket.emit('join_room', roomID);
         });
     
-    
-    
+        
+        return () => {
+            
+        };
+    }, []);
+
+    useEffect(() => {
+        // Inside the useEffect hook, update the ref when currentRoomID changes
         socket.on('user_left_room', ({ room, username: leaverUsername }) => {
-            const currentRoomID = currentRoomIDRef.current;
-            if (currentRoomID == room.roomID){
+            if (currentRoom?.roomID == room.roomID){
                 setCurrentRoom(room);
             }
             setRooms(prevRooms => 
@@ -184,46 +161,14 @@ const ChatPage = () => {
                 })
             );
         });
-        // Listen for incoming messages specific to a room
-        socket.on('receive_room_message', async ( message ) => {
-            const currentRoomID = currentRoomIDRef.current;
-            console.log(currentRoomID)
-            if (message.roomID == currentRoomID) {
-                setMessages(prevMessages => [...prevMessages, message]);
-            } else {
-                setRooms(prevRooms => 
-                    prevRooms.map(room => {
-                        console.log(room.roomID)
-                        if (room.roomID == message.roomID) {
-                            room.notification = true
-                           room.notificationMessage = message.message
-                        }
-                        return room;
-                    })
-                );
-                
-            }
-            console.log("Message received:", message);
-        });
-        
-        
-    
 
-        return () => {
-            
-        };
-    }, []);
 
-    useEffect(() => {
-        // Inside the useEffect hook, update the ref when currentRoomID changes
-        currentRoomIDRef.current = currentRoom?.roomID ?? null;
 
         // Register the socket event listener
         socket.on('receive_room_message', async (message) => {
             // Access the latest value of currentRoomID using the ref
-            const currentRoomID = currentRoomIDRef.current;
             
-            if (message.roomID === currentRoomID) {
+            if (message.roomID === currentRoom?.roomID) {
                 setMessages(prevMessages => [...prevMessages, message]);
             } else {
                 setRooms(prevRooms => 
@@ -237,12 +182,40 @@ const ChatPage = () => {
             }
             console.log("Message received:", message);
         });
+        
 
+        socket.on('receive_chat_invite', async (invite:Invite) => {
+            console.log("Received chat invite:", invite);
+            const existingInviteIndex = incomingInvites.findIndex(existingInvite => 
+            (existingInvite.room?.roomID === invite.room?.roomID || existingInvite.room === null) 
+            && existingInvite.senderUsername === invite.senderUsername
+            );
+            console.log(incomingInvites)
+            console.log(invite)
+            if (existingInviteIndex !== -1) {
+                console.log("Duplicate invite received.");
+            } else {
+                await setIncomingInvites(prevInvites => [...prevInvites, invite]);
+            }
+        });
+
+        socket.on('receive_room_messages', async (messages) => {
+            console.log("Received room messages:", messages);
+            setMessages(messages.messages || [])
+        });
+
+
+        
         // Clean up the event listener when the component unmounts
         return () => {
             socket.off('receive_room_message');
+            socket.off('receive_room_messages');
+            socket.off('receive_chat_invite');
+            socket.off('user_left');
         };
-    }, [currentRoom]);
+
+    }, [currentRoom, incomingInvites]);
+
 
     
     const switchCurrentRoom = async(room:Room) => {
@@ -253,6 +226,7 @@ const ChatPage = () => {
             return r;
         }));
         setCurrentRoom(room)
+        console.log(messages)
         getRoomMessages(room)
     }
     const sendLeaveRoom = async() => {
@@ -264,13 +238,7 @@ const ChatPage = () => {
     }
 
     const getRoomMessages = async (room: Room) => {
-        await axios.post(`${rootURL}/${username}/roomMessages`, {
-            room_id: room.roomID
-        }).then((response) => {
-            setMessages(response.data);
-        }).catch((error) => {
-            console.error('Error fetching room messages:', error);
-        });
+        socket.emit("get_room_messages", {room})
     }
 
     const sendMessage = () => {
@@ -327,17 +295,26 @@ const ChatPage = () => {
 
     return (
         <div>
-            {/* Display connected users */}
             <div>
-                <h2>Connected Users:</h2>
-                {connectedUsers.map((user, index) => (
-                    <p key={index}>{user}</p>
-                ))}
-
-            <h2>Rooms and Users:</h2>
-            <ul>
+            <div className='w-full h-16 bg-slate-50 flex justify-center mb-2'>
+            <div className='text-2xl max-w-[1800px] w-full flex items-center'>
+            Pennstagram - {username} &nbsp;
+            <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
+              onClick={home}>Home</button>&nbsp;
+       
+            </div>
+            </div>
+            <div className="mb-4 mx-auto w-1/2">
+                <h2 className="text-lg font-bold mb-2">Connected Users:</h2>
+                <ul className="bg-gray-100 rounded-lg p-4">
+                    {connectedUsers.map((user, index) => (
+                        <li key={index} className="py-2 border-b border-gray-200 last:border-b-0">{user}</li>
+                    ))}
+                </ul>
+            </div>
+            <div className="flex items-center mb-4 mx-auto w-1/2 space-x-4">
             {rooms.map((room) => (
-                <li key={room.roomID}>
+                <div key={room.roomID}>
                     <button 
                         onClick={() => switchCurrentRoom(room)} 
                         className={`px-4 py-2 rounded ${currentRoom && currentRoom.roomID === room.roomID ? 'bg-blue-500 text-white' : 'bg-white text-black'}`}
@@ -354,52 +331,48 @@ const ChatPage = () => {
                     {room.notification && (
                         <div className="notification">Notification: {room.notificationMessage}</div>
                     )}
-                </li>
+                </div>
             ))}
-
-            </ul>
+            </div>
 
             </div>
 
-            {incomingInvites.map((invite, index) => (
-                <InviteComponent
-                    key={index}
-                    invite={invite}
-                    onAccept={acceptInvite}
-                    onDecline={declineInvite}
-                />
-            ))}
+           
+           
+            <div className="flex items-center mb-4 mx-auto w-1/2 space-x-4">
+                <select
+                    value={inviteUsername}
+                    onChange={(e) => setInviteUsername(e.target.value)}
+                    className="border border-gray-300 rounded px-3 py-2 flex-grow mr-2"
+                >
+                    <option value="">Invite User to Current Room</option>
+                    {connectedUsers.map((user, index) => (
+                        <option key={index} value={user}>{user}</option>
+                    ))}
+                </select>
+                <button onClick={sendInviteToCurrentRoom} className="bg-blue-500 text-white px-4 py-2 rounded">
+                    Send Invite to Current Room
+                </button>
+                <button onClick={sendChatInvite} className="bg-blue-500 text-white px-4 py-2 rounded">
+                    Send New Chat Invite
+                </button>
+            </div>
 
-            <div className="flex items-center mb-4">
-            <select
-                value={inviteUsername}
-                onChange={(e) => setInviteUsername(e.target.value)}
-                className="border border-gray-300 rounded px-3 py-2 mr-2 flex-grow"
-            >
-                <option value="">Invite User to Current Room</option>
-                {connectedUsers.map((user, index) => (
-                    <option key={index} value={user}>{user}</option>
+
+            <div className="flex items-center mb-4 mx-auto w-1/2 space-x-4">
+                {incomingInvites.map((invite, index) => (
+                    <InviteComponent
+                        key={index}
+                        invite={invite}
+                        onAccept={acceptInvite}
+                        onDecline={declineInvite}
+                    />
                 ))}
-            </select>
-            <button onClick={sendInviteToCurrentRoom} className="bg-blue-500 text-white px-4 py-2 rounded">
-                Send Invite to Current Room
-            </button>
-            <button onClick={sendChatInvite} className="bg-blue-500 text-white px-4 py-2 rounded">
-                Send New Chat Invite
-            </button>
-
             </div>
-            
+                    
 
     <div className='w-screen h-screen flex flex-col items-center'>
-        <div className='w-full h-16 bg-slate-50 flex justify-center mb-2'>
-            <div className='text-2xl max-w-[1800px] w-full flex items-center'>
-            Pennstagram - {username} &nbsp;
-            <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
-              onClick={home}>Home</button>&nbsp;
        
-            </div>
-        </div>
         {currentRoom && currentRoom.users && (
             <div className={'font-bold text-3xl'}>
                 Room ID {currentRoom.roomID}:
@@ -416,7 +389,7 @@ const ChatPage = () => {
                     <div className='space-y-2'>
                         {messages.map((msg, index) => {
                             return (
-                                <MessageComponent key={index} sender={msg.sender} message={msg.message} timestamp={msg.timestamp} />
+                                <MessageComponent key={index} sender={msg.sender} message={msg.message} timestamp={msg.timestamp} currentUser={username || ''} />
                             )
                         })}
                     </div>

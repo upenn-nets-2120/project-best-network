@@ -28,7 +28,7 @@ const socketHandlers = (io) => {
                 }
             });
             if (!userExists) {
-                connectedUsers.push({ socketId: socket.id, username : username });
+                connectedUsers.push({ socket_id: socket.id, username : username });
                 console.log(connectedUsers);
                 socket.broadcast.emit('user_connected', { username });
             }
@@ -89,14 +89,11 @@ const socketHandlers = (io) => {
 
         socket.on('join_room', (roomID) => {
             socket.join(roomID);
-            console.log(`Socket ${socket.id} joined room ${roomID}`);
         });
 
         socket.on('send_chat_invite', async ({ senderUsername, inviteUsername }) => {
-            console.log("hey")
             const invitedSocketId = await helper.getSocketIdByUsername(connectedUsers, inviteUsername);
             if (invitedSocketId) {
-                console.log(invitedSocketId)
                 const inviteID = Date.now().toString(); 
                 const invite = { inviteID, senderUsername, inviteUsername, roomID:null };
                 roomInvites.push(invite);
@@ -119,12 +116,42 @@ const socketHandlers = (io) => {
         });
 
         socket.on('send_room_message',async  ({room, message, senderUsername}) => {
-            console.log(room)
             const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
             var user_id = await chat_route_helper.getUserId(senderUsername)
             await helper.sendMessageToDatabase(user_id, room.roomID, message, timestamp)
             var users = await helper.getUsersInRoom(room.roomID)
             io.to(room.roomID).emit('receive_room_message', {roomID:room.roomID, sender: senderUsername, timestamp: timestamp, message: message });
+        });
+
+
+        socket.on('get_room_messages',async  ({room}) => {
+            var room_id = room.roomID
+            console.log(room.roomID)
+            console.log(socket.id, connectedUsers)
+            var result = await chat_route_helper.checkIfChatRoomExists(room_id)
+            var username= await chat_route_helper.getUsernameBySocketId(connectedUsers,socket.id)
+            var user_id = await chat_route_helper.getUserId(username)
+            console.log(user_id)
+            var result = await chat_route_helper.checkIfUserBelongsToRoom(room_id,user_id)
+            var query = `
+                SELECT cr.roomID, crm.messageID, crm.message, crm.timestamp, crm.userID
+                FROM chatRooms cr
+                INNER JOIN chatRoomMessages crm ON cr.roomID = crm.roomID
+                WHERE cr.roomID = '${room_id}'
+                ORDER BY crm.timestamp ASC`; 
+            var result = await db.send_sql(query);
+            console.log(result)
+            const userIds = result.map(row => row.userID);
+            console.log(userIds)
+            const usernames = await chat_route_helper.getUsernamesFromUserIds(userIds)
+            console.log(usernames)
+            const response = result.map((row, index) => ({
+                message: row.message,
+                timestamp: row.timestamp,
+                sender: usernames[index],
+                roomID: room_id
+            }));
+            socket.emit('receive_room_messages',{messages: response})
         });
 
     });
