@@ -29,6 +29,7 @@ function register_routes(app) {
     app.get('/:username/feed', friend_routes.get_feed);
     app.post('/:username/addFriend', friend_routes.add_friend);
     app.post('/:username/removeFriend', friend_routes.remove_friend);
+    app.post('/:username/sendLike', friend_routes.send_like);
 
     //chat
     app.get('/:username/isLoggedIn', chat_routes.is_logged_in);

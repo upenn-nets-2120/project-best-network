@@ -73,13 +73,48 @@ async function create_tables(db) {
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (roomID) REFERENCES chatRooms(roomID)
     );`)
+      // TODO: create posts table
+      const q7 = db.create_tables('CREATE TABLE IF NOT EXISTS posts( \
+        post_id INT AUTO_INCREMENT NOT NULL, \
+        parent_post INT, \
+        title VARCHAR(255), \
+        content VARCHAR(255), \
+        author_id INT, \
+        like_count INT, \
+        FOREIGN KEY (parent_post) REFERENCES posts(post_id), \
+        FOREIGN KEY (author_id) REFERENCES users(id), \
+        PRIMARY KEY (post_id) \
+      );');
+    // create friends tables
+    const q8 = db.create_tables('CREATE TABLE IF NOT EXISTS friends ( \
+      followed INT, \
+      follower INT, \
+      FOREIGN KEY (follower) REFERENCES users(id), \
+      FOREIGN KEY (followed) REFERENCES users(id) \
+    );')
+    // create hashtag table
+    const q9 = db.create_tables('CREATE TABLE IF NOT EXISTS post_to_hashtags ( \
+      post_id INT, \
+      hashtag_id INT, \
+      FOREIGN KEY (post_id) REFERENCES posts(post_id), \
+      FOREIGN KEY (hashtag_id) REFERENCES hashtags(id) \
+    );')
+  const q10 = db. create_tables(`
+    CREATE TABLE IF NOT EXISTS likeToPost ( \
+      userID INT, \
+      postID INT, \
+      FOREIGN KEY (userID) REFERENCES users(id), \
+      FOREIGN KEY (postID) REFERENCES posts(post_id) \
+    );
+    `)
+    
 
   //   const q7 = db.send_sql(`
   //   DROP TABLE IF EXISTS chatRoomMessages, chatRoomUsers, chatRooms;
   // `);
 
 
-  await Promise.all([q1,q2,q3, q4, q5, q6 ]);
+  await Promise.all([q1,q2,q3, q4, q5, q6, q7, q8, q9, q10]);
     
    
   dbaccess.close_db()

@@ -139,10 +139,10 @@ var removeFriend = async function(req, res) {
   // POST /createPost
 var createPost = async function(req, res) {
   // Check if a user is logged in
-  /*
-  if (!req.session.user_id) {
+  
+  if (req.session.user_id === undefined) {
       return res.status(403).json({ error: 'Not logged in.' });
-  }*/
+  }
 
   // Extract post parameters from the request body
   const { title, content, parent_id, hashtags } = req.body;
@@ -154,6 +154,7 @@ var createPost = async function(req, res) {
 
   // Validate title and content to prevent SQL injection
   //const alphanumericRegex = /^[a-zA-Z0-9\s.,_?]+$/;
+  
   if (!helper.isOK(title) || !helper.isOK(content)) {
       return res.status(400).json({ error: 'Invalid characters in title or content.' });
   }
@@ -165,8 +166,8 @@ var createPost = async function(req, res) {
       if (parent_id === undefined) {
           // If parent_id is undefined, insert NULL for parent_post
           insertQuery = `
-              INSERT INTO posts (title, content, parent_post, author_id)
-              VALUES ('${title}', '${content}', NULL, ${req.session.user_id})
+              INSERT INTO posts (title, content, parent_post, author_id, like_count)
+              VALUES ('${title}', '${content}', NULL, ${req.session.user_id}, 0)
           `;
       } else {
           // If parent_id is defined, include it in the query
@@ -279,7 +280,7 @@ var uploadPost = async function(req, res) {
     const photoURL = `s3://best-network-nets212-sp24//posts/${last_id}`
 
     // Update the user's profile photo URL in the database
-    const pfpQuery = `UPDATE posts SET content = '${photoURL}' WHERE id = ${last_id};`;
+    const pfpQuery = `UPDATE posts SET content = '${photoURL}' WHERE post_id = ${last_id};`;
     await db.send_sql(pfpQuery);
 
     return res.status(200).json({ message: 'Profile photo uploaded successfully.' });
@@ -287,9 +288,64 @@ var uploadPost = async function(req, res) {
 
     return res.status(500).json({ error: 'Error uploading profile photo.' });
   }
-  
-  
+
 };
+
+// POST /like
+var sendLike = async function(req, res) {
+  const { post_id } = req.body;
+  
+  // Check if postID is provided
+  if (post_id === undefined) {
+      return res.status(400).json({ error: 'postID is required.' });
+  }
+
+  // Check if postID is an integer
+  if (isNaN(post_id)) {
+      return res.status(400).json({ error: 'postID must be an integer.' });
+  }
+
+  // Check if the user is logged in
+  if (req.session.user_id === undefined) {
+      return res.status(400).json({ error: 'Not logged in.' });
+  }
+
+  try {
+      // Check if the user has already liked the post
+      const checkLikeQuery = `
+          SELECT *
+          FROM likeToPost
+          WHERE userID = ${req.session.user_id} AND postID = ${post_id}
+      `;
+      const likeResult = await db.send_sql(checkLikeQuery);
+
+      // If the user has already liked the post, return an error
+      if (likeResult.length > 0) {
+          return res.status(400).json({ error: 'You have already liked this post.' });
+      }
+
+      // Insert the like into the likeToPost table
+      const insertQuery = `
+        INSERT INTO likeToPost (userID, postID)
+        VALUES (${req.session.user_id}, ${post_id})
+      `;
+      await db.send_sql(insertQuery);
+
+      // Increment the like_count in the posts table
+      const updateLikeQuery = `
+          UPDATE posts
+          SET like_count = like_count + 1
+          WHERE post_id = ${post_id}
+      `;
+      await db.send_sql(updateLikeQuery);
+
+      return res.status(201).json({ message: 'Like sent successfully.' });
+  } catch (error) {
+      console.error("Error querying database:", error);
+      return res.status(500).json({ error: 'Error querying database.' });
+  }
+};
+
 
 
   
@@ -298,7 +354,8 @@ var uploadPost = async function(req, res) {
     add_friend: addFriend,
     remove_friend: removeFriend,
     get_feed: feed,
-    upload_post: uploadPost
+    upload_post: uploadPost,
+    send_like: sendLike
   };
   
   module.exports = routes;
