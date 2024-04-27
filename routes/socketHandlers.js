@@ -105,6 +105,7 @@ const socketHandlers = (io) => {
 
         socket.on('send_group_chat_invite', async ({ room, senderUsername, inviteUsername }) => {
             const invitedSocketId = await helper.getSocketIdByUsername(connectedUsers, inviteUsername);
+            console.log(invitedSocketId)
             if (invitedSocketId) {
                 const inviteID = Date.now().toString(); 
                 const invite = { inviteID, senderUsername, inviteUsername, room };

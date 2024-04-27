@@ -38,6 +38,7 @@ const ChatPage = () => {
     );
     sameRoomInvites.forEach(i => {
         if (i.inviteID != invite.inviteID){
+            console.log('here')
             socket.emit('accept_invite', { invite });
         }
     });

@@ -142,7 +142,7 @@ const chat_route_helper = () => {
         getSocketIdByUsername: async (connectedUsers, username) => {
             try {
                 const user = connectedUsers.find(user => user.username === username);
-                return user ? user.socketId : null;
+                return user ? user.socket_id : null;
             } catch (error) {
                 console.error('Error finding socket ID by username:', error);
                 throw error;
