@@ -33,7 +33,6 @@ function register_routes(app) {
 
     //chat
     app.get('/:username/isLoggedIn', chat_routes.is_logged_in);
-    app.get('/:username/roomMessages', chat_routes.chat_room_messages);
-    app.get('/:username/chatRoomsForUser', chat_routes.chat_rooms_for_user);
+
   }
   
