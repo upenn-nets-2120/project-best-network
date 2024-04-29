@@ -5,7 +5,6 @@ import Signup from "./pages/Signup";
 import Friends from "./pages/Friends";
 import ChatInterface from "./pages/ChatInterface";
 import ChatPage from "./pages/ChatPage";
-import ProfilePhoto from './pages/ProfilePhoto'; 
 import ProfilePage from './pages/ProfilePage'; 
 function App() {
   return (
@@ -17,7 +16,6 @@ function App() {
         <Route path='/:username/friends' element={<Friends />} />
         <Route path="/:username/chat_nlp" element={<ChatInterface />} />
         <Route path="/:username/chat" element={<ChatPage />} />
-        <Route path="/:username/setProfilePhoto" element={<ProfilePhoto />} />
         <Route path="/:username/ProfilePage" element={<ProfilePage />} />
       </Routes>
     </BrowserRouter>
