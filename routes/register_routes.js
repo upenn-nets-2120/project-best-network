@@ -22,8 +22,8 @@ function register_routes(app) {
     app.post('/:username/setActor', login_routes.post_actor);
     app.post('/:username/addHashtag', login_routes.post_add_hashtag);
     app.post('/:username/removeHashtag', login_routes.post_remove_hashtag);
-    app.post('/:username/getRecommendedHashtags', login_routes.get_recommended_hashtags);
-
+    app.get('/:username/getRecommendedHashtags', login_routes.get_recommended_hashtags);
+    app.get('/:username/getProfile', login_routes.get_profile);
 
     //friends UPDATE
     app.post('/:username/createPost', friend_routes.create_post); 

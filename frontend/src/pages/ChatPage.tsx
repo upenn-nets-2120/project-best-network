@@ -5,7 +5,7 @@ import { io } from "socket.io-client";
 import axios from 'axios';
 import config from '../../config.json';
 const rootURL = config.serverRootURL;
-const socket = io(rootURL);
+
 import InviteComponent from '../components/InviteComponent'
 import MessageComponent from '../components/MessageComponent'
 import { Invite, Room, Message } from '../components/chatRoomInterfaces';
@@ -13,6 +13,7 @@ import { Invite, Room, Message } from '../components/chatRoomInterfaces';
 
 
 const ChatPage = () => {
+    const socket = io(rootURL);
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [currentMessage, setCurrentMessage] = useState('');
