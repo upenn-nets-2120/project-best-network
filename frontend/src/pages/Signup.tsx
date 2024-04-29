@@ -64,7 +64,7 @@ export default function Signup() {
           
                 if (response.status === 200) {
                     // response.render('homepage.ejs', {data: null, comments: null, message: 'Getting friends unsuccessful.', user: user});
-                navigate ("/" + username +"/setProfilePhoto'")
+                navigate ("/" + username +"/setProfilePhoto")
                 //   navigate("/"+ username+"/home");
                 }
                 
