@@ -259,22 +259,6 @@ var set_profile_hashtags = async function(req, res) {
 };
 
 
-// POST /mostPopularHashtags
-var most_popular_hashtags = async function(req, res) {
-  var username = req.params.username;
-  if (username == null){
-    return res.status(403).json({ error: 'Not logged in.' });
-  }
-  if (!helper.isLoggedIn(req,username)) {
-      return res.status(403).json({ error: 'Not logged in.' });
-  }
-  //if hashtag is new then add to database of hashtags,
-  //otherwise increment the hashtag data base count 
-  //then update user database with user's new hashtags
-
-  
-};
-
 
 
 
@@ -300,18 +284,41 @@ var get_profile = async function(req, res) {
 
 
 
-var getActors = async function(req, res) {
+var get_most_similar_actors = async function(req, res) {
 
 }
 
-var postActor = async function(req, res) {
+var post_actor = async function(req, res) {
   
 }
 
+var get_recommended_hashtags = async function(req, res) {
+  var username = req.params.username;
+  if (username == null){
+    return res.status(403).json({ error: 'Not logged in.' });
+  }
+  if (!helper.isLoggedIn(req,username)) {
+      return res.status(403).json({ error: 'Not logged in.' });
+  }
+  //if hashtag is new then add to database of hashtags,
+  //otherwise increment the hashtag data base count 
+  //then update user database with user's new hashtags
+
+  
+}
+
+var post_actor = async function(req, res) {
+  
+}
+
+var post_add_hashtag = async function(req, res) {
+
+}
 
 
+var post_remove_hashtag = async function(req, res) {
 
-
+}
 
 
 
@@ -323,8 +330,11 @@ var routes = {
     post_register: postRegister,
     post_set_profile_photo: setProfilePhoto,
     post_logout: postLogout,
-    get_actors: getActors,
-    post_actor: postActor
+    get_most_similar_actors: get_most_similar_actors,
+    get_recommended_hashtags: get_recommended_hashtags,
+    post_add_hashtag: post_add_hashtag,
+    post_remove_hashtag: post_remove_hashtag,
+    post_actor: post_actor
   };
 
 
