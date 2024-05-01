@@ -25,6 +25,15 @@ function register_routes(app) {
     app.get('/:username/getRecommendedHashtags', login_routes.get_recommended_hashtags);
     app.get('/:username/getProfile', login_routes.get_profile);
 
+    //account changes
+    app.put('/:username/change-username', login_routes.change_username);
+    app.put('/:username/change-firstname', login_routes.change_firstname);
+    app.put('/:username/change-lastname', login_routes.change_lastname);
+    app.put('/:username/change-email', login_routes.change_email);
+    app.put('/:username/change-birthday', login_routes.change_birthday);
+    app.put('/:username/change-affiliation', login_routes.change_affiliation);
+    app.put('/:username/change-password', login_routes.change_password);
+
     //friends UPDATE
     app.post('/:username/createPost', friend_routes.create_post); 
     app.post('/:username/uploadPost', upload.single('post'), friend_routes.upload_post); 
