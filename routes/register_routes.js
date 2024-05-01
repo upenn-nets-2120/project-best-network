@@ -18,10 +18,12 @@ function register_routes(app) {
     app.get('/:username/logout', login_routes.post_logout);
     app.post('/register', login_routes.post_register);
     app.post('/:username/setProfilePhoto', upload.single('profilePhoto'), login_routes.post_set_profile_photo); 
-    app.get('/:username/getActors', login_routes.get_actors);
+    app.get('/:username/getMostSimilarActors', login_routes.get_most_similar_actors);
     app.post('/:username/setActor', login_routes.post_actor);
-
-
+    app.post('/:username/addHashtag', login_routes.post_add_hashtag);
+    app.post('/:username/removeHashtag', login_routes.post_remove_hashtag);
+    app.get('/:username/getRecommendedHashtags', login_routes.get_recommended_hashtags);
+    app.get('/:username/getProfile', login_routes.get_profile);
 
     //friends UPDATE
     app.post('/:username/createPost', friend_routes.create_post); 
