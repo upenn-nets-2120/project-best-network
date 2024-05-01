@@ -18,6 +18,10 @@ export default function Home() {
       navigate("/"+ username+"/friends");
   };
 
+  const profile = () => {
+    navigate("/"+ username+"/ProfilePage");
+  };
+
   const chat = () => {
     navigate("/"+ username+"/chat");
   };
@@ -81,7 +85,9 @@ export default function Home() {
                 <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
               onClick={chat}>Chat</button>&nbsp;
                 <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
-              onClick={logout}>Logout</button>
+              onClick={logout}>Logout</button>&nbsp;
+              <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
+              onClick={profile}>Profile</button>
 
             </div>
         </div>
