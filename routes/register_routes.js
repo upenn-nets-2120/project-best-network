@@ -32,6 +32,9 @@ function register_routes(app) {
     app.post('/:username/addFriend', friend_routes.add_friend);
     app.post('/:username/removeFriend', friend_routes.remove_friend);
     app.post('/:username/sendLike', friend_routes.send_like);
+    app.get('/:username/onlineFriends', friend_routes.get_online_friends);
+    app.get('/:username/offlineFriends', friend_routes.get_offline_friends);
+
 
     //chat
     app.get('/:username/isLoggedIn', chat_routes.is_logged_in);
