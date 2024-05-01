@@ -22,6 +22,20 @@ export default function Home() {
     navigate("/"+ username+"/chat");
   };
   
+  const logout = async () => {
+      try {
+          const response = await axios.get(`${rootURL}/${username}/logout`, { withCredentials: true });
+          if (response.status === 200) {
+            navigate("/");
+          } else {
+            alert('Could not logout.');
+          }
+      } catch (error) {
+         console.error('Error logging out:', error);
+
+      }
+  }
+  
     // TODO: add state variable for posts
 
     const fetchData = async () => {
@@ -65,7 +79,9 @@ export default function Home() {
                 <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
               onClick={friends}>Friends</button>&nbsp;
                 <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
-              onClick={chat}>Chat</button>
+              onClick={chat}>Chat</button>&nbsp;
+                <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
+              onClick={logout}>Logout</button>
 
             </div>
         </div>

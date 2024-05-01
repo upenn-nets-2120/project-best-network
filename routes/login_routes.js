@@ -64,8 +64,8 @@ var postRegister = async function(req, res) {
 
     // Insert the new user into the database
     var insertQuery = `
-      INSERT INTO users (username, hashed_password, firstName, lastName, email, birthday, affiliation) 
-      VALUES ('${username}', '${hashed_password}', '${firstName}', '${lastName}', '${email}', '${birthday}', '${affiliation}')
+      INSERT INTO users (username, hashed_password, firstName, lastName, email, birthday, affiliation, logged_in) 
+      VALUES ('${username}', '${hashed_password}', '${firstName}', '${lastName}', '${email}', '${birthday}', '${affiliation}', '1')
     `;
     await db.send_sql(insertQuery);
 
@@ -198,6 +198,10 @@ var postLogin = async function(req, res) {
           return res.status(401).json({ error: 'Username and/or password are invalid.' });
       }
       const user = result[0];
+
+      const loginQuery = `UPDATE users SET logged_in = '1' WHERE id = '${user.id}';`;
+      await db.send_sql(loginQuery);
+
       bcrypt.compare(password, user.hashed_password, (err, result) => {
           if (err) {
               return res.status(500).json({ error: 'Error during password comparison' });
@@ -208,6 +212,8 @@ var postLogin = async function(req, res) {
               req.session.username = user.username;
               console.log(req.session);
               console.log("success");
+
+
               res.status(200).json({ username: user.username });
           } else {
               res.status(401).json({ error: 'Username and/or password are invalid.' });
@@ -224,6 +230,14 @@ var postLogin = async function(req, res) {
 // GET /logout
 var postLogout = async function(req, res) {
   if (req.session && req.session.user_id) {
+    try {
+      const logoutQuery = `UPDATE users SET logged_in = '0' WHERE id = '${req.session.user_id}';`;
+      await db.send_sql(logoutQuery);
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: 'Error querying database.' });
+    }
+
     req.session.user_id = null;
     req.session.username = null;
 
