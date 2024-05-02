@@ -148,6 +148,15 @@ const ChatPage = () => {
     
         
         return () => {
+            socket.off('connected_users');
+            socket.off('invite_accepted');
+            socket.off('invite_declined');
+            socket.off('user_connected');
+            socket.off('force_disconnect');
+            socket.off('user_disconnected');
+            socket.off('chat_rooms');
+            socket.off('chat_room');
+            socket.off('join_room');
             socket.disconnect()
         };
     }, []);
@@ -176,7 +185,6 @@ const ChatPage = () => {
         // Register the socket event listener
         socket.on('receive_room_message', async (message) => {
             // Access the latest value of currentRoomID using the ref
-            
             if (message.roomID === currentRoom?.roomID) {
                 setMessages(prevMessages => [...prevMessages, message]);
             } else {
@@ -220,7 +228,7 @@ const ChatPage = () => {
             socket.off('receive_room_message');
             socket.off('receive_room_messages');
             socket.off('receive_chat_invite');
-            socket.off('user_left');
+            socket.off('user_left_room');
         };
 
     }, [currentRoom, incomingInvites]);

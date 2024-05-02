@@ -207,6 +207,25 @@ const chat_route_helper = () => {
                 throw error;
             }
         },
+        getRoomMessages: async (room_id, user_id )=> {
+            var result = await chat_route_helper().checkIfUserBelongsToRoom(room_id,user_id) 
+            var query = `
+                SELECT cr.roomID, crm.messageID, crm.message, crm.timestamp, crm.userID
+                FROM chatRooms cr
+                INNER JOIN chatRoomMessages crm ON cr.roomID = crm.roomID
+                WHERE cr.roomID = '${room_id}'
+                ORDER BY crm.timestamp ASC`; 
+            var result = await db.send_sql(query);
+            const userIds = result.map(row => row.userID);
+            const usernames = await chat_route_helper().getUsernamesFromUserIds(userIds)
+            const response = result.map((row, index) => ({
+                message: row.message,
+                timestamp: row.timestamp,
+                sender: usernames[index],
+                roomID: room_id
+            }));
+            return response
+        }
         
         
     };
@@ -234,6 +253,7 @@ module.exports = {
 
     deleteUserFromRoom: chat_route_helper().deleteUserFromRoom,
     addUserToRoom: chat_route_helper().addUserToRoom,
-    sendMessageToDatabase: chat_route_helper().sendMessageToDatabase
+    sendMessageToDatabase: chat_route_helper().sendMessageToDatabase,
+    getRoomMessages: chat_route_helper().getRoomMessages
 };
 
