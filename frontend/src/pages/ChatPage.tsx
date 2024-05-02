@@ -329,97 +329,103 @@ const ChatPage = () => {
     }
 
     return (
-        <div>
-            <div>
-            <div className='w-full h-16 bg-slate-50 flex justify-center mb-2'>
+    <div>
+        {/* Header */}
+        <div className='w-full h-16 bg-slate-50 flex justify-center mb-2'>
             <div className='text-2xl max-w-[1800px] w-full flex items-center'>
             Pennstagram - {username} &nbsp;
             <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
-              onClick={home}>Home</button>&nbsp;
-       
+            onClick={home}>Home</button>&nbsp;
+    
             </div>
-            </div>
-            <div className="mb-4 mx-auto w-1/2">
-                <h2 className="text-lg font-bold mb-2">Connected Users:</h2>
-                <ul className="bg-gray-100 rounded-lg p-4">
-                    {connectedUsers.map((user, index) => (
-                        <li key={index} className="py-2 border-b border-gray-200 last:border-b-0">{user}</li>
-                    ))}
-                </ul>
-            </div>
-            <div className="flex items-center mb-4 mx-auto w-1/2 space-x-4">
-            {rooms.map((room) => (
-                <div key={room.roomID}>
-                    <button 
-                        onClick={() => switchCurrentRoom(room)} 
-                        className={`px-4 py-2 rounded ${currentRoom && currentRoom.roomID === room.roomID ? 'bg-blue-500 text-white' : 'bg-white text-black'}`}
-                    >
-                        <strong>Room ID:</strong> {room.roomID}
-                        <ul>
-                            {room.users.map((user, index) => (
-                                user !== username && (
-                                    <li key={index}>{user}</li>
-                                )
-                            ))}
-                        </ul>
-                    </button>
-                    {room.notification && (
-                        <div className="notification">Notification: {room.notificationMessage}</div>
-                    )}
-                </div>
-            ))}
-            </div>
+        </div>
 
-            </div>
-
-           
-           
-            <div className="flex items-center mb-4 mx-auto w-1/2 space-x-4">
-                <select
-                    value={inviteUsername}
-                    onChange={(e) => setInviteUsername(e.target.value)}
-                    className="border border-gray-300 rounded px-3 py-2 flex-grow mr-2"
-                >
-                    <option value="">Invite User to Current Room</option>
-                    {connectedUsers.map((user, index) => (
-                        <option key={index} value={user}>{user}</option>
-                    ))}
-                </select>
-                <button onClick={sendInviteToCurrentRoom} className="bg-blue-500 text-white px-4 py-2 rounded">
-                    Send Invite to Current Room
-                </button>
-                <button onClick={sendChatInvite} className="bg-blue-500 text-white px-4 py-2 rounded">
-                    Send New Chat Invite
-                </button>
-            </div>
-
-
-            <div className="flex items-center mb-4 mx-auto w-1/2 space-x-4">
-                {incomingInvites.map((invite, index) => (
-                    <InviteComponent
-                        key={index}
-                        invite={invite}
-                        onAccept={acceptInvite}
-                        onDecline={declineInvite}
-                    />
+            {/* Display connected users */}
+        <div className="mb-4 mx-auto w-1/2">
+            <h2 className="text-lg font-bold mb-2">Connected Users:</h2>
+            <ul className="bg-gray-100 rounded-lg p-4">
+                {connectedUsers.map((user, index) => (
+                    <li key={index} className="py-2 border-b border-gray-200 last:border-b-0">{user}</li>
                 ))}
-            </div>
-                    
+            </ul>
+        </div>
 
-    <div className='w-screen h-screen flex flex-col items-center'>
-       
-        {currentRoom && currentRoom.users && (
-            <div className={'font-bold text-3xl'}>
-                Room ID {currentRoom.roomID}:
-                {currentRoom.users.filter(user => user !== username).join(', ')}
+        {/* Rooms Displayed as boxes */}
+        <div className="flex items-center mb-4 mx-auto w-1/2 space-x-4">
+        {rooms.map((room) => (
+            <div key={room.roomID}>
+                <button 
+                    onClick={() => switchCurrentRoom(room)} 
+                    className={`px-4 py-2 rounded ${currentRoom && currentRoom.roomID === room.roomID ? 'bg-blue-500 text-white' : 'bg-white text-black'}`}
+                >
+                    <strong>Room ID:</strong> {room.roomID}
+                    <ul>
+                        {room.users.map((user, index) => (
+                            user !== username && (
+                                <li key={index}>{user}</li>
+                            )
+                        ))}
+                    </ul>
+                </button>
+                {room.notification && (
+                    <div className="notification">Notification: {room.notificationMessage}</div>
+                )}
             </div>
-        )}
-       {currentRoom !== undefined && (
-            <button onClick={sendLeaveRoom} className="bg-red-500 text-white px-4 py-2 rounded">
-                Leave Current Room
+        ))}
+
+        </div>
+
+           
+        {/* Send Invite to ChatChat */}
+        <div className="flex items-center mb-4 mx-auto w-1/2 space-x-4">
+            <select
+                value={inviteUsername}
+                onChange={(e) => setInviteUsername(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-2 flex-grow mr-2"
+            >
+                <option value="">Invite User to Current Room</option>
+                {connectedUsers.map((user, index) => (
+                    <option key={index} value={user}>{user}</option>
+                ))}
+            </select>
+            <button onClick={sendInviteToCurrentRoom} className="bg-blue-500 text-white px-4 py-2 rounded">
+                Send Invite to Current Room
             </button>
-        )}
+            <button onClick={sendChatInvite} className="bg-blue-500 text-white px-4 py-2 rounded">
+                Send New Chat Invite
+            </button>
+        </div>
+
+        {/* Display Incoming Invites */}
+        <div className="flex items-center mb-4 mx-auto w-1/2 space-x-4">
+            {incomingInvites.map((invite, index) => (
+                <InviteComponent
+                    key={index}
+                    invite={invite}
+                    onAccept={acceptInvite}
+                    onDecline={declineInvite}
+                />
+            ))}
+        </div>
+                    
+        {/* Chat Box */}
+        <div className='w-screen h-screen flex flex-col items-center'>
+            {/* Show title for current Room and Users in Room */}
+            {currentRoom && currentRoom.users && (
+                <div className={'font-bold text-3xl'}>
+                    Room ID {currentRoom.roomID}:
+                    {currentRoom.users.filter(user => user !== username).join(', ')}
+                </div>
+            )}
+            {/* Leave room Button */}
+            {currentRoom !== undefined && (
+                    <button onClick={sendLeaveRoom} className="bg-red-500 text-white px-4 py-2 rounded">
+                        Leave Current Room
+                    </button>
+            )}
+            {/* Show Messages */}
             <div className='h-[40rem] w-[30rem] bg-slate-100 p-3'>
+                {/* List messages */}
                 <div className='h-[90%] overflow-scroll'>
                     <div className='space-y-2'>
                         {messages.map((msg, index) => {
@@ -429,7 +435,9 @@ const ChatPage = () => {
                         })}
                     </div>
                 </div>
+                {/* New message Input Box/Button */}
                 <div className='w-full flex space-x-2'>
+                    {/* Box to input message */}
                     <input className='w-full outline-none border-none px-3 py-1 rounded-md'
                         placeholder='Ask something!'
                         onChange={e => setCurrentMessage(e.target.value)}
@@ -438,17 +446,16 @@ const ChatPage = () => {
                             if (e.key === 'Enter') {
                                 sendMessage();
                                 setCurrentMessage('');
-                            }
-                        }} />
+                            }}} 
+                    />
+                    {/* Send message button */}
                     <button className='outline-none px-3 py-1 rounded-md text-bold bg-indigo-600 text-white'
-                        onClick={() => {
-                            sendMessage();
-                        }}>Send</button>
+                        onClick={() => { sendMessage(); }}>Send</button>
                 </div>
             </div>
         </div>
-        </div>
 
+    </div>
         
     );
 };
