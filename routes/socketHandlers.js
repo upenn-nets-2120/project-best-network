@@ -107,7 +107,7 @@ const socketHandlers = (io) => {
                 io.to(room_id).emit('chat_room', { roomID: room_id, users }); //send updated room to users in room
             }
             //remove the invite from roomInvites as well as invites to inviteUsername with same room
-            roomInvites = roomInvites.filter(inv => inv.inviteID !== invite.inviteID || (invite.roomID==room_id && invite.inviteUsername== inv.inviteUsername) );
+            roomInvites = roomInvites.filter(inv => inv.inviteID !== invite.inviteID).filter(inv => (invite.roomID==room_id && invite.inviteUsername== inv.inviteUsername) );
             io.to(senderSocketId).emit('invite_accepted', invite); //tell sender that invite was accepted
          });
 

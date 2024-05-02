@@ -299,14 +299,6 @@ const ChatPage = () => {
     const acceptInvite = (invite: Invite) => {
         console.log("Invite accepted:", invite);
         socket.emit('accept_invite', { invite });
-        // const sameRoomInvites = incomingInvites.filter(i => 
-        //     i.room?.roomID === invite.room?.roomID
-        // );
-        // sameRoomInvites.forEach(i => {
-        //     if (i.inviteID != invite.inviteID){
-        //         socket.emit('accept_invite', { invite });
-        //     }
-        // });
         setIncomingInvites(prevInvites => 
             prevInvites.filter(prevInvite => 
                 prevInvite.inviteID !== invite.inviteID
