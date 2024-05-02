@@ -227,7 +227,7 @@ const chat_route_helper = () => {
                     VALUES (${room_id}, '${message}', ${user_id}, '${timestamp}')
                 `;
                 const insertResult = await db.send_sql(insertQuery);
-                return success
+                return true
             } catch (error) {
                 console.error('Error adding message to room:', error);
             }

@@ -92,18 +92,24 @@ const socketHandlers = (io) => {
                 var user_ids = [senderUserId, receiverUserId]
                 var room_id = await chat_route_helper.createChatRoom(user_ids) //call chat_route_helper to add new chat room to database
                 socket.join(room_id); //have user join socket channel with room id
+                var room = { roomID: room_id, users:[invite.senderUsername, invite.inviteUsername] }
                 //send notification to socket of sender to have them join socket channel
-                io.to(senderSocketId).emit('join_room', room_id); //they will recieve this notification on frontend and then send back
+                io.to(senderSocketId).emit('join_room', room); //they will recieve this notification on frontend and then send back
+                //send sender and invitee the new room information
+                io.to(senderSocketId).emit('chat_room',  room );
+                socket.emit('chat_room',  room );
             } else {
                 var room_id = invite.room.roomID 
                 await chat_route_helper.addUserToRoom(room_id, receiverUserId); //add reciever to room database via chat_route_helper
                 socket.join(room_id); //have reciever join room
+                var user_ids = await chat_route_helper.getUsersInRoom(room_id)
+                var users =  await chat_route_helper.getUsernamesFromUserIds(user_ids)
+                io.to(room_id).emit('chat_room', { roomID: room_id, users }); //send updated room to users in room
             }
-            var user_ids = await chat_route_helper.getUsersInRoom(room_id)
-            var users =  await chat_route_helper.getUsernamesFromUserIds(user_ids)
-            io.to(room_id).emit('chat_room', { roomID: room_id, users }); //send updated room to users in room
+            //remove the invite from roomInvites as well as invites to inviteUsername with same room
+            roomInvites = roomInvites.filter(inv => inv.inviteID !== invite.inviteID || (invite.roomID==room_id && invite.inviteUsername== inv.inviteUsername) );
             io.to(senderSocketId).emit('invite_accepted', invite); //tell sender that invite was accepted
-        });
+         });
 
         //handle invite declined
         socket.on('decline_invite', async ({ invite }) => {
@@ -113,8 +119,8 @@ const socketHandlers = (io) => {
         });
 
         //handle when user requests to join_room
-        socket.on('join_room', (roomID) => {
-            socket.join(roomID);
+        socket.on('join_room', (room) => {
+            socket.join(room.roomID);
         });
 
         //handle user sending invite to another user to join room
