@@ -23,6 +23,10 @@ const socketHandlers = (io) => {
             socket.emit('chat_rooms', rooms); //send rooms to user
             //send connected users to new user via socket
             socket.emit('connected_users', connectedUsers.filter(user =>  user.username != username).map(user => user.username)) 
+            
+            //send room invites to new user via socket
+            socket.emit('room_invites', roomInvites.filter(invite =>  invite.inviteUsername == username))
+            
             //see if username already has socket ie. is reconnecting via new socket
             var existingUser = connectedUsers.find(user => user.username === username);
             //if already and existing user, remove current socket through force disconnect and update connectedUsers
@@ -116,6 +120,15 @@ const socketHandlers = (io) => {
         //handle user sending invite to another user to join room
         socket.on('send_chat_invite', async ({ senderUsername, inviteUsername }) => {
             console.log(connectedUsers)
+            //check if existing invite with same sender and reciever has already been sent
+            const existingInvite = roomInvites.find(invite => 
+                null === invite.room && 
+                invite.inviteUsername === inviteUsername &&
+                invite.senderUsername === senderUsername);
+            if (existingInvite){ 
+                console.log("invite exists")
+                return; 
+            }
             //get the socket_id of person recieving invite
             const invitedSocketId = await chat_route_helper.getSocketIdByUsername(connectedUsers, inviteUsername);
             if (invitedSocketId) {
@@ -130,6 +143,16 @@ const socketHandlers = (io) => {
 
         //handle user sending group chat invite to existing room
         socket.on('send_group_chat_invite', async ({ room, senderUsername, inviteUsername }) => {
+            //check if existing invite with same sender and reciever and room has already been sent
+            const existingInvite = roomInvites.find(invite => 
+                invite.room && room && 
+                invite.room.roomID === room.roomID && 
+                invite.inviteUsername === inviteUsername &&
+                invite.senderUsername === senderUsername);
+            if (existingInvite){ 
+                console.log("invite already exists")
+                return; 
+            }
             //get the socket_id of person recieving invite
             const invitedSocketId = await chat_route_helper.getSocketIdByUsername(connectedUsers, inviteUsername);
             console.log(invitedSocketId)
@@ -155,8 +178,15 @@ const socketHandlers = (io) => {
         socket.on('get_room_messages',async  ({room}) => {
             var room_id = room.roomID
             var result = await chat_route_helper.checkIfChatRoomExists(room_id) //check if room exists
+            if (result == false){
+                return;
+            }
             var username= await chat_route_helper.getUsernameBySocketId(connectedUsers,socket.id) //get username of socket that wants messages
             var user_id = await chat_route_helper.getUserId(username) //get user id of socket that wants messages
+            var result = await chat_route_helper.checkIfUserBelongsToRoom(room_id,user_id) //get if user belongs to room, if not return 
+            if (result == false){
+                return;
+            }
             var response = await chat_route_helper.getRoomMessages(room_id,user_id) //use helper to get messages in room, helper checks if user_id belongs to room
             socket.emit('receive_room_messages',{messages: response}) //send message notification to all users in room
         });

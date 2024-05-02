@@ -115,6 +115,10 @@ const ChatPage = () => {
             console.log("here")
             setConnectedUsers(prevUsers => prevUsers.filter(user => user !== username));
         });
+
+        socket.on('room_invites', async (invites:Invite[]) => {
+            setIncomingInvites(invites)
+        });
         
         socket.on('chat_rooms', async (rooms:Room[]) => {
             setRooms(rooms)
