@@ -25,6 +25,15 @@ function register_routes(app) {
     app.get('/:username/getRecommendedHashtags', login_routes.get_recommended_hashtags);
     app.get('/:username/getProfile', login_routes.get_profile);
 
+    //account changes
+    app.put('/:username/change-username', login_routes.change_username);
+    app.put('/:username/change-firstname', login_routes.change_firstname);
+    app.put('/:username/change-lastname', login_routes.change_lastname);
+    app.put('/:username/change-email', login_routes.change_email);
+    app.put('/:username/change-birthday', login_routes.change_birthday);
+    app.put('/:username/change-affiliation', login_routes.change_affiliation);
+    app.put('/:username/change-password', login_routes.change_password);
+
     //friends UPDATE
     app.post('/:username/createPost', friend_routes.create_post); 
     app.post('/:username/uploadPost', upload.single('post'), friend_routes.upload_post); 
@@ -32,6 +41,9 @@ function register_routes(app) {
     app.post('/:username/addFriend', friend_routes.add_friend);
     app.post('/:username/removeFriend', friend_routes.remove_friend);
     app.post('/:username/sendLike', friend_routes.send_like);
+    app.get('/:username/onlineFriends', friend_routes.get_online_friends);
+    app.get('/:username/offlineFriends', friend_routes.get_offline_friends);
+
 
     //chat
     app.get('/:username/isLoggedIn', chat_routes.is_logged_in);

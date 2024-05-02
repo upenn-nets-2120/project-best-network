@@ -64,8 +64,8 @@ var postRegister = async function(req, res) {
 
     // Insert the new user into the database
     var insertQuery = `
-      INSERT INTO users (username, hashed_password, firstName, lastName, email, birthday, affiliation) 
-      VALUES ('${username}', '${hashed_password}', '${firstName}', '${lastName}', '${email}', '${birthday}', '${affiliation}')
+      INSERT INTO users (username, hashed_password, firstName, lastName, email, birthday, affiliation, logged_in) 
+      VALUES ('${username}', '${hashed_password}', '${firstName}', '${lastName}', '${email}', '${birthday}', '${affiliation}', '1')
     `;
     await db.send_sql(insertQuery);
 
@@ -164,7 +164,7 @@ var setProfilePhoto = async function(req, res) {
   try {
     await s3Access.put_by_key("best-network-nets212-sp24", "/profilePictures/" + userID, profilePhoto.buffer, profilePhoto.mimetype);
     // Get the photo URL from S3
-    const photoURL = `s3://best-network-nets212-sp24//profilePictures/${userID}`
+    const photoURL = `https://best-network-nets212-sp24.s3.amazonaws.com//profilePictures/${userID}`
 
     // Update the user's profile photo URL in the database
     const pfpQuery = `UPDATE users SET profilePhoto = '${photoURL}' WHERE id = '${userID}';`;
@@ -198,6 +198,10 @@ var postLogin = async function(req, res) {
           return res.status(401).json({ error: 'Username and/or password are invalid.' });
       }
       const user = result[0];
+
+      const loginQuery = `UPDATE users SET logged_in = '1' WHERE id = '${user.id}';`;
+      await db.send_sql(loginQuery);
+
       bcrypt.compare(password, user.hashed_password, (err, result) => {
           if (err) {
               return res.status(500).json({ error: 'Error during password comparison' });
@@ -208,6 +212,8 @@ var postLogin = async function(req, res) {
               req.session.username = user.username;
               console.log(req.session);
               console.log("success");
+
+
               res.status(200).json({ username: user.username });
           } else {
               res.status(401).json({ error: 'Username and/or password are invalid.' });
@@ -224,6 +230,14 @@ var postLogin = async function(req, res) {
 // GET /logout
 var postLogout = async function(req, res) {
   if (req.session && req.session.user_id) {
+    try {
+      const logoutQuery = `UPDATE users SET logged_in = '0' WHERE id = '${req.session.user_id}';`;
+      await db.send_sql(logoutQuery);
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: 'Error querying database.' });
+    }
+
     req.session.user_id = null;
     req.session.username = null;
 
@@ -314,6 +328,170 @@ var post_remove_hashtag = async function(req, res) {
   res.status(200).json({})
 }
 
+// Put
+var change_username = async function(req, res) {
+  // TODO: check username and password and login
+  const { username } = req.body;
+
+  if (!req.session.user_id) {
+    return res.status(403).json({ error: 'Not logged in.' });
+  }
+  if (!username) {
+      return res.status(400).json({ error: 'One or more of the fields you entered was empty, please try again.' });
+  }
+  try {
+      const updateQuery = `UPDATE users SET username = '${username}' WHERE id = '${req.session.user_id}';`;
+      await db.send_sql(updateQuery);
+      req.session.username = user.username;
+      console.log(req.session);
+      console.log("success");
+      res.status(200).json({ username: user.username });
+  } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: 'Error querying database.' });
+  }
+ 
+};
+
+// Put
+var change_firstname = async function(req, res) {
+  const { firstName } = req.body;
+
+  if (!req.session.user_id) {
+    return res.status(403).json({ error: 'Not logged in.' });
+  }
+  if (!firstName) {
+    return res.status(400).json({ error: 'First name cannot be empty.' });
+  }
+  try {
+    const updateQuery = `UPDATE users SET firstName = '${firstName}' WHERE id = '${req.session.user_id}';`;
+    await db.send_sql(updateQuery);
+    req.session.firstName = firstName;
+    res.status(200).json({ firstName: firstName });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error querying database.' });
+  }
+};
+
+// Put
+var change_lastname = async function(req, res) {
+  const { lastName } = req.body;
+
+  if (!req.session.user_id) {
+    return res.status(403).json({ error: 'Not logged in.' });
+  }
+  if (!lastName) {
+    return res.status(400).json({ error: 'Last name cannot be empty.' });
+  }
+  try {
+    const updateQuery = `UPDATE users SET lastName = '${lastName}' WHERE id = '${req.session.user_id}';`;
+    await db.send_sql(updateQuery);
+    req.session.lastName = lastName;
+    res.status(200).json({ lastName: lastName });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error querying database.' });
+  }
+};
+
+// Put
+var change_email = async function(req, res) {
+  const { email } = req.body;
+
+  if (!req.session.user_id) {
+    return res.status(403).json({ error: 'Not logged in.' });
+  }
+  if (!email) {
+    return res.status(400).json({ error: 'Email cannot be empty.' });
+  }
+  try {
+    const updateQuery = `UPDATE users SET email = '${email}' WHERE id = '${req.session.user_id}';`;
+    await db.send_sql(updateQuery);
+    req.session.email = email;
+    res.status(200).json({ email: email });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error querying database.' });
+  }
+};
+
+// Put
+var change_birthday = async function(req, res) {
+  const { birthday } = req.body;
+
+  if (!req.session.user_id) {
+    return res.status(403).json({ error: 'Not logged in.' });
+  }
+  if (!birthday) {
+    return res.status(400).json({ error: 'Birthday cannot be empty.' });
+  }
+  try {
+    const updateQuery = `UPDATE users SET birthday = '${birthday}' WHERE id = '${req.session.user_id}';`;
+    await db.send_sql(updateQuery);
+    req.session.birthday = birthday;
+    res.status(200).json({ birthday: birthday });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error querying database.' });
+  }
+};
+
+// Put
+var change_affiliation = async function(req, res) {
+  const { affiliation } = req.body;
+  console.log(affiliation);
+  if (!req.session.user_id) {
+    return res.status(403).json({ error: 'Not logged in.' });
+  }
+  if (!affiliation) {
+    return res.status(400).json({ error: 'Affiliation cannot be empty.' });
+  }
+  try {
+    const updateQuery = `UPDATE users SET affiliation = '${affiliation}' WHERE id = '${req.session.user_id}';`;
+    console.log(updateQuery);
+
+    await db.send_sql(updateQuery);
+    req.session.affiliation = affiliation;
+    res.status(200).json({ affiliation: affiliation });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error querying database.' });
+  }
+};
+
+
+// Put
+var change_password = async function(req, res) {
+  const { password } = req.body;
+
+  if (!req.session.user_id) {
+    return res.status(403).json({ error: 'Not logged in.' });
+  }
+  if (!password) {
+    return res.status(400).json({ error: 'Password cannot be empty.' });
+  }
+  try {
+     // Hash the password
+     var hashed_password = await new Promise((resolve, reject) => {
+      helper.encryptPassword(password, (err, hash) => {
+        if (err) {
+          console.error(err);
+          reject(err);  
+        } else {
+          resolve(hash);  
+        }
+      });
+    });
+    const updateQuery = `UPDATE users SET password = '${hashed_password}' WHERE id = '${req.session.user_id}';`;
+    await db.send_sql(updateQuery);
+    res.status(200).json({ message: 'Password updated successfully.' });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Error querying database.' });
+  }
+};
+
 
 
 
@@ -329,7 +507,14 @@ var routes = {
     post_add_hashtag: post_add_hashtag,
     post_remove_hashtag: post_remove_hashtag,
     post_actor: post_actor,
-    get_profile: get_profile
+    get_profile: get_profile,
+    change_username: change_username,
+    change_firstname: change_firstname,
+    change_lastname: change_lastname,
+    change_email: change_email,
+    change_birthday: change_birthday,
+    change_affiliation: change_affiliation,
+    change_password: change_password
   };
 
 

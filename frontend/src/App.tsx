@@ -6,6 +6,8 @@ import Friends from "./pages/Friends";
 import ChatInterface from "./pages/ChatInterface";
 import ChatPage from "./pages/ChatPage";
 import ProfilePage from './pages/ProfilePage'; 
+import ProfilePhoto from './pages/ProfilePhoto'
+import ProfileSettings from './pages/ProfileSettings'
 function App() {
   return (
     <BrowserRouter>
@@ -16,7 +18,10 @@ function App() {
         <Route path='/:username/friends' element={<Friends />} />
         <Route path="/:username/chat_nlp" element={<ChatInterface />} />
         <Route path="/:username/chat" element={<ChatPage />} />
+        <Route path="/:username/setProfilePhoto" element={<ProfilePhoto />} />
         <Route path="/:username/ProfilePage" element={<ProfilePage />} />
+        <Route path="/:username/ProfileSettings" element={<ProfileSettings />} />
+
       </Routes>
     </BrowserRouter>
   )
