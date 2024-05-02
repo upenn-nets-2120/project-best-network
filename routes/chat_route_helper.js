@@ -14,8 +14,7 @@ const chat_route_helper = () => {
                 const lastInsertIdQuery = `SELECT LAST_INSERT_ID() AS roomID`;
                 const lastInsertIdResult = await db.send_sql(lastInsertIdQuery);
                 
-                const room_id = lastInsertIdResult[0].roomID;
-                console.log(room_id);                
+                const room_id = lastInsertIdResult[0].roomID;                
 
                 // Insert users into chatRoomUsers table
                 const insertUsersQuery = `
@@ -48,7 +47,6 @@ const chat_route_helper = () => {
         
         getUserId: async (username) => {
             try {
-                console.log(username)
                 const query = `SELECT id FROM users WHERE username = '${username}'`;
                 const result = await db.send_sql(query);
                 if (result.length > 0) {
@@ -130,7 +128,6 @@ const chat_route_helper = () => {
                 roomID: room.roomID,
                 users: room.other_users.split(', ')
             }));
-            console.log(rooms)
             return rooms;
 
             } catch (error) {
@@ -151,7 +148,6 @@ const chat_route_helper = () => {
         getUsernameBySocketId: async (connectedUsers, socket_id) => {
             try {
                 var user = connectedUsers.find(user => user.socket_id === socket_id);
-                console.log(user)
                 return user ? user.username : null;
             } catch (error) {
                 console.error('Error finding username by socketID:', error);
@@ -167,8 +163,6 @@ const chat_route_helper = () => {
                     WHERE roomID = ${room_id} AND userID = ${user_id}
                 `;
                 const deleteResult = await db.send_sql(deleteQuery);
-                console.log(deleteResult)
-                console.log(`User with ID ${user_id} deleted from room ${room_id}`);
                 const checkEmptyQuery = `
                 SELECT COUNT(*) AS userCount FROM chatRoomUsers
                 WHERE roomID = ${room_id}
@@ -180,7 +174,6 @@ const chat_route_helper = () => {
                         WHERE roomID = ${room_id}
                     `;
                     await db.send_sql(deleteRoomQuery);
-                    console.log(`Room ${room_id} deleted as it became empty.`);
                 }
                 return deleteResult;
             } catch (error) {
@@ -196,7 +189,6 @@ const chat_route_helper = () => {
                     VALUES (${room_id}, ${user_id})
                 `;
                 const insertResult = await db.send_sql(insertQuery);
-                console.log(`User with ID ${user_id} added to room ${room_id}`);
                 return insertResult;
             } catch (error) {
                 console.error('Error adding user to room:', error);
@@ -209,7 +201,6 @@ const chat_route_helper = () => {
                     VALUES (${room_id}, '${message}', ${user_id}, '${timestamp}')
                 `;
                 const insertResult = await db.send_sql(insertQuery);
-                console.log(`Message added to room ${room_id} by user with ID ${user_id}`);
                 return insertResult;
             } catch (error) {
                 console.error('Error adding message to room:', error);

@@ -10,10 +10,10 @@ import InviteComponent from '../components/InviteComponent'
 import MessageComponent from '../components/MessageComponent'
 import { Invite, Room, Message } from '../components/chatRoomInterfaces';
 
-
+const socket = io(rootURL);
 
 const ChatPage = () => {
-    const socket = io(rootURL);
+
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [currentMessage, setCurrentMessage] = useState('');
@@ -80,6 +80,7 @@ const ChatPage = () => {
                 console.error('Error checking login status:', error);
             });
 
+
         // Emit 'send_username' event with username
         socket.emit("send_username", { username: username });
         
@@ -104,8 +105,14 @@ const ChatPage = () => {
                 return prevUsers;
             });
         });
+
+        socket.on('force_disconnect', () => {
+            console.log("Disconnected from server.");
+            setIsLoggedIn(false);  // Set logged in state to false on disconnect
+        });
     
         socket.on('user_disconnected', ({ username }) => {
+            console.log("here")
             setConnectedUsers(prevUsers => prevUsers.filter(user => user !== username));
         });
         
@@ -141,7 +148,7 @@ const ChatPage = () => {
     
         
         return () => {
-            
+            socket.disconnect()
         };
     }, []);
 
