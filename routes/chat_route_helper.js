@@ -167,8 +167,8 @@ const chat_route_helper = () => {
                 SELECT COUNT(*) AS userCount FROM chatRoomUsers
                 WHERE roomID = ${room_id}
                 `;
-                const { userCount } = await db.send_sql(checkEmptyQuery);
-                if (userCount === 0) {
+                var result = await db.send_sql(checkEmptyQuery);
+                if (result[0].userCount === 0) {
                     const deleteRoomQuery = `
                         DELETE FROM chatRooms
                         WHERE roomID = ${room_id}
