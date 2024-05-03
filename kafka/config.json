@@ -1,0 +1,6 @@
+{
+    "groupId": "g13",
+    "bootstrapServers": ["localhost:9092"],
+    "topic": "sample-topic",
+    "port": 3000
+}

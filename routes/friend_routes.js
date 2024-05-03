@@ -46,6 +46,12 @@ var addFriend = async function(req, res) {
       VALUES (${friend_id}, ${req.session.user_id})
       ` 
       await db.send_sql(addFriend);
+
+      const addFriend2 = `INSERT INTO friends (followed, follower)
+      VALUES (${req.session.user_id}, ${friend_id})
+      ` 
+      await db.send_sql(addFriend2);
+
       return res.status(201).json({ message: `now following ${username}` });
     } catch (error) {
       // Handle database query errors
@@ -80,6 +86,12 @@ var removeFriend = async function(req, res) {
           WHERE followed = '${friendID}' AND follower = ${req.session.user_id}
       `;
       await db.send_sql(removeFriendQuery);
+
+      const removeFriendQuery2 = `
+          DELETE FROM friends
+          WHERE followed = '${req.session.user_id}' AND follower = ${friendID}
+      `;
+      await db.send_sql(removeFriendQuery2);
 
       // Respond with success message
       return res.status(200).json({ message: 'Friend removed successfully.' });
@@ -349,6 +361,62 @@ var sendLike = async function(req, res) {
   }
 };
 
+// /GET friends online
+// Function to get online friends
+var getOnlineFriends = async function(req, res) {
+  try {
+      // Check if a user is logged in
+      if (!req.session.user_id) {
+          return res.status(403).json({ error: 'Not logged in.' });
+      }
+
+      // Query to get online friends
+      const onlineFriendsQuery = `
+          SELECT users.*
+          FROM friends
+          JOIN users ON friends.followed = users.id
+          WHERE friends.follower = ${req.session.user_id} AND users.logged_in = 1;
+      `;
+      const onlineFriends = await db.send_sql(onlineFriendsQuery);
+
+      // Return the online friends
+      console.log("online friends: " + onlineFriends);
+
+      return res.status(200).json({ results: onlineFriends });
+  } catch (error) {
+      // Handle database query errors
+      console.error("Error querying database:", error);
+      return res.status(500).json({ error: 'Error querying database.' });
+  }
+};
+
+var getOfflineFriends = async function(req, res) {
+  try {
+      // Check if a user is logged in
+      if (!req.session.user_id) {
+          return res.status(403).json({ error: 'Not logged in.' });
+      }
+
+      // Query to get online friends
+      const offlineFriendsQuery = `
+          SELECT users.*
+          FROM friends
+          JOIN users ON friends.followed = users.id
+          WHERE friends.follower = ${req.session.user_id} AND users.logged_in = 0;
+      `;
+      const offlineFriends = await db.send_sql(offlineFriendsQuery);
+
+      console.log("Offline friends: " + offlineFriends);
+      // Return the online friends
+      return res.status(200).json({ results: offlineFriends });
+  } catch (error) {
+      // Handle database query errors
+      console.error("Error querying database:", error);
+      return res.status(500).json({ error: 'Error querying database.' });
+  }
+};
+
+
 
 
   
@@ -358,7 +426,10 @@ var sendLike = async function(req, res) {
     remove_friend: removeFriend,
     get_feed: feed,
     upload_post: uploadPost,
-    send_like: sendLike
+    send_like: sendLike,
+    get_online_friends: getOnlineFriends,
+    get_offline_friends: getOfflineFriends
+
   };
   
   module.exports = routes;

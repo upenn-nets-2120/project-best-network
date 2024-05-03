@@ -1,18 +1,5 @@
 import React from 'react';
-
-interface Invite {
-    inviteID: number;
-    inviteUsername: string;
-    senderUsername: string;
-    room: Room;
-}
-
-interface Room {
-    roomID: number;
-    users: string[];
-    notification: boolean; 
-    notificationMessage: string;
-}
+import { Invite, Room, Message } from '../Interfaces/chatRoomInterfaces';
 
 interface InviteComponentProps {
     invite: Invite;
@@ -20,6 +7,8 @@ interface InviteComponentProps {
     onDecline: (invite: Invite) => void;
 }
 
+
+//this creates invite box for each invite
 const InviteComponent: React.FC<InviteComponentProps> = ({ invite, onAccept, onDecline }) => {
     const handleAccept = () => {
         onAccept(invite); // Call onAccept with the invite object

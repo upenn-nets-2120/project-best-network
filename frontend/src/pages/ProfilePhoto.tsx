@@ -47,6 +47,8 @@ export default function SetProfilePhoto() {
                 navigate(`/${username}/home`);
             } else {
                 alert('Photo upload failed.');
+                console.log(response);
+
             }
         } catch (error) {
             console.error('Photo upload error:', error);
