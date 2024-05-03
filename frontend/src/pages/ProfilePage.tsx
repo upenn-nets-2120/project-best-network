@@ -78,9 +78,9 @@ export default function UserProfile() {
 
   const addHashtag = async () => {
     try {
-      const response = await axios.post(`${config.serverRootURL}/${username}/addHashtag`, {
-        hashtag: newHashtag,
-      });
+      const response = await axios.post(`${rootURL}/${username}/addHashtag`, {
+        hashtag: newHashtag
+      }, { withCredentials: true });
 
       if (response.status === 200) {
         // Update hashtags in state
@@ -88,10 +88,11 @@ export default function UserProfile() {
         setNewHashtag('');
       } else {
         setError('Failed to add hashtag.');
+        alert("oops");
       }
-    } catch (error) {
-      console.error('Add hashtag error:', error);
-      setError('Failed to add hashtag.');
+    } catch (error) { 
+        console.error('Add hashtag error:', error);
+        setError('Failed to add hashtag.');
     }
   };
 
