@@ -112,6 +112,18 @@ var removeFriend = async function(req, res) {
         return res.status(403).json({ error: 'Not logged in.' });
     }
 
+    //  // Retrieve author_id based on username
+    //  const authorQuery = `SELECT id FROM users WHERE username = ?`;
+    //  const authorResult = await db.send_sql(authorQuery, [username]);
+
+    //  // Check if the user exists
+    //  if (authorResult.length === 0) {
+    //      return res.status(404).json({ error: 'User not found.' });
+    //  }
+
+    //  // Extract the author_id
+    //  const author_id = authorResult[0].id;
+
     try {
         // Query to get posts for the current user's feed
         // get the nconst id
@@ -148,124 +160,122 @@ var removeFriend = async function(req, res) {
     }
     
   };
+
   // POST /createPost
-var createPost = async function(req, res) {
-  // Check if a user is logged in
-  
-  if (req.session.user_id === null) {
-      return res.status(403).json({ error: 'Not logged in.' });
-  }
+  var createPost = async function(req, res) {
+    // Check if a user is logged in
+    if (req.session.user_id === null) {
+        return res.status(403).json({ error: 'Not logged in.' });
+    }
 
-  // Extract post parameters from the request body
-  const { title, content, parent_id, hashtags } = req.body;
-  console.log('Request body:', req.body);
-  console.log('Request files:', req.file);
-  console.log(title); 
-  console.log(content); 
-  console.log(parent_id); 
-  console.log(hashtags); 
+    // Extract post parameters from the request body
+    const { title, content, parent_id, hashtags, username } = req.body;
+    console.log('Request body:', req.body);
+    console.log('Request files:', req.file);
+    console.log(title);
+    console.log(content);
+    console.log(parent_id);
+    console.log(hashtags);
+    console.log(req.session.user_id);
 
-  // Check if any of the required fields are empty
-  // if ((!title && !content) && !hashtags && !Array.isArray(hashtags)) {
-  //   return res.status(400).json({ error: 'One or more of the fields you entered was empty, please try again.' });
-  // }
+    try {
+        // Retrieve author_id based on username
+        const authorQuery = `SELECT id FROM users WHERE username = ?`;
+        const authorResult = await db.send_sql(authorQuery, [username]);
 
-  // Validate title and content to prevent SQL injection
-  //const alphanumericRegex = /^[a-zA-Z0-9\s.,_?]+$/;
-  
-  try {
-      //get username
-
-      // Insert the post into the database
-      let insertQuery;
-      if (parent_id === undefined) {
-          // If parent_id is undefined, insert NULL for parent_post
-          insertQuery = `
-              INSERT INTO posts (title, content, parent_post, author_id, like_count)
-              VALUES ('${title}', '${content}', NULL, ${req.session.user_id}, 0)
-          `;
-      } else {
-          // If parent_id is defined, include it in the query
-          insertQuery = `
-              INSERT INTO posts (title, content, parent_post, author_id)
-              VALUES ('${title}', '${content}', ${parent_id}, ${req.session.user_id})
-          `;
-      }
-      await db.send_sql(insertQuery);
-      const getLastPost = `SELECT * FROM posts WHERE post_id = LAST_INSERT_ID()`;
-      const last_post = await db.send_sql(getLastPost);
-      const last_id = last_post[0].post_id;
-      //const lastInsertId = last_id[0]['LAST_INSERT_ID()'];
-      // insert hashtags into post_to_hashtags for each hashtag
-      //const last_id = await db.send_sql(id_query);
-      console.log(last_id);
-      for (const element of hashtags) {
-        // first check if hashtag already exists
-        let hashtagQuery = `
-            SELECT * FROM hashtags WHERE text = '${element}'
-        `;
-        let hashtag_result = await db.send_sql(hashtagQuery);
-        console.log(element);
-        console.log(hashtag_result);
-        // if result is empty, add hashtag to hashtag to table
-        // now quee the id from hashtags tables
-   // If the result is not empty, it means the hashtag already exists
-          if (hashtag_result.length > 0) {
-            // Fetch the hashtag_id from the result
-            const hashtag_id = hashtag_result[0].id;
-            // Update the count value in the hashtags table
-            let updateQuery = `
-                UPDATE hashtags
-                SET count = count + 1
-                WHERE id = ${hashtag_id}
-            `;
-            await db.send_sql(updateQuery);
-            // Insert the post-to-hashtag relationship into the post_to_hashtags table
-            let insertQuery2 = `
-                INSERT INTO post_to_hashtags (post_id, hashtag_id)
-                VALUES (${last_id}, ${hashtag_id})
-            `;
-            await db.send_sql(insertQuery2);
-        } else {
-            // If the result is empty, the hashtag does not exist
-            // Insert the hashtag into the hashtags table first
-            let insertHashtagQuery = `
-                INSERT INTO hashtags (text, count)
-                VALUES ('${element}', 1)
-            `;
-            var insert_hashtag_result = await db.send_sql(insertHashtagQuery);
-
-            // Fetch the inserted hashtag's ID
-            const hashtag_id = insert_hashtag_result.insertId;
-
-            // Insert the post-to-hashtag relationship into the post_to_hashtags table
-            let insertQuery2 = `
-                INSERT INTO post_to_hashtags (post_id, hashtag_id)
-                VALUES (${last_id}, ${hashtag_id})
-            `;
-            await db.send_sql(insertQuery2);
+        // Check if the user exists
+        if (authorResult.length === 0) {
+            return res.status(404).json({ error: 'User not found.' });
         }
-      }
-      // Return successful response
 
-      console.log(content);
-      if (content){
-        //TODO: set profile photo
-        //https://github.com/upenn-nets-2120/homework-2-ms1-vavali08/blob/main/src/main/java/org/nets2120/imdbIndexer/S3Setup.java Reference - Note that this is Java
-        await s3Access.put_by_key("best-network-nets212-sp24", "/postContent/" + last_id, content, 'image/*');
-        const photoURL = await s3Access.get_by_key("/profilePictures/" + last_id);
-        console.log(photoURL);
-        pfpQuery = `UPDATE users SET profilePhoto = ${photoURL} WHERE id = '${last_id}'`;
-        console.log(pfpQuery);
-        await db.send_sql(pfpQuery);
-      }
-      return res.status(201).json({ message: 'Post created.' });
-  } catch (error) {
-      // Handle database query errors
-      console.error("Error querying database:", error);
-      return res.status(500).json({ error: 'Error querying database.' });
-  }
+        // Extract the author_id
+        const author_id = authorResult[0].id;
+
+        // Continue with the post creation process
+        let insertQuery;
+        if (parent_id === undefined) {
+            // If parent_id is undefined, insert NULL for parent_post
+            insertQuery = `
+                INSERT INTO posts (title, content, parent_post, author_id, like_count)
+                VALUES (?, ?, NULL, ?, 0)
+            `;
+            await db.send_sql(insertQuery, [title, content, author_id]);
+        } else {
+            // If parent_id is defined, include it in the query
+            insertQuery = `
+                INSERT INTO posts (title, content, parent_post, author_id)
+                VALUES (?, ?, ?, ?)
+            `;
+            await db.send_sql(insertQuery, [title, content, parent_id, author_id]);
+        }
+
+        // Retrieve the newly created post
+        const lastPostQuery = `SELECT * FROM posts WHERE post_id = LAST_INSERT_ID()`;
+        const last_post = await db.send_sql(lastPostQuery);
+        const last_id = last_post[0].post_id;
+        console.log(last_id);
+
+        // Handle hashtags and create post-to-hashtag relationships
+        for (const element of hashtags) {
+            let hashtagQuery = `SELECT * FROM hashtags WHERE text = ?`;
+            let hashtag_result = await db.send_sql(hashtagQuery, [element]);
+            console.log(element);
+            console.log(hashtag_result);
+
+            if (hashtag_result.length > 0) {
+                // Hashtag already exists, update its count and create relationship
+                const hashtag_id = hashtag_result[0].id;
+                let updateQuery = `UPDATE hashtags SET count = count + 1 WHERE id = ?`;
+                await db.send_sql(updateQuery, [hashtag_id]);
+
+                let insertQuery2 = `INSERT INTO post_to_hashtags (post_id, hashtag_id) VALUES (?, ?)`;
+                await db.send_sql(insertQuery2, [last_id, hashtag_id]);
+            } else {
+                // Hashtag does not exist, insert it and create relationship
+                let insertHashtagQuery = `INSERT INTO hashtags (text, count) VALUES (?, 1)`;
+                const insert_hashtag_result = await db.send_sql(insertHashtagQuery, [element]);
+
+                // Get the newly inserted hashtag's ID
+                const hashtag_id = insert_hashtag_result.insertId;
+
+                // Create post-to-hashtag relationship
+                let insertQuery2 = `INSERT INTO post_to_hashtags (post_id, hashtag_id) VALUES (?, ?)`;
+                await db.send_sql(insertQuery2, [last_id, hashtag_id]);
+            }
+        }
+
+        // Handle image content and S3 access if content is provided
+        if (content) {
+          try {
+              // Save content to S3 bucket
+              const bucketName = "best-network-nets212-sp24";
+              const s3Path = `/posts/${last_id}`;
+              const s3Url = `https://${bucketName}.s3.amazonaws.com${s3Path}`;
+      
+              // Upload content to S3
+              await s3Access.put_by_key(bucketName, s3Path, content.buffer, content.mimetype);
+      
+              // Update the user's profile photo URL in the database if needed
+              const pfpQuery = `UPDATE users SET profilePhoto = ? WHERE id = ?`;
+              await db.send_sql(pfpQuery, [s3Url, author_id]);
+      
+              // Return successful response
+              return res.status(201).json({ message: 'Post created and photo uploaded successfully.' });
+          } catch (error) {
+              console.error('Error uploading photo:', error);
+              return res.status(500).json({ error: 'Error uploading photo.' });
+          }
+      } 
+
+        // Return successful response
+        return res.status(201).json({ message: 'Post created.' });
+    } catch (error) {
+        // Handle database query errors
+        console.error('Error querying database:', error);
+        return res.status(500).json({ error: 'Error querying database.' });
+    }
 };
+
 // POST /uploadPost
 var uploadPost = async function(req, res) {
   //upload to s3

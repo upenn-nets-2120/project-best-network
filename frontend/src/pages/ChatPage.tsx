@@ -28,7 +28,7 @@ const ChatPage = () => {
     
     const navigate = useNavigate(); 
     const home = () => {
-        navigate("/");
+        navigate("/" + username + "/home");
     };
 
     const [incomingInvites, setIncomingInvites] = useState<Invite[]>([]); // Specify the type as Invite[]

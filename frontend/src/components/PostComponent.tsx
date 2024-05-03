@@ -7,18 +7,12 @@ export default function PostComponent({
   post_id,
   title = 'Post title',
   user = 'arnavchopra',
-  description = 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Rem porro consequatur impedit dolor, soluta rerum mollitia ut eos fugiat! Amet nam voluptate quos delectus rem enim veritatis eius iste! Et.',
+  description = 'Lorem ipsum dolor sit amet consectetur adipisicing elit.',
   initialLikes = 0,
   initialComments = [],
-} : {
-  post_id: number,
-  title: string,
-  user: string,
-  description: string,
-  initialLikes: number,
-  initialComments: Array<string>,
 }) {
-    console.log('Post ID:', post_id);
+  console.log('Post ID:', post_id);
+  
   const [likes, setLikes] = useState(initialLikes);
   const [comments, setComments] = useState(initialComments);
   const [newComment, setNewComment] = useState('');
@@ -64,37 +58,43 @@ export default function PostComponent({
     }
   };
 
+  // Construct the S3 image URL based on post_id
+  const s3ImageUrl = `https://best-network-nets212-sp24.s3.amazonaws.com//posts/${post_id}`;
+
   return (
-    <div className='rounded-md bg-slate-50 w-full max-w-[1000px] space-y-2 p-3'>
-      <div className=' text-slate-800'>
-        <span className='font-semibold'> @{user} </span>
-        posted
-      </div>
-      <div className='text-2xl font-bold'>
-        { title }
-      </div>
-      <div className=''>
-        { description }
-      </div>
-      <div className='flex space-x-4'>
-        <button onClick={handleLike}>Like</button>
-        <span>Likes: {likes}</span>
-      </div>
-      <div className='flex flex-col'>
-        <textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder='Add a comment...'
-        />
-        <button onClick={handleAddComment}>Add Comment</button>
-      </div>
-      <div>
-        <ul>
-          {comments.map((comment, index) => (
-            <li key={index}>{comment}</li>
-          ))}
-        </ul>
-      </div>
+    <div className="rounded-md bg-slate-50 w-full max-w-[1000px] space-y-2 p-3">
+        <div className="text-slate-800">
+            <span className="font-semibold">@{user}</span> posted
+        </div>
+        <div className="text-2xl font-bold">
+            {title}
+        </div>
+        <div>
+            {description}
+        </div>
+        {/* Display the image using the constructed S3 image URL */}
+        <div className="image-container">
+            <img src={s3ImageUrl} alt={`${title}`} style={{ maxWidth: '100%' }} />
+        </div>
+        <div className="flex space-x-4">
+            <button onClick={handleLike}>Like</button>
+            <span>Likes: {likes}</span>
+        </div>
+        <div className="flex flex-col">
+            <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Add a comment..."
+            />
+            <button onClick={handleAddComment}>Add Comment</button>
+        </div>
+        <div>
+            <ul>
+                {comments.map((comment, index) => (
+                    <li key={index}>{comment}</li>
+                ))}
+            </ul>
+        </div>
     </div>
   );
 }

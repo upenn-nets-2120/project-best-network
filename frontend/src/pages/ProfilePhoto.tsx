@@ -34,7 +34,7 @@ export default function SetProfilePhoto() {
 
         // Perform the file upload request
         try {
-            const response = await axios.post(`${rootURL}/${username}/setProfilePhoto`, formData, {
+            const response = await axios.post(`${rootURL}/:username/setProfilePhoto`, formData, {
                 withCredentials: true,
                 headers: {
                     'Content-Type': 'multipart/form-data',

@@ -6,11 +6,13 @@ import { useParams } from 'react-router-dom';
 function CreatePostComponent({ updatePosts }) {
     const { username } = useParams();
 
+    // State variables for form inputs
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [image, setImage] = useState(null);
     const [hashtags, setHashtags] = useState('');
 
+    // Event handler for file input change
     const handleFileChange = (event) => {
         const file = event.target.files && event.target.files[0];
         if (file) {
@@ -18,11 +20,20 @@ function CreatePostComponent({ updatePosts }) {
         }
     };
 
-    const handleHashtagsChange = (event) => {
-        const input = event.target.value;
-        setHashtags(input);
+    // Event handlers for text input changes
+    const handleTitleChange = (event) => {
+        setTitle(event.target.value);
     };
 
+    const handleContentChange = (event) => {
+        setContent(event.target.value);
+    };
+
+    const handleHashtagsChange = (event) => {
+        setHashtags(event.target.value);
+    };
+
+    // Event handler for form submission
     const handleSubmit = async (event) => {
         event.preventDefault();
 
@@ -32,29 +43,36 @@ function CreatePostComponent({ updatePosts }) {
             return;
         }
 
-        // Create FormData object
-        const formData = new FormData();
-        formData.append('title', title);
-        formData.append('content', content);
-        formData.append('hashtags', hashtags);
-        if (image) {
-            formData.append('image', image);
-        }
+        // Convert comma-separated hashtags to an array
+        const hashtagsArray = hashtags.split(',').map(tag => tag.trim());
 
-        console.log(title); 
-        console.log(content); 
-        console.log(hashtags); 
+        // Create a JavaScript object for the post data
+        const postData = {
+            title,
+            content,
+            hashtags: hashtagsArray, // Use the hashtags array instead of the raw string
+            image,
+            username: username
+        };
+
+        console.log(image); 
+
+        // Convert the JavaScript object to JSON format
+        const jsonData = JSON.stringify(postData);
+
+        // Log the JSON data being sent
+        console.log('JSON data being sent:', jsonData);
 
         try {
-            // Send a POST request to the server
-            const response = await axios.post(`${config.serverRootURL}/${username}/createPost`, formData, {
+            // Send a POST request to the server with JSON data
+            const response = await axios.post(`${config.serverRootURL}/${username}/createPost`, jsonData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
+                    'Content-Type': 'application/json', 
                 },
             });
 
             console.log('Post created successfully:', response.data);
-            updatePosts(); 
+            updatePosts();
 
             // Reset form fields after successful post creation
             setTitle('');
@@ -67,6 +85,7 @@ function CreatePostComponent({ updatePosts }) {
         }
     };
 
+    // Render the form
     return (
         <div className="w-screen h-screen flex justify-center">
             <form onSubmit={handleSubmit}>
@@ -81,7 +100,7 @@ function CreatePostComponent({ updatePosts }) {
                             type="text"
                             className="outline-none bg-white rounded-md border border-slate-100 p-2"
                             value={title}
-                            onChange={(e) => setTitle(e.target.value)}
+                            onChange={handleTitleChange}
                         />
                     </div>
                     <div className="flex space-x-4 items-center justify-between">
@@ -90,7 +109,7 @@ function CreatePostComponent({ updatePosts }) {
                             id="content"
                             placeholder="Content"
                             value={content}
-                            onChange={(e) => setContent(e.target.value)}
+                            onChange={handleContentChange}
                             className="border border-gray-300 p-2 rounded-md"
                             rows={4}
                         />
