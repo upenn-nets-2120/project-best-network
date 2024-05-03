@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import axios from 'axios'; 
 import config from '../../config.json';
+import { useParams } from 'react-router-dom';
+
 
 export default function ProfileSettings() {
     const rootURL = config.serverRootURL;
 
-    const [username, setUsername] = useState('');
+    const { username } = useParams();
+
+
+    const [user, setUsername] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
@@ -17,7 +22,7 @@ export default function ProfileSettings() {
     const handleChangeUsername = async () => {
         try {
             await axios.put(`${rootURL}/${username}/change-username`, {
-                username: username
+                username: user
             }, { withCredentials: true });
             alert('Username updated successfully.');
         } catch (error) {
@@ -112,10 +117,10 @@ export default function ProfileSettings() {
                 <div className='flex space-x-4 items-center justify-between'>
                     <label htmlFor="username" className='font-semibold'>Username</label>
                     <input
-                        id="username"
+                        id="user"
                         type="text"
                         className='outline-none bg-white rounded-md border border-slate-100 p-2'
-                        value={username}
+                        value={user}
                         onChange={(e) => setUsername(e.target.value)}
                     />
                     <button onClick={handleChangeUsername} className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'>

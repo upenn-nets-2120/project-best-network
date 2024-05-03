@@ -342,10 +342,10 @@ var change_username = async function(req, res) {
   try {
       const updateQuery = `UPDATE users SET username = '${username}' WHERE id = '${req.session.user_id}';`;
       await db.send_sql(updateQuery);
-      req.session.username = user.username;
+      req.session.username = username;
       console.log(req.session);
       console.log("success");
-      res.status(200).json({ username: user.username });
+      res.status(200).json({ username: req.session.username });
   } catch (error) {
       console.error('Error:', error);
       res.status(500).json({ error: 'Error querying database.' });
@@ -366,7 +366,6 @@ var change_firstname = async function(req, res) {
   try {
     const updateQuery = `UPDATE users SET firstName = '${firstName}' WHERE id = '${req.session.user_id}';`;
     await db.send_sql(updateQuery);
-    req.session.firstName = firstName;
     res.status(200).json({ firstName: firstName });
   } catch (error) {
     console.error('Error:', error);
@@ -387,7 +386,6 @@ var change_lastname = async function(req, res) {
   try {
     const updateQuery = `UPDATE users SET lastName = '${lastName}' WHERE id = '${req.session.user_id}';`;
     await db.send_sql(updateQuery);
-    req.session.lastName = lastName;
     res.status(200).json({ lastName: lastName });
   } catch (error) {
     console.error('Error:', error);
@@ -408,7 +406,6 @@ var change_email = async function(req, res) {
   try {
     const updateQuery = `UPDATE users SET email = '${email}' WHERE id = '${req.session.user_id}';`;
     await db.send_sql(updateQuery);
-    req.session.email = email;
     res.status(200).json({ email: email });
   } catch (error) {
     console.error('Error:', error);
@@ -429,7 +426,6 @@ var change_birthday = async function(req, res) {
   try {
     const updateQuery = `UPDATE users SET birthday = '${birthday}' WHERE id = '${req.session.user_id}';`;
     await db.send_sql(updateQuery);
-    req.session.birthday = birthday;
     res.status(200).json({ birthday: birthday });
   } catch (error) {
     console.error('Error:', error);
@@ -483,7 +479,7 @@ var change_password = async function(req, res) {
         }
       });
     });
-    const updateQuery = `UPDATE users SET password = '${hashed_password}' WHERE id = '${req.session.user_id}';`;
+    const updateQuery = `UPDATE users SET hashed_password = '${hashed_password}' WHERE id = '${req.session.user_id}';`;
     await db.send_sql(updateQuery);
     res.status(200).json({ message: 'Password updated successfully.' });
   } catch (error) {
