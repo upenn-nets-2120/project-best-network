@@ -29,6 +29,8 @@ export default function Login() {
 
   const handleLogin = async () => {
     // TODO: check username and password using /login route 
+    console.log(username); 
+    console.log(password); 
     axios.post(`${config.serverRootURL}/login`, {
       username,
       password

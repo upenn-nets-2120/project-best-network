@@ -14,6 +14,7 @@ module.exports = {
 function register_routes(app) {
     //login UPDATE
     app.get('/hello', login_routes.get_helloworld);
+    app.get('/checkRegistration', login_routes.get_registration);
     app.post('/login', login_routes.post_login);
     app.get('/:username/logout', login_routes.post_logout);
     app.post('/register', login_routes.post_register);

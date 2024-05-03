@@ -140,24 +140,27 @@ var removeFriend = async function(req, res) {
 var createPost = async function(req, res) {
   // Check if a user is logged in
   
-  if (req.session.user_id === undefined) {
+  if (req.session.user_id === null) {
       return res.status(403).json({ error: 'Not logged in.' });
   }
 
   // Extract post parameters from the request body
   const { title, content, parent_id, hashtags } = req.body;
+  console.log('Request body:', req.body);
+  console.log('Request files:', req.file);
+  console.log(title); 
+  console.log(content); 
+  console.log(parent_id); 
+  console.log(hashtags); 
 
   // Check if any of the required fields are empty
-  if ((!title && !content) || !hashtags || !Array.isArray(hashtags)) {
-    return res.status(400).json({ error: 'One or more of the fields you entered was empty, please try again.' });
-  }
+  // if ((!title && !content) && !hashtags && !Array.isArray(hashtags)) {
+  //   return res.status(400).json({ error: 'One or more of the fields you entered was empty, please try again.' });
+  // }
 
   // Validate title and content to prevent SQL injection
   //const alphanumericRegex = /^[a-zA-Z0-9\s.,_?]+$/;
   
-  if (!helper.isOK(title) || !helper.isOK(content)) {
-      return res.status(400).json({ error: 'Invalid characters in title or content.' });
-  }
   try {
       //get username
 
@@ -270,9 +273,9 @@ var uploadPost = async function(req, res) {
   if (!post) {
     return res.status(400).json({ error: 'No profile photo uploaded.' });
   }
-  if (!userID) {
-    return res.status(403).json({ error: 'Not logged in.' });
-  }
+  // if (!userID) {
+  //   return res.status(403).json({ error: 'Not logged in.' });
+  // }
 
   try {
     await s3Access.put_by_key("best-network-nets212-sp24", "/posts/" + last_id, post.buffer, post.mimetype);

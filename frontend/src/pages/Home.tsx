@@ -48,6 +48,7 @@ export default function Home() {
               const response = await axios.get(`${rootURL}/${username}/feed`, { withCredentials: true });
               console.log(response)
               setPosts(response.data.results);  
+              console.log(response.data.results); 
           } catch (error) {
               console.error('Error fetching posts:', error);
           }
@@ -76,6 +77,7 @@ export default function Home() {
             // TODO: map each post to a PostComponent
             posts.map(post => (
                 <PostComponent key={post.post_id} title={post.title}
+                post_id = {post.post_id}
                 user={post.username}
                 description={post.content}
                 />
@@ -85,4 +87,5 @@ export default function Home() {
     </div>
   )
 }
+
 

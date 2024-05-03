@@ -18,6 +18,32 @@ var getHelloWorld = function(req, res) {
     res.status(200).send({message: "Hello, world!"});
 }
 
+// check if user exists (Kim inputed for kafka)
+var checkRegistration = async function(req, res) {
+  try {
+      // Extract the username from the request body
+      const { federatedUsername } = req.body;
+
+      if (!federatedUsername) {
+        return res.status(400).json({ error: 'Username is required.' });
+    }
+
+      // Query the database to check if the user exists
+      const query = `SELECT * FROM users WHERE username = '${federatedUsername}'`;
+      const result = await db.send_sql(query);
+
+      // If the user exists, return a success message
+      if (result.length > 0) {
+          return res.status(200).json({ registered: true });
+      }
+
+      // If the user does not exist, return a message indicating not registered
+      return res.status(200).json({ registered: false });
+  } catch (error) {
+      console.error('Error querying database:', error);
+      return res.status(500).json({ error: 'Error querying database.' });
+  }
+};
 
 // POST /register 
 /*  Example body: 
@@ -205,9 +231,11 @@ var postLogin = async function(req, res) {
 
           if (result) {
               req.session.user_id = user.id; 
+              console.log(user.id); 
               req.session.username = user.username;
               console.log(req.session);
               console.log("success");
+              req.session.save(); 
               res.status(200).json({ username: user.username });
           } else {
               res.status(401).json({ error: 'Username and/or password are invalid.' });
@@ -319,6 +347,7 @@ var postActor = async function(req, res) {
 
 var routes = { 
     get_helloworld: getHelloWorld,
+    get_registration: checkRegistration,
     post_login: postLogin,
     post_register: postRegister,
     post_set_profile_photo: setProfilePhoto,

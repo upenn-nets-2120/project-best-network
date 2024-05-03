@@ -10,6 +10,9 @@ export default function SetProfilePhoto() {
 
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+    const handleSkip = () => {
+        navigate(`/${username}/home`);
+    }
     // Handle file selection
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files && event.target.files[0];
@@ -31,7 +34,7 @@ export default function SetProfilePhoto() {
 
         // Perform the file upload request
         try {
-            const response = await axios.post(`${rootURL}/setProfilePhoto`, formData, {
+            const response = await axios.post(`${rootURL}/${username}/setProfilePhoto`, formData, {
                 withCredentials: true,
                 headers: {
                     'Content-Type': 'multipart/form-data',
@@ -75,6 +78,15 @@ export default function SetProfilePhoto() {
                         >
                             Upload Photo
                         </button>
+                    </div>
+                    <div className='w-full flex justify-center'>
+                        <button
+                            type="button"
+                            className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'
+                            onClick={handleSkip}
+                            >
+                                I don't want a profile picture
+                                </button>
                     </div>
                 </div>
             </form>
