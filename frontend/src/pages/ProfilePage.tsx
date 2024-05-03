@@ -1,46 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import {useState, useEffect} from 'react';
 import axios from 'axios';
 import config from '../../config.json';
 import { useParams, useNavigate } from 'react-router-dom';
 
 export default function UserProfile() {
-    const [profilePhoto, setProfilePhoto] = useState(null);
-    const [email, setEmail] = useState('');
-    const [hashtags, setHashtags] = useState<string[]>([]);
-    const [recommendedHashtags, setRecommendedHashtags] = useState<string[]>([]);
-    const [similarActors, setSimilarActors] = useState<string[]>([]);
-    const [actor, setActor] = useState('');
-    const [newActor, setNewActor] = useState('');
-    const [newHashtag, setNewHashtag] = useState('');
-    const [error, setError] = useState('');
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const { username } = useParams();
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [email, setEmail] = useState('');
+  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [recommendedHashtags, setRecommendedHashtags] = useState<string[]>([]);
+  const [similarActors, setSimilarActors] = useState<string[]>([]);
+  const [actor, setActor] = useState('');
+  const [newActor, setNewActor] = useState('');
+  const [newHashtag, setNewHashtag] = useState('');
+  const [error, setError] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const rootURL = config.serverRootURL;
 
-    const navigate = useNavigate(); // Importing navigate function
+  useEffect(() => {
+    getProfile();
+    getRecommendedHashtags();
+    getMostSimilarActors();
+  }, []);
 
-    useEffect(() => {
-        getProfile();
-        getRecommendedHashtags();
-        getMostSimilarActors();
-    }, [username]);
+  const { username } = useParams();
+  const getProfile = async () => {
+    try {
+      const response = await axios.get(`${rootURL}/${username}/getProfile`, { withCredentials: true });
 
-    const getProfile = async () => {
-        try {
-            const response = await axios.get(`${config.serverRootURL}/${username}/getProfile`);
-            if (response.status === 200) {
-                const { profilePhoto, email, hashtags, actor } = response.data;
-                setProfilePhoto(profilePhoto);
-                setEmail(email);
-                setHashtags(hashtags);
-                setActor(actor);
-                setNewActor(actor);
-            } else {
-                console.error('Failed to fetch profile data.');
-            }
-        } catch (error) {
-            console.error('Fetch profile data error:', error);
-        }
-    };
+
+      if (response.status === 200) {
+        console.log(response.data)
+        //const { profilePhoto, email, hashtags, actor } = response.data; -> I changed this bc i think this led to some errors related to
+        //  email being used as a variable from the response and being used a state variable etc
+        setProfilePhoto(response.data.profilePhoto);
+        setEmail(response.data.email);
+        setHashtags(response.data.hashtags);
+        setActor(response.data.actor);
+        setNewActor(response.data.actor);
+        console.log(response.data.hashtags)
+      } else {
+        console.error('Failed to fetch profile data.');
+      }
+    } catch (error) {
+      console.error('Fetch profile data error:', error);
+    }
+  };
 
     const getRecommendedHashtags = async () => {
         try {
@@ -70,53 +74,62 @@ export default function UserProfile() {
         }
     };
 
-    const addHashtag = async () => {
-        try {
-            const response = await axios.post(`${config.serverRootURL}/${username}/addHashtag`, { hashtag: newHashtag });
-            if (response.status === 200) {
-                setHashtags([...hashtags, newHashtag]);
-                setNewHashtag('');
-            } else {
-                setError('Failed to add hashtag.');
-            }
-        } catch (error) {
-            console.error('Add hashtag error:', error);
-            setError('Failed to add hashtag.');
-        }
-    };
+  const addHashtag = async () => {
+    try {
+      const response = await axios.post(`${config.serverRootURL}/${username}/addHashtag`, {
+        hashtag: newHashtag,
+      });
 
-    const removeHashtag = async () => {
-        try {
-            const response = await axios.post(`${config.serverRootURL}/${username}/removeHashtag`, { hashtag: newHashtag });
-            if (response.status === 200) {
-                setHashtags(hashtags.filter(tag => tag !== newHashtag));
-            } else {
-                setError('Failed to remove hashtag.');
-            }
-        } catch (error) {
-            console.error('Remove hashtag error:', error);
-            setError('Failed to remove hashtag.');
-        }
-    };
+      if (response.status === 200) {
+        // Update hashtags in state
+        setHashtags([...hashtags, newHashtag]);
+        setNewHashtag('');
+      } else {
+        setError('Failed to add hashtag.');
+      }
+    } catch (error) {
+      console.error('Add hashtag error:', error);
+      setError('Failed to add hashtag.');
+    }
+  };
 
-    const resetActor = async (actorName: string) => {
-        try {
-            const response = await axios.post(`${config.serverRootURL}/${username}/setActor`, { actor: actorName });
-            if (response.status === 200) {
-                setActor(actorName);
-                setNewActor(actorName);
-            } else {
-                setError('Failed to reset actor.');
-            }
-        } catch (error) {
-            console.error('Reset actor error:', error);
-            setError('Failed to reset actor.');
-        }
-    };
-
-    const handleHashtagButtonClick = (hashtag: string) => {
-        setNewHashtag(hashtag);
-    };
+  const removeHashtag = async () => {
+    try {
+      const response = await axios.post(`${config.serverRootURL}/${username}/removeHashtag`, {
+        hashtag: newHashtag, // Replace 'exampleHashtag' with the actual hashtag to remove
+      });
+  
+      if (response.status === 200) {
+        // Remove the hashtag from state
+        setHashtags(hashtags.filter(tag => tag !== newHashtag)); // Update with the actual hashtag name
+      } else {
+        setError('Failed to remove hashtag.');
+      }
+    } catch (error) {
+      console.error('Remove hashtag error:', error);
+      setError('Failed to remove hashtag.');
+    }
+  };
+  
+  const resetActor = async (actorName:string) => {
+    try {
+      const response = await axios.post(`${config.serverRootURL}/${username}/setActor`, { actor: actorName });
+  
+      if (response.status === 200) {
+        setActor(actorName);
+        setNewActor(actorName)
+      } else {
+        setError('Failed to reset actor.');
+      }
+    } catch (error) {
+      console.error('Reset actor error:', error);
+      setError('Failed to reset actor.');
+    }
+  };
+  
+  const handleHashtagButtonClick = (hashtag:string) => {
+    setNewHashtag(hashtag);
+  };
 
     const handleFileUpload = async () => {
         if (selectedFile) {
