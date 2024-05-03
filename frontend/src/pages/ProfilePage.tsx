@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import {useState, useEffect} from 'react';
 import axios from 'axios';
 import config from '../../config.json';
 import { useParams } from 'react-router-dom';
@@ -14,25 +14,30 @@ export default function UserProfile() {
   const [newHashtag, setNewHashtag] = useState('');
   const [error, setError] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const rootURL = config.serverRootURL;
+
   useEffect(() => {
     getProfile();
     getRecommendedHashtags();
     getMostSimilarActors();
   }, []);
+
   const { username } = useParams();
   const getProfile = async () => {
     try {
-      const response = await axios.get(`${config.serverRootURL}/${username}/getProfile`);
+      const response = await axios.get(`${rootURL}/${username}/getProfile`, { withCredentials: true });
+
 
       if (response.status === 200) {
         console.log(response.data)
-        const { profilePhoto, email, hashtags, actor } = response.data;
-        setProfilePhoto(profilePhoto);
-        setEmail(email);
-        setHashtags(hashtags);
-        setActor(actor);
-        setNewActor(actor);
-        console.log(hashtags)
+        //const { profilePhoto, email, hashtags, actor } = response.data; -> I changed this bc i think this led to some errors related to
+        //  email being used as a variable from the response and being used a state variable etc
+        setProfilePhoto(response.data.profilePhoto);
+        setEmail(response.data.email);
+        setHashtags(response.data.hashtags);
+        setActor(response.data.actor);
+        setNewActor(response.data.actor);
+        console.log(response.data.hashtags)
       } else {
         console.error('Failed to fetch profile data.');
       }

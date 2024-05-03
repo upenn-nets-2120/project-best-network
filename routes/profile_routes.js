@@ -5,6 +5,12 @@ const helper = require('./login_route_helper.js');
 const process = require('process');
 const s3Access = require('../models/s3_access.js'); 
 
+
+// Database connection setup
+const db = dbsingleton;
+db.get_db_connection();
+const PORT = config.serverPort;
+
 // /setProfileHashTags
 var set_profile_hashtags = async function(req, res) {
     var username = req.params.username;
@@ -26,23 +32,25 @@ var set_profile_hashtags = async function(req, res) {
   
 // GET /getProfile
 var get_profile = async function(req, res) {
-// var username = req.params.username;
-// if (username == null){
-//   return res.status(403).json({ error: 'Not logged in.' });
-// }
-// if (!helper.isLoggedIn(req,username)) {
-//     return res.status(403).json({ error: 'Not logged in.' });
-// }
-// var query = "SELECT * FROM users WHERE username = '" + username + "'";
-// try {
-//     var result = await db.send_sql(query);
-//     return result
-// } catch (error) {
-//     console.error('Error:', error);
-//     res.status(500).json({ error: 'Error querying database.' });
-// }
-var link = "https://images.moviesanywhere.com/24b204384e43573f3d961c340d33108f/b90afbd0-c8d0-4fe4-9752-a51489480a05.jpg"
-res.status(200).json({email:"jsusser@julia.com", username:"julia", hashtags:["#heyjulia", "#juliacodes"], actor:"Awesome Julia", profilePhoto:link})
+    var username = req.session.username;
+    if (username == null){
+        return res.status(403).json({ error: 'Not logged in.' });
+    }
+    var query = `SELECT * FROM users WHERE username = '${username}'`;
+    try {
+        var result = await db.send_sql(query);
+        if (result.length < 1) {
+            return res.status(409).json({ error: 'Account not found' });
+        }
+        var info = result[0];
+        console.log(info);
+        return res.status(200).json({email : info.email, username: info.username, hashtags:["#heyjulia", "#juliacodes"], actor:"Awesome Julia", profilePhoto:info.profilePhoto});
+
+    } catch (error) {
+        console.error('Error:', error);
+        return res.status(500).json({ error: 'Error querying database.' });
+    }
+
 };
 
 
