@@ -98,9 +98,9 @@ export default function UserProfile() {
 
   const removeHashtag = async () => {
     try {
-      const response = await axios.post(`${config.serverRootURL}/${username}/removeHashtag`, {
-        hashtag: newHashtag, // Replace 'exampleHashtag' with the actual hashtag to remove
-      });
+      const response = await axios.post(`${rootURL}/${username}/removeHashtag`, {
+        hashtag: newHashtag
+      }, { withCredentials: true });
   
       if (response.status === 200) {
         // Remove the hashtag from state

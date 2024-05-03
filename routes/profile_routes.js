@@ -149,7 +149,43 @@ var post_add_hashtag = async function(req, res) {
 
 
 var post_remove_hashtag = async function(req, res) {
-res.status(200).json({})
+
+    const { hashtag } = req.body
+    const userID = req.session.user_id;
+
+    var hashtagQuery = `SELECT hashtags.text 
+            FROM users
+            JOIN hashtagInterests ON users.id = hashtagInterests.userID
+            JOIN hashtags ON hashtagInterests.hashtagID = hashtags.id
+            WHERE users.id = '${userID}'`
+
+    var hashtags = await db.send_sql(hashtagQuery);
+    var hashtagsTextList = hashtags.map(hashtag => hashtag.text);
+
+    if (!hashtagsTextList.includes(hashtag)) {
+        return res.status(400).send("You don't follow this hashtag");
+    }
+
+    //getting data for hashtag
+    var idQuery = `SELECT * FROM hashtags WHERE text = '${hashtag}'`;
+    console.log(idQuery);
+    var hashtagData = await db.send_sql(idQuery);
+    console.log(hashtagData);
+    hashtagID = hashtagData[0].id;
+    count = hashtagData[0].count;
+
+    var deleteInterestQuery = `DELETE FROM hashtagInterests WHERE hashtagID = '${hashtagID}' AND userID = '${userID}'`;
+    await db.send_sql(deleteInterestQuery);
+
+    if(count == 1) {
+        var deleteHashtagQuery = `DELETE FROM hashtags WHERE text = '${hashtag}'`;
+        await db.send_sql(deleteHashtagQuery);
+    } else {
+        var decrementQuery = `UPDATE hashtags SET count = count - 1 WHERE text = '${hashtag}'`;
+        await db.send_sql(decrementQuery);
+    }
+
+    res.status(200).json({hashtag: hashtag})
 }
 
 var routes = {
