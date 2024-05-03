@@ -1,6 +1,5 @@
 const login_routes = require('./login_routes.js');
 const multer = require('multer');
-const chat_routes = require('./chat_routes.js');
 const friend_routes = require('./friend_routes.js');
 const s3Access = require('../models/s3_access.js'); 
 
@@ -24,7 +23,7 @@ function register_routes(app) {
     app.post('/:username/removeHashtag', login_routes.post_remove_hashtag);
     app.get('/:username/getRecommendedHashtags', login_routes.get_recommended_hashtags);
     app.get('/:username/getProfile', login_routes.get_profile);
-
+    app.get('/:username/isLoggedIn', login_routes.is_logged_in);
     //account changes
     app.put('/:username/change-username', login_routes.change_username);
     app.put('/:username/change-firstname', login_routes.change_firstname);
@@ -45,8 +44,8 @@ function register_routes(app) {
     app.get('/:username/offlineFriends', friend_routes.get_offline_friends);
 
 
-    //chat
-    app.get('/:username/isLoggedIn', chat_routes.is_logged_in);
+
+
 
   }
   

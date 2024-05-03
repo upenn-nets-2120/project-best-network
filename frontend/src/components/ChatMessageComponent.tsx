@@ -1,8 +1,7 @@
 import React from 'react';
 
 
-
-
+//this creates chat box for each chat message
 const MessageComponent = ({ sender, message, timestamp, currentUser }: { sender: string, message: string, timestamp: number, currentUser: string }) => {
   const formattedTimestamp = new Date(timestamp).toLocaleString(); // Convert timestamp to a readable date format
   const isSenderCurrentUser = sender !== currentUser;

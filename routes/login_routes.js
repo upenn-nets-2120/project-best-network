@@ -492,6 +492,21 @@ var change_password = async function(req, res) {
 
 
 
+// get /isLoggedIn
+//this is required for chatRoom
+var is_logged_in = async function(req, res) {
+  var username = req.params.username;
+  // if (username == null){
+  //     return res.status(403).json({ error: 'Not logged in.' });
+  //   }
+  // if (!helper.isLoggedIn(req,username)) {
+  //     return res.status(403).json({ error: 'Not logged in.' });
+  // }
+  res.status(200).json({ isLoggedIn : true });
+};
+
+
+
 var routes = { 
     get_helloworld: getHelloWorld,
     post_login: postLogin,
@@ -510,7 +525,8 @@ var routes = {
     change_email: change_email,
     change_birthday: change_birthday,
     change_affiliation: change_affiliation,
-    change_password: change_password
+    change_password: change_password,
+    is_logged_in : is_logged_in
   };
 
 
