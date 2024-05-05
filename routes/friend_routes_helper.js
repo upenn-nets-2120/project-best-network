@@ -4,7 +4,7 @@ const {OpenAIEmbeddingFunction} = require('chromadb');
 async function uploadEmbeddingsForPost(hashtags, author_id, post_id) {
     let embedder = new OpenAIEmbeddingFunction({
         openai_api_key: "sk-proj-sZ53UsKU4SJaL42d76pMT3BlbkFJ6Jc9TJiW8KCiM7oIgNm6",
-        model: "text-embedding-3-large"
+        model: "text-embedding-3-small"
     })
     console.log("The model is:", embedder.model);
 

@@ -446,11 +446,47 @@ var getOfflineFriends = async function(req, res) {
 };
 
 
+var createTweet = async function(req, res) {
+  // Check if a user is logged in
+  /*
+  if (req.session.user_id === null) {
+      return res.status(403).json({ error: 'Not logged in.' });
+  }
+*/
+
+  // Extract post parameters from the request body
+  const { id ,text, created_at, conversation_id, hashtags, author_id,
+    quoted_tweet_id, replied_to_tweet_id, quotes, urls, replies,
+     mentions, retweets, retweet_id, likes } = req.body;
+
+
+  try {
+      // Retrieve author_id based on username
+    // Insert the tweet data into your database table
+    const insertQuery = `
+    INSERT INTO tweets (quoted_tweet_id, hashtags, created_at, replied_to_tweet_id, quotes, urls, replies, conversation_id, mentions, id, text, author_id, retweets, retweet_id, likes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`;
+
+// Check if mentions is empty and replace it with NULL
+const mentionsValue = mentions.length > 0 ? mentions : null;
+
+// Pass the updated values to the database query
+await db.send_sql(insertQuery, [quoted_tweet_id, hashtags, new Date(created_at), replied_to_tweet_id, quotes, urls, replies, conversation_id, mentionsValue, id, text, author_id, retweets, retweet_id, likes]);
+      // Return successful response
+      return res.status(201).json({ message: 'tweet added.' });
+  } catch (error) {
+      // Handle database query errors
+      console.error('Error querying database:', error);
+      return res.status(500).json({ error: 'Error querying database for tweet.' });
+  }
+};
 
 
   
   var routes = { 
     create_post: createPost,
+    create_tweet: createTweet,
     add_friend: addFriend,
     remove_friend: removeFriend,
     get_feed: feed,

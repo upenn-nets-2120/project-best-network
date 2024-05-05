@@ -109,14 +109,31 @@ async function create_tables(db) {
       FOREIGN KEY (postID) REFERENCES posts(post_id) \
     );
     `)
-    
-
+  const q11 = db.create_tables(`
+  CREATE TABLE tweets ( \
+    id BIGINT PRIMARY KEY, \
+    created_at DATETIME, \
+    text TEXT, \
+    author_id BIGINT, \
+    quoted_tweet_id BIGINT, \
+    replied_to_tweet_id BIGINT, \
+    quotes INT, \
+    urls TEXT, \
+    replies INT, \
+    conversation_id BIGINT, \
+    retweets INT, \
+    retweet_id BIGINT, \
+    likes INT, \
+    hashtags TEXT, \
+    mentions TEXT  \
+);
+`)
   //   const q7 = db.send_sql(`
   //   DROP TABLE IF EXISTS chatRoomMessages, chatRoomUsers, chatRooms;
   // `);
 
 
-  await Promise.all([q1,q2,q3, q4, q5, q6, q7, q8, q9, q10]);
+  await Promise.all([q1,q2,q3, q4, q5, q6, q7, q8, q9, q10, q11]);
     
    
   dbaccess.close_db()

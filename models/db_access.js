@@ -5,6 +5,7 @@ const process = require('process');
 // Implementation of a singleton pattern for database connections
 let the_db = null;
 
+
 module.exports = {
     get_db_connection,
     set_db_connection,
