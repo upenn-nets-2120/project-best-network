@@ -42,17 +42,20 @@ function register_routes(app) {
     app.get('/:username/getProfile', profile_routes.get_profile);
 
 
-    //friends UPDATE
+    //friend routes
+    app.post('/:username/addFriend', friend_routes.add_friend);
+    app.post('/:username/removeFriend', friend_routes.remove_friend);
+    app.get('/:username/onlineFriends', friend_routes.get_online_friends);
+    app.get('/:username/offlineFriends', friend_routes.get_offline_friends);
+
+
+    //feed routes
     app.post('/:username/createPost', friend_routes.create_post); 
     app.post('/:username/createTweet', friend_routes.create_tweet); 
     app.post('/:username/uploadPost', upload.single('post'), friend_routes.upload_post); 
     app.get('/:username/feed', friend_routes.get_feed);
-    app.post('/:username/addFriend', friend_routes.add_friend);
-    app.post('/:username/removeFriend', friend_routes.remove_friend);
     app.post('/:username/sendLike', friend_routes.send_like);
-    app.get('/:username/onlineFriends', friend_routes.get_online_friends);
-    app.get('/:username/offlineFriends', friend_routes.get_offline_friends);
-
+   
 
 
 
