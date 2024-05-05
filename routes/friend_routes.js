@@ -204,8 +204,8 @@ var removeFriend = async function(req, res) {
         } else {
             // If parent_id is defined, include it in the query
             insertQuery = `
-                INSERT INTO posts (title, content, parent_post, author_id)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO posts (title, content, parent_post, author_id, like_count)
+                VALUES (?, ?, ?, ?, 0)
             `;
             await db.send_sql(insertQuery, [title, content, parent_id, author_id]);
         }
@@ -389,7 +389,22 @@ var sendLike = async function(req, res) {
       return res.status(500).json({ error: 'Error querying database.' });
   }
 };
+// GET /getComments
+var getComments = async function(req, res) {
+  try {
+    const {post_id} = req.body;
+    // select from posts those with parent id of the post
+    const commentQuery = `SELECT * FROM posts WHERE parent_post = ${post_id}`;
+    const comments = await db.send_sql(commentQuery);
+    console.log("comments: " + comments);
+    return res.status(200).json({ results: comments });
+  } catch (error) {
+    // Handle database query errors
+    console.error("Error querying database for comments:", error);
+    return res.status(500).json({ error: 'Error querying database.' });
+  }
 
+}
 // /GET friends online
 // Function to get online friends
 var getOnlineFriends = async function(req, res) {
@@ -493,8 +508,8 @@ await db.send_sql(insertQuery, [quoted_tweet_id, hashtags, new Date(created_at),
     upload_post: uploadPost,
     send_like: sendLike,
     get_online_friends: getOnlineFriends,
-    get_offline_friends: getOfflineFriends
-
+    get_offline_friends: getOfflineFriends,
+    get_comments: getComments
   };
   
   module.exports = routes;

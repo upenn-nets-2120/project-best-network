@@ -45,6 +45,7 @@ function register_routes(app) {
     //friends UPDATE
     app.post('/:username/createPost', friend_routes.create_post); 
     app.post('/:username/createTweet', friend_routes.create_tweet); 
+    app.get('/:username/getComment', friend_routes.get_comments);
     app.post('/:username/uploadPost', upload.single('post'), friend_routes.upload_post); 
     app.get('/:username/feed', friend_routes.get_feed);
     app.post('/:username/addFriend', friend_routes.add_friend);
