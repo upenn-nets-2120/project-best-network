@@ -2,6 +2,7 @@ const dbsingleton = require('../models/db_access.js');
 const config = require('../config.json'); // Load configuration
 const helper = require('../routes/login_route_helper.js');
 const s3Access = require('../models/s3_access.js'); 
+const { uploadEmbeddingsForPost } = require('../routes/friend_routes_helper.js');
 //const PORT = config.serverPort;
 const db = dbsingleton;
 db.get_db_connection();
@@ -243,7 +244,20 @@ var removeFriend = async function(req, res) {
                 await db.send_sql(insertQuery2, [last_id, hashtag_id]);
             }
         }
-
+        // use hashtags to upload embeddings
+        if (hashtags) {
+          uploadEmbeddingsForPost(hashtags, author_id, last_id)
+          .then((result) => {
+            console.log(result);
+            if(!result) {
+              return res.status(500).json({ error: 'Error uploading photo with embeddings.' });
+            }
+          })
+          .catch((error) => {
+            console.error(error);
+            return res.status(500).json({ error: 'Error uploading photo with embeddings.' });
+          });
+        }
         // Handle image content and S3 access if content is provided
         if (content) {
           try {
@@ -289,29 +303,34 @@ var uploadPost = async function(req, res) {
   const last_id = last_post[0].post_id;
 
   const post = req.file;
+  const filenameWithExtension = req.file.originalname;
+  const filenameWithoutExtension = filenameWithExtension.replace(/\.[^/.]+$/, '');
+
   console.log(post);
   const userID = req.session.user_id;
 
   if (!post) {
-    return res.status(400).json({ error: 'No profile photo uploaded.' });
+    return res.status(400).json({ error: 'No post uploaded.' });
   }
-  // if (!userID) {
-  //   return res.status(403).json({ error: 'Not logged in.' });
-  // }
+  if (!userID) {
+     return res.status(403).json({ error: 'Not logged in.' });
+  }
 
   try {
-    await s3Access.put_by_key("best-network-nets212-sp24", "/posts/" + last_id, post.buffer, post.mimetype);
+    await s3Access.put_by_key("best-network-nets212-sp24", "/posts/" + userID, post.buffer, post.mimetype);
     // Get the photo URL from S3
-    const photoURL = `s3://best-network-nets212-sp24//posts/${last_id}`
+    const photoURL = `https://best-network-nets212-sp24.s3.amazonaws.com//posts/${userID}`
 
     // Update the user's profile photo URL in the database
     const pfpQuery = `UPDATE posts SET content = '${photoURL}' WHERE post_id = ${last_id};`;
     await db.send_sql(pfpQuery);
 
-    return res.status(200).json({ message: 'Profile photo uploaded successfully.' });
-  } catch (error) {
+    // upload to chromaDB collection
 
-    return res.status(500).json({ error: 'Error uploading profile photo.' });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Error uploading photo.' });
   }
 
 };
