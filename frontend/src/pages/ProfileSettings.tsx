@@ -2,6 +2,8 @@ import { useState } from 'react';
 import axios from 'axios'; 
 import config from '../../config.json';
 import { useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+
 
 
 export default function ProfileSettings() {
@@ -18,6 +20,15 @@ export default function ProfileSettings() {
     const [affiliation, setAffiliation] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+
+    const navigate = useNavigate(); 
+    const home = () => {
+        navigate("/" + username + "/home");
+    };
+
+    const profile = () => {
+        navigate("/" + username + "/profilepage");
+    };
 
     const handleChangeUsername = async () => {
         try {
@@ -109,111 +120,124 @@ export default function ProfileSettings() {
     };
 
     return (
-        <div className='w-screen h-screen flex items-center justify-center'>
-            <div className='rounded-md bg-slate-50 p-6 space-y-2 w-full'>
-                <div className='font-bold flex w-full justify-center text-2xl mb-4'>
-                    Profile Settings
+        <div>
+            
+            {/* Header */}
+            <div className='w-full h-16 bg-slate-50 flex justify-center mb-2'>
+                <div className='text-2xl max-w-[1800px] w-full flex items-center'>
+                Pennstagram - {username} &nbsp;
+                    <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
+                    onClick={home}>Home</button>&nbsp;
+                    <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
+                    onClick={profile}>Profile Page</button>&nbsp;
                 </div>
-                <div className='flex space-x-4 items-center justify-between'>
-                    <label htmlFor="username" className='font-semibold'>Username</label>
-                    <input
-                        id="user"
-                        type="text"
-                        className='outline-none bg-white rounded-md border border-slate-100 p-2'
-                        value={user}
-                        onChange={(e) => setUsername(e.target.value)}
-                    />
-                    <button onClick={handleChangeUsername} className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'>
-                        Change Username
-                    </button>
-                </div>
-                <div className='flex space-x-4 items-center justify-between'>
-                    <label htmlFor="firstName" className='font-semibold'>First Name</label>
-                    <input
-                        id="firstName"
-                        type="text"
-                        className='outline-none bg-white rounded-md border border-slate-100 p-2'
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                    />
-                    <button onClick={handleChangeFirstName} className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'>
-                        Change First Name
-                    </button>
-                </div>
-                <div className='flex space-x-4 items-center justify-between'>
-                    <label htmlFor="lastName" className='font-semibold'>Last Name</label>
-                    <input
-                        id="lastName"
-                        type="text"
-                        className='outline-none bg-white rounded-md border border-slate-100 p-2'
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                    />
-                    <button onClick={handleChangeLastName} className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'>
-                        Change Last Name
-                    </button>
-                </div>
-                <div className='flex space-x-4 items-center justify-between'>
-                    <label htmlFor="email" className='font-semibold'>Email</label>
-                    <input
-                        id="email"
-                        type="email"
-                        className='outline-none bg-white rounded-md border border-slate-100 p-2'
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                    />
-                    <button onClick={handleChangeEmail} className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'>
-                        Change Email
-                    </button>
-                </div>
-                <div className='flex space-x-4 items-center justify-between'>
-                    <label htmlFor="birthday" className='font-semibold'>Birthday</label>
-                    <input
-                        id="birthday"
-                        type="date"
-                        className='outline-none bg-white rounded-md border border-slate-100 p-2'
-                        value={birthday}
-                        onChange={(e) => setBirthday(e.target.value)}
-                    />
-                    <button onClick={handleChangeBirthday} className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'>
-                        Change Birthday
-                    </button>
-                </div>
-                <div className='flex space-x-4 items-center justify-between'>
-                    <label htmlFor="affiliation" className='font-semibold'>Affiliation</label>
-                    <input
-                        id="affiliation"
-                        type="text"
-                        className='outline-none bg-white rounded-md border border-slate-100 p-2'
-                        value={affiliation}
-                        onChange={(e) => setAffiliation(e.target.value)}
-                    />
-                    <button onClick={handleChangeAffiliation} className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'>
-                        Change Affiliation
-                    </button>
-                </div>
-                <div className='flex space-x-4 items-center justify-between'>
-                    <label htmlFor="password" className='font-semibold'>Password</label>
-                    <input
-                        id="password"
-                        type="password"
-                        className='outline-none bg-white rounded-md border border-slate-100 p-2'
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <button onClick={handleChangePassword} className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'>
-                        Change Password
-                    </button>
-                </div>
-                <div className='flex space-x-4 items-center justify-between'>
-                    <label htmlFor="confirmPassword" className='font-semibold'>Confirm Password</label>
-                    <input
-                        id="confirmPassword"
-                        type="password"
-                        className='outline-none bg-white rounded-md border border-slate-100 p-2'
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                    />
+            </div>
+            <div className='w-screen h-screen flex items-center justify-center'>
+                <div className='rounded-md bg-slate-50 p-6 space-y-2 w-full'>
+                    <div className='font-bold flex w-full justify-center text-2xl mb-4'>
+                        Profile Settings
+                    </div>
+                    <div className='flex space-x-4 items-center justify-between'>
+                        <label htmlFor="username" className='font-semibold'>Username</label>
+                        <input
+                            id="user"
+                            type="text"
+                            className='outline-none bg-white rounded-md border border-slate-100 p-2'
+                            value={user}
+                            onChange={(e) => setUsername(e.target.value)}
+                        />
+                        <button onClick={handleChangeUsername} className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'>
+                            Change Username
+                        </button>
+                    </div>
+                    <div className='flex space-x-4 items-center justify-between'>
+                        <label htmlFor="firstName" className='font-semibold'>First Name</label>
+                        <input
+                            id="firstName"
+                            type="text"
+                            className='outline-none bg-white rounded-md border border-slate-100 p-2'
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                        />
+                        <button onClick={handleChangeFirstName} className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'>
+                            Change First Name
+                        </button>
+                    </div>
+                    <div className='flex space-x-4 items-center justify-between'>
+                        <label htmlFor="lastName" className='font-semibold'>Last Name</label>
+                        <input
+                            id="lastName"
+                            type="text"
+                            className='outline-none bg-white rounded-md border border-slate-100 p-2'
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                        />
+                        <button onClick={handleChangeLastName} className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'>
+                            Change Last Name
+                        </button>
+                    </div>
+                    <div className='flex space-x-4 items-center justify-between'>
+                        <label htmlFor="email" className='font-semibold'>Email</label>
+                        <input
+                            id="email"
+                            type="email"
+                            className='outline-none bg-white rounded-md border border-slate-100 p-2'
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                        <button onClick={handleChangeEmail} className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'>
+                            Change Email
+                        </button>
+                    </div>
+                    <div className='flex space-x-4 items-center justify-between'>
+                        <label htmlFor="birthday" className='font-semibold'>Birthday</label>
+                        <input
+                            id="birthday"
+                            type="date"
+                            className='outline-none bg-white rounded-md border border-slate-100 p-2'
+                            value={birthday}
+                            onChange={(e) => setBirthday(e.target.value)}
+                        />
+                        <button onClick={handleChangeBirthday} className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'>
+                            Change Birthday
+                        </button>
+                    </div>
+                    <div className='flex space-x-4 items-center justify-between'>
+                        <label htmlFor="affiliation" className='font-semibold'>Affiliation</label>
+                        <input
+                            id="affiliation"
+                            type="text"
+                            className='outline-none bg-white rounded-md border border-slate-100 p-2'
+                            value={affiliation}
+                            onChange={(e) => setAffiliation(e.target.value)}
+                        />
+                        <button onClick={handleChangeAffiliation} className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'>
+                            Change Affiliation
+                        </button>
+                    </div>
+                    <div className='flex space-x-4 items-center justify-between'>
+                        <label htmlFor="password" className='font-semibold'>Password</label>
+                        <input
+                            id="password"
+                            type="password"
+                            className='outline-none bg-white rounded-md border border-slate-100 p-2'
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                        <button onClick={handleChangePassword} className='px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white'>
+                            Change Password
+                        </button>
+                    </div>
+                    <div className='flex space-x-4 items-center justify-between'>
+                        <label htmlFor="confirmPassword" className='font-semibold'>Confirm Password</label>
+                        <input
+                            id="confirmPassword"
+                            type="password"
+                            className='outline-none bg-white rounded-md border border-slate-100 p-2'
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                        />
+                    </div>
                 </div>
             </div>
         </div>

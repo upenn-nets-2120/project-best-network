@@ -2,6 +2,8 @@ import {useState, useEffect} from 'react';
 import axios from 'axios';
 import config from '../../config.json';
 import { useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+
 
 export default function UserProfile() {
   const [profilePhoto, setProfilePhoto] = useState(null);
@@ -15,6 +17,7 @@ export default function UserProfile() {
   const [error, setError] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const rootURL = config.serverRootURL;
+  
 
   useEffect(() => {
     getProfile();
@@ -23,6 +26,17 @@ export default function UserProfile() {
   }, []);
 
   const { username } = useParams();
+
+  const navigate = useNavigate(); 
+  const home = () => {
+      navigate("/" + username + "/home");
+  };
+
+  const settings = () => {
+    navigate("/" + username + "/profileSettings");
+  };
+
+
   const getProfile = async () => {
     try {
       const response = await axios.get(`${rootURL}/${username}/getProfile`, { withCredentials: true });
@@ -158,92 +172,108 @@ export default function UserProfile() {
   };
 
   return (
-    <div className="w-screen h-screen flex items-center justify-center">
-      <div>
-        <div>Username: {username}</div>
-        <div>Email: {email}</div>
-        <div>
-          Profile Photo: {profilePhoto ? <img src={profilePhoto} alt="Profile" style={{ maxWidth: '100px' }} /> : 'No photo'}
-        </div>
-        <div>Hashtags: {hashtags.join(", ")}</div>
-        <div>Actor: {actor}</div>
-        <div>Similar Actors: {similarActors.join(", ")}</div>
+    <div>
+
+      {/* Header */}
+      <div className='w-full h-16 bg-slate-50 flex justify-center mb-2'>
+          <div className='text-2xl max-w-[1800px] w-full flex items-center'>
+          Pennstagram - {username} &nbsp;
+            <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
+            onClick={home}>Home</button>&nbsp;
+            <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
+            onClick={settings}>Profile Settings</button>&nbsp;
+          </div>
       </div>
 
-      <form>
-        {/* Input and button to add hashtag */}
-        <div className="flex space-x-4 items-center">
-        {/* Render recommended hashtags as buttons */}
-        <div className="space-x-2">
-            {recommendedHashtags.map((hashtag, index) => (
-            <button
-                key={index}
-                type="button"
-                className="px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white"
-                onClick={() => handleHashtagButtonClick(hashtag)}
-            >
-                {hashtag}
-            </button>
-            ))}
-            </div>
-        </div>
-        <div className="flex space-x-4 items-center">
-        <input
-            id="addHashtagInput"
-            type="text"
-            className="outline-none bg-white rounded-md border border-slate-100 p-2"
-            placeholder="Enter hashtag"
-            value={newHashtag}
-            onChange={(e) => setNewHashtag(e.target.value)}
-        />
-        <button
-            type="button"
-            className="px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white"
-            onClick={addHashtag}
-        >
-            Add Hashtag
-        </button>
-        <button
-            type="button"
-            className="px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white"
-            onClick={removeHashtag}
-        >
-            Remove Hashtag
-        </button>
+      
 
+      <div className="w-screen h-screen flex items-center justify-center">
+        <div>
+          <div>Username: {username}</div>
+          <div>Email: {email}</div>
+          <div>
+            Profile Photo: {profilePhoto ? <img src={profilePhoto} alt="Profile" style={{ maxWidth: '100px' }} /> : 'No photo'}
+          </div>
+          <div>Hashtags: {hashtags.join(", ")}</div>
+          <div>Actor: {actor}</div>
+          <div>Similar Actors: {similarActors.join(", ")}</div>
         </div>
-        {/* Input and button to reset actor */}
-        <div className="flex space-x-4 items-center">
-        <input
-            id="resetActorInput"
-            type="text"
-            className="outline-none bg-white rounded-md border border-slate-100 p-2"
-            placeholder="Enter actor name"
-            value={newActor}
-            onChange={(e) => setNewActor(e.target.value)}
-            />
-            <button 
-            className="px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white" 
-            onClick={() => resetActor(newActor)}>Reset Actor</button>
 
-        </div>
-        {/* Input for file upload */}
-        <div className="flex space-x-4 items-center">
-         <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setSelectedFile(e.target.files && e.target.files.length > 0 ? e.target.files[0] : null)}
-            id="fileInput"
-        />
-        <button
-            type="button"
-            className="px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white"
-            onClick={handleFileUpload}
-         >
-            Upload File
-        </button>
-    </div>
-      </form>
+        <form>
+          {/* Input and button to add hashtag */}
+          <div className="flex space-x-4 items-center">
+          {/* Render recommended hashtags as buttons */}
+          <div className="space-x-2">
+              {recommendedHashtags.map((hashtag, index) => (
+              <button
+                  key={index}
+                  type="button"
+                  className="px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white"
+                  onClick={() => handleHashtagButtonClick(hashtag)}
+              >
+                  {hashtag}
+              </button>
+              ))}
+              </div>
+          </div>
+          <div className="flex space-x-4 items-center">
+          <input
+              id="addHashtagInput"
+              type="text"
+              className="outline-none bg-white rounded-md border border-slate-100 p-2"
+              placeholder="Enter hashtag"
+              value={newHashtag}
+              onChange={(e) => setNewHashtag(e.target.value)}
+          />
+          <button
+              type="button"
+              className="px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white"
+              onClick={addHashtag}
+          >
+              Add Hashtag
+          </button>
+          <button
+              type="button"
+              className="px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white"
+              onClick={removeHashtag}
+          >
+              Remove Hashtag
+          </button>
+
+          </div>
+          {/* Input and button to reset actor */}
+          <div className="flex space-x-4 items-center">
+          <input
+              id="resetActorInput"
+              type="text"
+              className="outline-none bg-white rounded-md border border-slate-100 p-2"
+              placeholder="Enter actor name"
+              value={newActor}
+              onChange={(e) => setNewActor(e.target.value)}
+              />
+              <button 
+              className="px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white" 
+              onClick={() => resetActor(newActor)}>Reset Actor</button>
+
+          </div>
+          {/* Input for file upload */}
+          <div className="flex space-x-4 items-center">
+          <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setSelectedFile(e.target.files && e.target.files.length > 0 ? e.target.files[0] : null)}
+              id="fileInput"
+          />
+          <button
+              type="button"
+              className="px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white"
+              onClick={handleFileUpload}
+          >
+              Upload File
+          </button>
+      </div>
+        </form>
+      </div>
     </div>
   );
 }

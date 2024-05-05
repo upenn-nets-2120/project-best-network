@@ -82,14 +82,17 @@ export default function Friends() {
 
     const removeFriend = async () => {
         try {
-            await axios.delete(`${rootURL}/${username}/removeFriend`, { data: { username: removeFriendName }, withCredentials: true });
+
+            await axios.post(`${rootURL}/${username}/removeFriend`, {
+                username: removeFriendName
+              }, { withCredentials: true });
             setRemoveFriendName('');
             // Refresh friends list after removing
             const onlineFriendsResponse = await axios.get(`${rootURL}/${username}/onlineFriends`, { withCredentials: true });
             setOnlineFriends(onlineFriendsResponse.data.results);
 
             const offlineFriendsResponse = await axios.get(`${rootURL}/${username}/offlineFriends`, { withCredentials: true });
-            setOnlineFriends(offlineFriendsResponse.data.results);
+            setOfflineFriends(offlineFriendsResponse.data.results);
 
             
         } catch (error) {
