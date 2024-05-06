@@ -83,6 +83,7 @@ async function create_tables(db) {
         content VARCHAR(255), \
         author_id INT, \
         like_count INT, \
+        photo VARCHAR(255), \
         FOREIGN KEY (parent_post) REFERENCES posts(post_id), \
         FOREIGN KEY (author_id) REFERENCES users(id), \
         PRIMARY KEY (post_id) \
@@ -111,7 +112,7 @@ async function create_tables(db) {
       );
       `)
     const q11 = db.create_tables(`
-    CREATE TABLE tweets ( \
+    CREATE TABLE IF NOT EXISTS tweets ( \
       id BIGINT PRIMARY KEY, \
       created_at DATETIME, \
       text TEXT, \
@@ -129,9 +130,7 @@ async function create_tables(db) {
       mentions TEXT  \
     );
     `)
-  //   const q7 = db.send_sql(`
-  //   DROP TABLE IF EXISTS chatRoomMessages, chatRoomUsers, chatRooms;
-  // `);
+
 
 
   await Promise.all([q1,q2,q3, q4, q5, q6, q7, q8, q9, q10, q11]);
