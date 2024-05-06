@@ -3,6 +3,24 @@ const config = require('../config.json'); // Load configuration
 const helper = require('../routes/login_route_helper.js');
 const s3Access = require('../models/s3_access.js'); 
 const { uploadEmbeddingsForPost } = require('../routes/friend_routes_helper.js');
+/*
+const { RecursiveCharacterTextSplitter } = require("langchain/text_splitter");
+*/
+const { OpenAIEmbeddings } = require("@langchain/openai");
+/*
+const { MemoryVectorStore } = require("langchain/vectorstores/memory");
+const { createStuffDocumentsChain } = require("langchain/chains/combine_documents");
+const { Document } = require("@langchain/core/documents");
+const { createRetrievalChain } = require("langchain/chains/retrieval");
+
+const { formatDocumentsAsString } = require("langchain/util/document");
+const {
+    RunnableSequence,
+    RunnablePassthrough,
+  } = require("@langchain/core/runnables");
+ */ 
+const { Chroma } = require("@langchain/community/vectorstores/chroma");
+
 //const PORT = config.serverPort;
 const db = dbsingleton;
 db.get_db_connection();
@@ -11,6 +29,22 @@ const PORT = config.serverPort;
 var getHelloWorld = function(req, res) {
   res.status(200).send({message: "Hello, world!"});
 }
+
+var getVectorStore = async function(req) {
+  if (vectorStore == null) {
+      const embeddings = new OpenAIEmbeddings({
+        apiKey: process.env.OPENAI_API_KEY, // In Node.js defaults to process.env.OPENAI_API_KEY
+        batchSize: 512, // Default value if omitted is 512. Max is 2048
+        model: "text-embedding-3-small",
+      });
+      vectorStore = await Chroma.fromExistingCollection(embeddings, {
+          collectionName: "posts_new",
+          url: "http://localhost:8000", // Optional, will default to this value
+          });
+  }
+  return vectorStore;
+}
+
 // POST /addFriend
 var addFriend = async function(req, res) {
     // Implementation to add a friend
@@ -461,6 +495,7 @@ var getOfflineFriends = async function(req, res) {
 };
 
 
+
 var createTweet = async function(req, res) {
   // Check if a user is logged in
   /*
@@ -496,6 +531,38 @@ await db.send_sql(insertQuery, [quoted_tweet_id, hashtags, new Date(created_at),
       return res.status(500).json({ error: 'Error querying database for tweet.' });
   }
 };
+
+var getPost = async function(req, res) {
+  const vs = await getVectorStore();
+  const retriever = vs.asRetriever();
+  console.log(req.body)
+  const { context, question } = req.body;
+  if (!context || !question) {
+      console.log(question)
+      console.log(context)
+  }
+  //console.log(process.env.OPENAI_API_KEY)
+  const prompt =
+  PromptTemplate.fromTemplate(`Given: ${context}, answer: ${question}`);
+  const llm = new ChatOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      model: "gpt-3.5-turbo" 
+  });
+
+  const ragChain = RunnableSequence.from([
+      {
+          context: retriever.pipe(formatDocumentsAsString),
+          question: new RunnablePassthrough(),
+        },
+    prompt,
+    llm,
+    new StringOutputParser(),
+  ]);
+
+  result = await ragChain.invoke(req.body.question);
+  console.log(result);
+  res.status(200).json({message:result});
+}
 
 
   
