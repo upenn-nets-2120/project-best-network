@@ -84,17 +84,34 @@ public class FriendsOfFriendsSpark {
             // likeToPost with user id and post id
             // merge in posts and only keep when parent post is null
             //put in java pair rdd with user id and post id
+            String sql;
+            Statement stmt;
+            ResultSet resultSet;
+            List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>> networkList = new ArrayList<>();
 
-            String sql = "SELECT users.id AS user_id, 'u' AS utag, posts.post_id AS post_id, 'p' AS ptag " +
+            sql = "SELECT users.id AS user_id, 'u' AS utag, posts.post_id AS post_id, 'p' AS ptag " +
                           "FROM users " +
                           "JOIN posts ON users.id = posts.author_id " +
                           "WHERE posts.parent_post IS NULL";
             
             
-            Statement stmt = connection.createStatement();
-            ResultSet resultSet = stmt.executeQuery(sql);
+            stmt = connection.createStatement();
+            resultSet = stmt.executeQuery(sql);
             // Process the result set and create a list of Tuple2 representing users and posts
-            List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>> networkList = new ArrayList<>();
+            while (resultSet.next()) {
+                int user_id = resultSet.getInt("user_id");
+                int post_id = resultSet.getInt("post_id");
+                networkList.add(new Tuple2<>(new Tuple2<>(user_id, "u"), new Tuple2<>(post_id, "p")));
+            }
+
+            sql = "SELECT posts.post_id AS post_id, 'p' AS ptag, users.id AS user_id, 'u' AS utag " +
+                 "FROM posts " +
+                 "JOIN users ON posts.author_id = users.id " +
+                 "WHERE posts.parent_post IS NULL";
+
+            stmt = connection.createStatement();
+            resultSet = stmt.executeQuery(sql);
+            // Process the result set and create a list of Tuple2 representing users and posts
             while (resultSet.next()) {
                 int user_id = resultSet.getInt("user_id");
                 int post_id = resultSet.getInt("post_id");
@@ -104,6 +121,8 @@ public class FriendsOfFriendsSpark {
             // Convert the list to JavaRDD and then to JavaPairRDD
             JavaRDD<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>> rdd = context.parallelize(networkList);
             JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, String>> network = rdd.mapToPair(pair -> new Tuple2<>(pair._1(), pair._2()));
+
+
 
             // Show the result
             network.foreach(pair -> System.out.println(pair._1() + " -> " + pair._2()));
