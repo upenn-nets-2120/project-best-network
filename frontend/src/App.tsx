@@ -6,8 +6,9 @@ import Friends from "./pages/Friends";
 import SearchBar from "./pages/SearchBar";
 import ChatPage from "./pages/ChatPage";
 import ProfilePage from './pages/ProfilePage'; 
-import ProfilePhoto from './pages/ProfilePhoto'
-import ProfileSettings from './pages/ProfileSettings'
+import ProfilePhoto from './pages/ProfilePhoto';
+import ProfileSettings from './pages/ProfileSettings';
+import ActorPage from './pages/ActorPage';
 function App() {
   return (
     <BrowserRouter>
@@ -21,6 +22,8 @@ function App() {
         <Route path="/:username/setProfilePhoto" element={<ProfilePhoto />} />
         <Route path="/:username/ProfilePage" element={<ProfilePage />} />
         <Route path="/:username/ProfileSettings" element={<ProfileSettings />} />
+        <Route path="/:username/Actors" element={<ActorPage />} />
+
 
       </Routes>
     </BrowserRouter>

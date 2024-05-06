@@ -41,8 +41,6 @@ function register_routes(app) {
 
 
     //profile stuff
-    app.get('/:username/getMostSimilarActors', profile_routes.get_most_similar_actors);
-    app.post('/:username/setActor', profile_routes.post_actor);
     app.post('/:username/addHashtag', profile_routes.post_add_hashtag);
     app.post('/:username/removeHashtag', profile_routes.post_remove_hashtag);
     app.get('/:username/getRecommendedHashtags', profile_routes.get_recommended_hashtags);
@@ -66,7 +64,7 @@ function register_routes(app) {
 
     //actor routes
     app.get('/:username/getActors', actor_routes.get_actors);
-    app.get('/:username/setActor', actor_routes.set_actor);
+    app.post('/:username/setActor', actor_routes.set_actor);
    
 
 

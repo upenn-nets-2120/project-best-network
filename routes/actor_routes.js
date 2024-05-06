@@ -24,26 +24,6 @@ async function initializeAndFindTopKMatches(s3Url) {
             embeddingFunction: null,
             metadata: { "hnsw:space": "l2" },
         });
-        //await initializeFaceModels();
-        
-        /**
-         
-
-        // Check if the indexing process has completed
-        const indexingPromises = [];
-        fs.readdir("images", function (err, files) {
-            if (err) {
-                console.error("Could not list the directory.", err);
-                process.exit(1);
-            }
-            files.forEach(function (file, index) {
-                indexingPromises.push(indexAllFaces(path.join("images", file), file, collection));
-            });
-        });
-        await Promise.all(indexingPromises);
-        */
-
-        // Once indexing is complete, proceed with querying
         const topMatches = await findTopKMatches(collection, s3Url, 5);
         
         return topMatches;
@@ -83,7 +63,10 @@ var get_actors = async function(req, res) {
     try {
         // Call initializeAndFindTopKMatches function
         const topMatches = await initializeAndFindTopKMatches(info.profilePhoto);
-        return res.status(200).json(topMatches);
+        const nconsts = topMatches[0].documents[0].map((document) => document.split('.')[0]);
+        const actorQuery = `SELECT primaryName, nconst FROM actors WHERE nconst IN (${nconsts.map(() => '?').join(',')})`;
+        const actorResults = await db.send_sql(actorQuery, nconsts);
+        return res.status(200).json(actorResults);
     } catch (error) {
         console.error('Error getting actors:', error);
         return res.status(500).json({ error: 'Internal Server Error' }); // Send error response
@@ -91,6 +74,26 @@ var get_actors = async function(req, res) {
 }
 
 var set_actor = async function(req, res) {
+    console.log("set_actor");
+    console.log("why isnt this working");
+    var username = req.session.username;
+    const { actor } = req.body;
+    if (username == null){
+        return res.status(403).json({ error: 'Not logged in.' });
+    }
+
+    try {
+        const updateQuery = `UPDATE users SET actor_nconst = '${actor}' WHERE id = '${req.session.user_id}';`;
+        console.log(updateQuery);
+
+        await db.send_sql(updateQuery);
+        return res.status(200).json(actor);
+    } catch (error) {
+        console.error('Error setting actor:', error);
+        return res.status(500).json({ error: 'Internal Server Error' }); // Send error response
+    }
+
+
 
 }
 
