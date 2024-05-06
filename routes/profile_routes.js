@@ -33,6 +33,7 @@ var set_profile_hashtags = async function(req, res) {
 // GET /getProfile
 var get_profile = async function(req, res) {
     var username = req.session.username;
+    console.log(username);
     if (username == null){
         return res.status(403).json({ error: 'Not logged in.' });
     }
@@ -89,6 +90,8 @@ var get_recommended_hashtags = async function(req, res) {
 var post_add_hashtag = async function(req, res) {
     const { hashtag } = req.body
     const userID = req.session.user_id;
+    console.log(userID);
+    console.log(username);
 
     var hashtagQuery = `SELECT hashtags.text 
             FROM users

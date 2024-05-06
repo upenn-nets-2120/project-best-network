@@ -26,7 +26,8 @@ function register_routes(app) {
     app.post('/login', login_routes.post_login);
     app.get('/:username/logout', login_routes.post_logout);
     app.post('/register', login_routes.post_register);
-    app.post('/:username/setProfilePhoto', upload.single('profilePhoto'), login_routes.post_set_profile_photo); 
+    app.post('/:username/setProfilePhoto', upload.single('profilePhoto'), login_routes.set_profile_photo); 
+    app.post('/:username/deleteProfilePhoto', login_routes.delete_profile_photo); 
     app.get('/:username/isLoggedIn', login_routes.is_logged_in);
 
     //account changes

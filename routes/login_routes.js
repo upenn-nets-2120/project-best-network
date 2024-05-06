@@ -4,7 +4,6 @@ const bcrypt = require('bcrypt');
 const helper = require('../routes/login_route_helper.js');
 const process = require('process');
 const s3Access = require('../models/s3_access.js'); 
-const { useResolvedPath } = require('react-router');
 
 
 
@@ -179,12 +178,13 @@ var setProfilePhoto = async function(req, res) {
 
   const profilePhoto = req.file;
   console.log(profilePhoto);
-  const userID = req.session.user_id;
+  const username = req.session.username;
+  const user_id = req.session.user_id;
 
   if (!profilePhoto) {
     return res.status(400).json({ error: 'No profile photo uploaded.' });
   }
-  if (!userID) {
+  if (!username) {
     return res.status(403).json({ error: 'Not logged in.' });
   }
 
@@ -211,17 +211,25 @@ var setProfilePhoto = async function(req, res) {
 
 var deleteProfilePhoto = async function(req, res) {
 
-  const userID = req.session.user_id;
+  console.log("Delete pfp function...");
 
-  const usersQuery = `SELECT * from users where id = '${userID}'`;
+  console.log(req.session.user_id);
+  const username = req.session.username;
+  const userID = req.session.user_id;
+  if (!username) {
+    return res.status(403).json({ error: 'Not logged in.' });
+  }
+
+
+  const usersQuery = `SELECT * from users where username = '${username}'`;
   var userData = await db.send_sql(usersQuery);
   console.log(userData);
-  profilePhoto = userData[0].profilePhoto;
-  if (profilePhoto) {
+  if (userData[0].profilePhoto) {
     console.log("User has existing profile photo, deleting");
 
     await s3Access.delete_by_key("best-network-nets212-sp24", "/profilePictures/" + userID);
     const pfpQuery = `UPDATE users SET profilePhoto = NULL WHERE id = '${userID}';`;
+    await db.send_sql(pfpQuery);
 
   } else {
     console.log("No profile photo to delete");
@@ -326,8 +334,8 @@ var routes = {
     get_registration: checkRegistration,
     post_login: postLogin,
     post_register: postRegister,
-    post_set_profile_photo: setProfilePhoto,
-    post_delete_profile_photo: deleteProfilePhoto,
+    set_profile_photo: setProfilePhoto,
+    delete_profile_photo: deleteProfilePhoto,
     post_logout: postLogout,
     is_logged_in : is_logged_in
   };

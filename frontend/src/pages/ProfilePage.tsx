@@ -184,6 +184,22 @@ export default function UserProfile() {
     }
   };
 
+  const handleDeletePhoto = async () => {
+    try {
+      const response = await axios.post(`${rootURL}/${username}/deleteProfilePhoto`, {}, { withCredentials: true });
+      if (response.status === 200) {
+        const response = await axios.get(`${rootURL}/${username}/getProfile`, { withCredentials: true });
+        setProfilePhoto(response.data.profilePhoto);
+      } else {
+        console.error('Failed to upload profile photo.');
+      }
+    } catch (error) {
+      console.error('Upload profile photo error:', error);
+    }
+
+  }
+
+
   return (
     <div>
 
@@ -282,7 +298,14 @@ export default function UserProfile() {
               className="px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white"
               onClick={handleFileUpload}
           >
-              Upload File
+              Upload New Profile Photo
+          </button>
+          <button
+              type="button"
+              className="px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white"
+              onClick={handleDeletePhoto}
+          >
+              Delete Profile Photo
           </button>
       </div>
         </form>
