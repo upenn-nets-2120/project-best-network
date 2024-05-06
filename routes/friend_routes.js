@@ -334,7 +334,7 @@ var uploadPost = async function(req, res) {
     const photoURL = `https://best-network-nets212-sp24.s3.amazonaws.com//posts/${last_id}`
 
     // Update the user's profile photo URL in the database
-    const pfpQuery = `UPDATE posts SET photo = '${photoURL}' WHERE last_id = ${last_id};`;
+    const pfpQuery = `UPDATE posts SET photo = '${photoURL}' WHERE post_id = '${last_id}';`;
     await db.send_sql(pfpQuery);
 
     // upload to chromaDB collection
