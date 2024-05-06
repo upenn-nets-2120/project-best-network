@@ -304,7 +304,7 @@ var removeFriend = async function(req, res) {
               await s3Access.put_by_key(bucketName, s3Path, content.buffer, content.mimetype);
       
               // Update the user's profile photo URL in the database if needed
-              const pfpQuery = `UPDATE users SET profilePhoto = ? WHERE id = ?`;
+              const pfpQuery = `UPDATE posts SET content = ? WHERE id = ?`;
               await db.send_sql(pfpQuery, [s3Url, author_id]);
       
               // Return successful response
@@ -426,7 +426,9 @@ var sendLike = async function(req, res) {
 // GET /getComments
 var getComments = async function(req, res) {
   try {
+    console.log(req.body); 
     const {post_id} = req.body;
+    console.log(post_id); 
     // select from posts those with parent id of the post
     const commentQuery = `SELECT * FROM posts WHERE parent_post = ${post_id}`;
     const comments = await db.send_sql(commentQuery);
