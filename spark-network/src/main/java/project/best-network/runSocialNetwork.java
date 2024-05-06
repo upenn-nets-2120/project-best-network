@@ -328,7 +328,7 @@ public class runSocialNetwork {
         
         int i = 0;
         double d_max = .1;
-        while (i < 100) {
+        while (i < 1) {
             i = i +1 ;
             //propogate labels ie for each label move across an edge so edgeRDD.join labels then multiple the edge._2._1 weight times the label weight label._2() and store in new tuple <edge._2._1,
             JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> propagatedVertexLabels = vertexLabels
@@ -364,11 +364,8 @@ public class runSocialNetwork {
 
             propagatedVertexLabels = propagatedVertexLabels
                 .mapToPair(pair -> {
-                    Tuple2<Integer, String> key = pair._1();
-                    Tuple2<Integer, Double> value = pair._2();
-
-                    if (key._2().equals("u") && key._1().equals(value._1())) {
-                        return new Tuple2<>(key, new Tuple2<>(value._1(), 1.0));
+                    if (pair._1._2().equals("u") && pair._1._1().equals(pair._2._1())) {
+                        return new Tuple2<>(pair._1(), new Tuple2<>(pair._2._1(), 1.0));
                     } else {
                         return pair;
                     }
@@ -404,30 +401,39 @@ public class runSocialNetwork {
         try (Connection connection = DriverManager.getConnection(Config.DATABASE_CONNECTION, Config.DATABASE_USERNAME,
                 Config.DATABASE_PASSWORD)) {
             try (Statement statement = connection.createStatement()) {
+                // Drop table for social network friend recommendations if exists
+                statement.execute("DROP TABLE IF EXISTS socialNetworkFriendRecommendations");
+
+                // Drop table for social network hashtag recommendations if exists
+                statement.execute("DROP TABLE IF EXISTS socialNetworkHashtagRecommendations");
+
+                // Drop table for social network post recommendations if exists
+                statement.execute("DROP TABLE IF EXISTS socialNetworkPostRecommendations");
+
                 // Create table for social network friend recommendations if not exists
                 statement.execute("CREATE TABLE IF NOT EXISTS socialNetworkFriendRecommendations ( " +
                         "userID INT, " +
                         "userLabelID INT, " +
                         "weight DOUBLE, " +
                         "FOREIGN KEY (userID) REFERENCES users(id), " +
-                        "FOREIGN KEY (userLabelID) REFERENCES userLabels(id) " +
+                        "FOREIGN KEY (userLabelID) REFERENCES users(id) " +
                         ")");
                 
                 // Create table for social network hashtag recommendations if not exists
                 statement.execute("CREATE TABLE IF NOT EXISTS socialNetworkHashtagRecommendations ( " +
-                        "userLabelID INT, " +
                         "hashtagID INT, " +
+                        "userLabelID INT, " +
                         "weight DOUBLE, " +
-                        "FOREIGN KEY (userLabelID) REFERENCES userLabels(id), " +
+                        "FOREIGN KEY (userLabelID) REFERENCES users(id), " +
                         "FOREIGN KEY (hashtagID) REFERENCES hashtags(id) " +
                         ")");
                 
                 // Create table for social network post recommendations if not exists
                 statement.execute("CREATE TABLE IF NOT EXISTS socialNetworkPostRecommendations ( " +
-                        "userLabelID INT, " +
                         "postID INT, " +
+                        "userLabelID INT, " +
                         "weight DOUBLE, " +
-                        "FOREIGN KEY (userLabelID) REFERENCES userLabels(id), " +
+                        "FOREIGN KEY (userLabelID) REFERENCES users(id), " +
                         "FOREIGN KEY (postID) REFERENCES posts(post_id) " +
                         ")");
             }
@@ -453,31 +459,37 @@ public class runSocialNetwork {
     
        
         createAndClearTables();
-        //then go through vertexLabel rankings and filter for where ._2 in key is a "h" and then add these to database
-        vertexLabelRankings.foreach(vertexLabelRanking -> {
+
+        List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>>> rankingsList = vertexLabelRankings.collect();
+        for (Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>> pair : rankingsList) {
             try {
+                if (pair._1._2().equals("u") && pair._1._1().equals(pair._2._1())) {
+                        return; //user obviously loves themselves :), skip
+                }
                 PreparedStatement stmt;
-                if (vertexLabelRanking._1()._2().equals("h")) {
+                if (pair._1()._2().equals("h")) {
                     stmt = connection.prepareStatement(
-                        "INSERT INTO socialNetworkHashtagRecommendations (userLabelID, hashtagID, weight) VALUES (?, ?, ?)");
-                } else if (vertexLabelRanking._1()._2().equals("p")) {
+                        "INSERT INTO socialNetworkHashtagRecommendations (hashtagID, userLabelID, weight) VALUES (?, ?, ?)");
+                } else if (pair._1()._2().equals("p")) {
                     stmt = connection.prepareStatement(
-                        "INSERT INTO socialNetworkPostRecommendations (userLabelID, postID, weight) VALUES (?, ?, ?)");
-                } else if (vertexLabelRanking._1()._2().equals("f")) {
+                        "INSERT INTO socialNetworkPostRecommendations (postID, userLabelID, weight) VALUES (?, ?, ?)");
+                } else if (pair._1()._2().equals("u")) {
                     stmt = connection.prepareStatement(
-                        "INSERT INTO socialNetworkFriendRecommendations (userLabelID, friendID, weight) VALUES (?, ?, ?)");
+                        "INSERT INTO socialNetworkFriendRecommendations (userID, userLabelID, weight) VALUES (?, ?, ?)");
                 } else {
                     return; // Skip this entry
                 }
-
-                stmt.setInt(1, vertexLabelRanking._1()._1());
-                stmt.setInt(2, vertexLabelRanking._2()._1());
-                stmt.setDouble(3, vertexLabelRanking._2()._2());
+                System.out.println(pair._1._1());
+                System.out.println(pair._2._1());
+                System.out.println(pair._2._2());
+                stmt.setInt(1, pair._1._1());
+                stmt.setInt(2, pair._2._1());
+                stmt.setDouble(3, pair._2._2());
                 stmt.executeUpdate();
             } catch (SQLException e) {
                 logger.error("Error inserting data: " + e.getMessage(), e);
             }
-        });
+        };
 
 
         } catch (SQLException e) {
@@ -496,9 +508,10 @@ public class runSocialNetwork {
             writer.println("vertex_id,type,user_id,weight");
 
             // Write the recommendations to the file
-            vertexLabelRankings.foreach(vertexLabelRanking -> {
-                writer.println(vertexLabelRanking._1()._1() + "," + vertexLabelRanking._1()._2() + "," + vertexLabelRanking._2()._1() + "," + vertexLabelRanking._2()._2());
-            });
+            List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>>> rankingsList = vertexLabelRankings.collect();
+            for (Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>> pair : rankingsList) {
+                writer.println(pair._1()._1() + "," + pair._1()._2() + "," + pair._2()._1() + "," + pair._2()._2());
+            };
         } catch (Exception e) {
             logger.error("Error writing recommendations to file: " + e.getMessage(), e);
         }
