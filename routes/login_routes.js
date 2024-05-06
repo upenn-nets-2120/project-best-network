@@ -177,9 +177,8 @@ var setProfilePhoto = async function(req, res) {
   //https://github.com/upenn-nets-2120/homework-2-ms1-vavali08/blob/main/src/main/java/org/nets2120/imdbIndexer/S3Setup.java Reference - Note that this is Java
 
   const profilePhoto = req.file;
-  console.log(profilePhoto);
   const username = req.session.username;
-  const user_id = req.session.user_id;
+  const userID = req.session.user_id;
 
   if (!profilePhoto) {
     return res.status(400).json({ error: 'No profile photo uploaded.' });
@@ -230,9 +229,12 @@ var deleteProfilePhoto = async function(req, res) {
     await s3Access.delete_by_key("best-network-nets212-sp24", "/profilePictures/" + userID);
     const pfpQuery = `UPDATE users SET profilePhoto = NULL WHERE id = '${userID}';`;
     await db.send_sql(pfpQuery);
+    return res.status(200).json({ message: 'Profile photo deleted successfully.' });
 
   } else {
     console.log("No profile photo to delete");
+    return res.status(200).json({ message: 'No profile photo to delete' });
+
   }
 }
  

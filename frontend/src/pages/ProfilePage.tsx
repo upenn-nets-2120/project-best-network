@@ -188,13 +188,14 @@ export default function UserProfile() {
     try {
       const response = await axios.post(`${rootURL}/${username}/deleteProfilePhoto`, {}, { withCredentials: true });
       if (response.status === 200) {
-        const response = await axios.get(`${rootURL}/${username}/getProfile`, { withCredentials: true });
-        setProfilePhoto(response.data.profilePhoto);
+        setProfilePhoto(null);
+        alert('Deleted picture succesfully');
       } else {
-        console.error('Failed to upload profile photo.');
+        console.error('Failed to delete profile photo.');
+        alert('failed to delete profile picture');
       }
     } catch (error) {
-      console.error('Upload profile photo error:', error);
+      console.error('delete profile photo error:', error);
     }
 
   }
@@ -221,7 +222,8 @@ export default function UserProfile() {
           <div>Username: {username}</div>
           <div>Email: {email}</div>
           <div>
-            Profile Photo: {profilePhoto ? <img src={profilePhoto} alt="Profile" style={{ maxWidth: '100px' }} /> : 'No photo'}
+            Profile Photo: {profilePhoto ? <img src={`${profilePhoto}?${new Date().getTime()}`} alt="Profile" style={{ maxWidth: '100px' }} />
+              : 'No photo'}
           </div>
           <div>Hashtags: {hashtags.join(", ")}</div>
           <div>Actor: {actor}</div>
