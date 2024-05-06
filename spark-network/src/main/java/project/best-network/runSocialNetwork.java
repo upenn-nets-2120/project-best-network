@@ -30,15 +30,15 @@ import java.sql.ResultSet;
 
 
 
-public class FriendsOfFriendsSpark {
-    static Logger logger = LogManager.getLogger(FriendsOfFriendsSpark.class);
+public class runSocialNetwork {
+    static Logger logger = LogManager.getLogger(runSocialNetwork.class);
     /**
      * Connection to Apache Spark
      */
     SparkSession spark;
     JavaSparkContext context;
 
-    public FriendsOfFriendsSpark() {
+    public runSocialNetwork() {
         System.setProperty("file.encoding", "UTF-8");
     }
 
@@ -124,6 +124,7 @@ public class FriendsOfFriendsSpark {
                 int post_id = postHashtagResultSet.getInt("post_id");
                 int hashtag_id = postHashtagResultSet.getInt("hashtag_id");
                 networkList.add(new Tuple2<>(new Tuple2<>(post_id, "p"), new Tuple2<>(hashtag_id, "h")));
+                networkList.add(new Tuple2<>(new Tuple2<>(hashtag_id, "h"), new Tuple2<>(post_id, "p")));
             }
             postHashtagResultSet.close();
             postHashtagStmt.close();
@@ -221,7 +222,6 @@ public class FriendsOfFriendsSpark {
                 Tuple2<Integer, String> value = edge._2();
                 return new Tuple2<>(new Tuple2<>(key, value), 1);
             });
-
         
         JavaPairRDD<Tuple2<Integer, String>, Double> userHashtagWeightsSum = edgeRDD
             .filter(edge -> edge._1()._1()._2().equals("u") && edge._1()._2()._2().equals("h")) 
@@ -234,7 +234,7 @@ public class FriendsOfFriendsSpark {
             .mapToPair(tuple -> new Tuple2<>(tuple._1(), .3 / tuple._2())); 
 
         JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> userHashtagEdges = networkRDD
-            .filter(edge -> edge._1()._2().equals("u") && edge._2()._1().equals("h"))
+            .filter(edge -> edge._1()._2().equals("u") && edge._2()._2().equals("h"))
             .join(userHashtagWeightsSum);
 
 
@@ -250,7 +250,7 @@ public class FriendsOfFriendsSpark {
             .mapToPair(tuple -> new Tuple2<>(tuple._1(), .4 / tuple._2())); 
 
         JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> userPostEdges = networkRDD
-            .filter(edge -> edge._1()._2().equals("u") && edge._2()._1().equals("p"))
+            .filter(edge -> edge._1()._2().equals("u") && edge._2()._2().equals("p"))
             .join(userPostWeightsSum);
 
         
@@ -265,13 +265,13 @@ public class FriendsOfFriendsSpark {
             .mapToPair(tuple -> new Tuple2<>(tuple._1(), .4 / tuple._2())); 
 
         JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> userUserEdges = networkRDD
-            .filter(edge -> edge._1()._2().equals("u") && edge._2()._1().equals("u"))
+            .filter(edge -> edge._1()._2().equals("u") && edge._2()._2().equals("u"))
             .join(userUserWeightsSum);
 
 
 
         JavaPairRDD<Tuple2<Integer, String>, Double> postWeightsSum = edgeRDD
-            .filter(edge -> edge._1()._1()._1().equals("p")) 
+            .filter(edge -> edge._1()._1()._2().equals("p")) 
             .mapToPair(edge -> {
                 Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
                 Integer value = edge._2();
@@ -318,7 +318,7 @@ public class FriendsOfFriendsSpark {
     /**
      * run algorithm
      */
-    private void adsorptionPropagation(JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> edgeRDD,
+    private JavaPairRDD<Tuple2<Integer, String>,Tuple2<Integer, Double>> adsorptionPropagation(JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> edgeRDD,
                                    JavaRDD<Integer> usersRDD) {
         
         JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> userLabelsMapped = usersRDD
@@ -328,7 +328,7 @@ public class FriendsOfFriendsSpark {
         
         int i = 0;
         double d_max = .1;
-        while (i < 15) {
+        while (i < 100) {
             i = i +1 ;
             //propogate labels ie for each label move across an edge so edgeRDD.join labels then multiple the edge._2._1 weight times the label weight label._2() and store in new tuple <edge._2._1,
             JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> propagatedVertexLabels = vertexLabels
@@ -341,12 +341,13 @@ public class FriendsOfFriendsSpark {
                     Double edgeWeight = edge._2();
                     Double labelWeight = label._2();
                     Double propagatedWeight = edgeWeight * labelWeight;
-                    Integer userLabel = label._1();
+                    Integer userLabel = label._1(); 
                     return new Tuple2<>(new Tuple2<>(vertex, userLabel), propagatedWeight);
                 })
-                .reduceByKey(Double::sum)
+                .reduceByKey(Double::sum) //get sum for a given vertex and user
                 .mapToPair(pair -> new Tuple2<>(pair._1()._1(), new Tuple2<>(pair._1()._2(), pair._2())));
 
+            //normalize get sum of all labels for vertex
             JavaPairRDD<Tuple2<Integer, String>, Double> sumsByVertex = propagatedVertexLabels
                 .mapValues(tuple -> tuple._2()) 
                 .reduceByKey(Double::sum);
@@ -392,32 +393,112 @@ public class FriendsOfFriendsSpark {
 
 
         vertexLabels.foreach(edge -> System.out.println(edge));
-    }   
+        return vertexLabels;
+    }  
+
+
+    /**
+     * Create tables for social network recommendations and clear existing data.
+     */
+    public void createAndClearTables() {
+        try (Connection connection = DriverManager.getConnection(Config.DATABASE_CONNECTION, Config.DATABASE_USERNAME,
+                Config.DATABASE_PASSWORD)) {
+            try (Statement statement = connection.createStatement()) {
+                // Create table for social network friend recommendations if not exists
+                statement.execute("CREATE TABLE IF NOT EXISTS socialNetworkFriendRecommendations ( " +
+                        "userID INT, " +
+                        "userLabelID INT, " +
+                        "weight DOUBLE, " +
+                        "FOREIGN KEY (userID) REFERENCES users(id), " +
+                        "FOREIGN KEY (userLabelID) REFERENCES userLabels(id) " +
+                        ")");
+                
+                // Create table for social network hashtag recommendations if not exists
+                statement.execute("CREATE TABLE IF NOT EXISTS socialNetworkHashtagRecommendations ( " +
+                        "userLabelID INT, " +
+                        "hashtagID INT, " +
+                        "weight DOUBLE, " +
+                        "FOREIGN KEY (userLabelID) REFERENCES userLabels(id), " +
+                        "FOREIGN KEY (hashtagID) REFERENCES hashtags(id) " +
+                        ")");
+                
+                // Create table for social network post recommendations if not exists
+                statement.execute("CREATE TABLE IF NOT EXISTS socialNetworkPostRecommendations ( " +
+                        "userLabelID INT, " +
+                        "postID INT, " +
+                        "weight DOUBLE, " +
+                        "FOREIGN KEY (userLabelID) REFERENCES userLabels(id), " +
+                        "FOREIGN KEY (postID) REFERENCES posts(post_id) " +
+                        ")");
+            }
+
+            // Clear existing data from tables
+            try (Statement clearStatement = connection.createStatement()) {
+                clearStatement.execute("DELETE FROM socialNetworkFriendRecommendations");
+                clearStatement.execute("DELETE FROM socialNetworkHashtagRecommendations");
+                clearStatement.execute("DELETE FROM socialNetworkPostRecommendations");
+            }
+
+        } catch (SQLException e) {
+            logger.error("Error creating and clearing tables: " + e.getMessage(), e);
+        }
+    }
+ 
     /**
      * Send back to database
      */
-    public void sendResultsToDatabase(List<Tuple2<Tuple2<String, String>, Integer>> recommendations) {
+    public void sendResultsToDatabase(JavaPairRDD<Tuple2<Integer, String>,Tuple2<Integer, Double>> vertexLabelRankings) {
         try (Connection connection = DriverManager.getConnection(Config.DATABASE_CONNECTION, Config.DATABASE_USERNAME,
                 Config.DATABASE_PASSWORD)) {
-        
+    
+       
+        createAndClearTables();
+        //then go through vertexLabel rankings and filter for where ._2 in key is a "h" and then add these to database
+        vertexLabelRankings.foreach(vertexLabelRanking -> {
+            try {
+                PreparedStatement stmt;
+                if (vertexLabelRanking._1()._2().equals("h")) {
+                    stmt = connection.prepareStatement(
+                        "INSERT INTO socialNetworkHashtagRecommendations (userLabelID, hashtagID, weight) VALUES (?, ?, ?)");
+                } else if (vertexLabelRanking._1()._2().equals("p")) {
+                    stmt = connection.prepareStatement(
+                        "INSERT INTO socialNetworkPostRecommendations (userLabelID, postID, weight) VALUES (?, ?, ?)");
+                } else if (vertexLabelRanking._1()._2().equals("f")) {
+                    stmt = connection.prepareStatement(
+                        "INSERT INTO socialNetworkFriendRecommendations (userLabelID, friendID, weight) VALUES (?, ?, ?)");
+                } else {
+                    return; // Skip this entry
+                }
+
+                stmt.setInt(1, vertexLabelRanking._1()._1());
+                stmt.setInt(2, vertexLabelRanking._2()._1());
+                stmt.setDouble(3, vertexLabelRanking._2()._2());
+                stmt.executeUpdate();
+            } catch (SQLException e) {
+                logger.error("Error inserting data: " + e.getMessage(), e);
+            }
+        });
+
+
         } catch (SQLException e) {
             logger.error("Error sending recommendations to database: " + e.getMessage(), e);
         }
     }
 
     /**
-     * Write the recommendations to a CSV file. Do not modify this method.
-     *
-     * @param recommendations List: (followed: String, follower: String)
+     * Write the recommendations to a CSV file. 
      */
-    public void writeResultsCsv(List<Tuple2<Tuple2<String, String>, Integer>> recommendations) {
+    public void writeResultsCsv(JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> vertexLabelRankings) {
         // Create a new file to write the recommendations to
-        File file = new File("recommendations_2.csv");
+        File file = new File("vertexLabelRankings.csv");
         try (PrintWriter writer = new PrintWriter(file)) {
+            // Write the header
+            writer.println("vertex_id,type,user_id,weight");
+
             // Write the recommendations to the file
-            for (Tuple2<Tuple2<String, String>, Integer> recommendation : recommendations) {
-                writer.println(recommendation._1._1 + "," + recommendation._1._2 + "," + recommendation._2);
-            }
+            vertexLabelRankings.foreach(vertexLabelRanking -> {
+                writer.println(vertexLabelRanking._1()._1() + "," + vertexLabelRanking._1()._2() + "," + vertexLabelRanking._2()._1() + "," + vertexLabelRanking._2()._2());
+            });
         } catch (Exception e) {
             logger.error("Error writing recommendations to file: " + e.getMessage(), e);
         }
@@ -439,18 +520,12 @@ public class FriendsOfFriendsSpark {
         JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> edgeRDD = computeEdgeRDD(network);
 
         // Run the adsorption propagation algorithm
-        adsorptionPropagation(edgeRDD, usersRDD);
+        JavaPairRDD<Tuple2<Integer, String>,Tuple2<Integer, Double>> vertexLabelRankings = adsorptionPropagation(edgeRDD, usersRDD);
 
         logger.info("*** Finished Adsorption! ***");
-        // // Collect results and send results back to database:
-        // // Format of List = ((person, recommendation), strength)
-        // if (recommendations == null) {
-        //     logger.error("Recommendations are null");
-        //     return;
-        // }
-        // List<Tuple2<Tuple2<String, String>, Integer>> collectedRecommendations = recommendations.collect();
-        // writeResultsCsv(collectedRecommendations);
-        // sendResultsToDatabase(collectedRecommendations);
+
+        sendResultsToDatabase(vertexLabelRankings);
+        writeResultsCsv(vertexLabelRankings);
 
         logger.info("*** Finished Adsorption! ***");
     }
@@ -467,7 +542,7 @@ public class FriendsOfFriendsSpark {
     }
 
     public static void main(String[] args) {
-        final FriendsOfFriendsSpark fofs = new FriendsOfFriendsSpark();
+        final runSocialNetwork fofs = new runSocialNetwork();
         try {
             fofs.initialize();
             fofs.run();
