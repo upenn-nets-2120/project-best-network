@@ -3,17 +3,17 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>edu.upenn.cis</groupId>
+    <groupId>project</groupId>
     <artifactId>nets2120-hw3</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>NETS 2120 Homework 3</name>
+    <name>NETS 2120 Project Best Network</name>
 
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <aws.java.sdk.version>2.13.64</aws.java.sdk.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
 
     <dependencies>
         <dependency>
@@ -25,12 +25,6 @@
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
             <version>4.1.96.Final</version>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.14.0</version>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
@@ -198,6 +192,65 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>create-distribution</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>submit-hw3</finalName>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <descriptors>
+                                <descriptor>assembly/submit-hw3.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <!-- Download our data files from AWS -->
+                <executions>
+                    <execution>
+                        <id>win-utils</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>http://public-repo-1.hortonworks.com/hdp-win-alpha/winutils.exe</url>
+                            <outputFileName>winutils.exe</outputFileName>
+                            <outputDirectory>${project.basedir}/native-libs/bin</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <!-- Copy the native libraries needed for DynamoDB Local -->
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <includeScope>test</includeScope>
+                            <includeTypes>so,dll,dylib</includeTypes>
+                            <outputDirectory>${project.basedir}/native-libs</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
@@ -225,12 +278,46 @@
                 <version>1.2.1</version>
                 <executions>
                     <execution>
+                        <id>foaf_streams</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>bestnetwork.FriendsOfFriendsStreams</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>foaf_spark</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>project.bestnetwork.FriendsOfFriendsSpark</mainClass>
+                            <compilerArgs>
+                                <arg>--add-exports=java.base/java.lang=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.lang.invoke=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.lang.reflect=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.io=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.net=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.nio=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.util=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.util.concurrent=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.util.concurrent.atomic=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/sun.nio.cs=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/sun.security.action=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/sun.util.calendar=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/security.jgss/sun.security.krb5=ALL-UNNAMED</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>local</id>
                         <goals>
                             <goal>java</goal>
                         </goals>
                         <configuration>
-                            <mainClass>edu.upenn.cis.nets2120.hw3.local.ComputeRanksLocal</mainClass>
+                            <mainClass>bestnetwork.ComputeRanks</mainClass>
                             <arguments>
                             </arguments>
                         </configuration>
@@ -241,7 +328,7 @@
                             <goal>java</goal>
                         </goals>
                         <configuration>
-                            <mainClass>edu.upenn.cis.nets2120.hw3.livy.ComputeRanksLivy</mainClass>
+                            <mainClass>bestnetwork.livy.ComputeRanksLivy</mainClass>
                             <arguments>
                             </arguments>
                         </configuration>
