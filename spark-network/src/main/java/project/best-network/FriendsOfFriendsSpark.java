@@ -61,7 +61,7 @@ public class FriendsOfFriendsSpark {
      *
      * @return JavaPairRDD: (followed: String, follower: String) The social network
      */
-    public JavaPairRDD<String, String> getSocialNetworkFromJDBC() {
+    public JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, String>> getSocialNetworkFromJDBC() {
         try {
             logger.info("Connecting to database...");
             Connection connection = null;
@@ -84,136 +84,167 @@ public class FriendsOfFriendsSpark {
             // likeToPost with user id and post id
             // merge in posts and only keep when parent post is null
             //put in java pair rdd with user id and post id
-            String sql;
-            Statement stmt;
-            ResultSet resultSet;
             List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>> networkList = new ArrayList<>();
-
-            sql = "SELECT users.id AS user_id, 'u' AS utag, posts.post_id AS post_id, 'p' AS ptag " +
-                          "FROM users " +
-                          "JOIN posts ON users.id = posts.author_id " +
-                          "WHERE posts.parent_post IS NULL";
             
             
-            stmt = connection.createStatement();
-            resultSet = stmt.executeQuery(sql);
-            // Process the result set and create a list of Tuple2 representing users and posts
-            while (resultSet.next()) {
-                int user_id = resultSet.getInt("user_id");
-                int post_id = resultSet.getInt("post_id");
-                networkList.add(new Tuple2<>(new Tuple2<>(user_id, "u"), new Tuple2<>(post_id, "p")));
-            }
+            // SQL query to select users and their posts where parent_post is NULL
+            String userPostSql = "SELECT l.userID, l.postID " +
+                     "FROM likeToPost l " +
+                     "JOIN posts p ON l.postID = p.post_id " +
+                     "WHERE p.parent_post IS NULL";
 
-            sql = "SELECT posts.post_id AS post_id, 'p' AS ptag, users.id AS user_id, 'u' AS utag " +
-                 "FROM posts " +
-                 "JOIN users ON posts.author_id = users.id " +
-                 "WHERE posts.parent_post IS NULL";
-
-            stmt = connection.createStatement();
-            resultSet = stmt.executeQuery(sql);
-            // Process the result set and create a list of Tuple2 representing users and posts
-            while (resultSet.next()) {
-                int user_id = resultSet.getInt("user_id");
-                int post_id = resultSet.getInt("post_id");
+            Statement userPostStmt = connection.createStatement();
+            ResultSet userPostResultSet = userPostStmt.executeQuery(userPostSql);
+            while (userPostResultSet.next()) {
+                int user_id = userPostResultSet.getInt("userID");
+                int post_id = userPostResultSet.getInt("postID");
                 networkList.add(new Tuple2<>(new Tuple2<>(user_id, "u"), new Tuple2<>(post_id, "p")));
+                networkList.add(new Tuple2<>(new Tuple2<>(post_id, "p"), new Tuple2<>(user_id, "u")));
             }
+            userPostResultSet.close();
+            userPostStmt.close();
+
+            // SQL query to select users and hashtags they are interested in
+            String userHashtagSql = "SELECT userID, hashtagID " +
+                                    "FROM hashtagInterests";
+            Statement userHashtagStmt = connection.createStatement();
+            ResultSet userHashtagResultSet = userHashtagStmt.executeQuery(userHashtagSql);
+            while (userHashtagResultSet.next()) {
+                int user_id = userHashtagResultSet.getInt("userID");
+                int hashtag_id = userHashtagResultSet.getInt("hashtagID");
+                networkList.add(new Tuple2<>(new Tuple2<>(user_id, "u"), new Tuple2<>(hashtag_id, "h")));
+                networkList.add(new Tuple2<>(new Tuple2<>(hashtag_id, "h"), new Tuple2<>(user_id, "u")));
+            }
+            userHashtagResultSet.close();
+            userHashtagStmt.close();
+
+            // SQL query to select posts and hashtags associated with them
+            String postHashtagSql = "SELECT post_id, hashtag_id " +
+                                    "FROM post_to_hashtags";
+
+            Statement postHashtagStmt = connection.createStatement();
+            ResultSet postHashtagResultSet = postHashtagStmt.executeQuery(postHashtagSql);
+            while (postHashtagResultSet.next()) {
+                int post_id = postHashtagResultSet.getInt("post_id");
+                int hashtag_id = postHashtagResultSet.getInt("hashtag_id");
+                networkList.add(new Tuple2<>(new Tuple2<>(post_id, "p"), new Tuple2<>(hashtag_id, "h")));
+            }
+            postHashtagResultSet.close();
+            postHashtagStmt.close();
+
+
+            // SQL query to select friends/followers
+            String friendsSql = "SELECT followed, follower FROM friends";
+
+            Statement friendsStmt = connection.createStatement();
+            ResultSet friendsResultSet = friendsStmt.executeQuery(friendsSql);
+            while (friendsResultSet.next()) {
+                int followedUserId = friendsResultSet.getInt("followed");
+                int followerUserId = friendsResultSet.getInt("follower");
+                System.out.println(followedUserId);
+                networkList.add(new Tuple2<>(new Tuple2<>(followedUserId, "u"), new Tuple2<>(followerUserId, "u")));
+            }
+            friendsResultSet.close();
+            friendsStmt.close();
 
             // Convert the list to JavaRDD and then to JavaPairRDD
             JavaRDD<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>> rdd = context.parallelize(networkList);
             JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, String>> network = rdd.mapToPair(pair -> new Tuple2<>(pair._1(), pair._2()));
 
-
-
             // Show the result
             network.foreach(pair -> System.out.println(pair._1() + " -> " + pair._2()));
 
-            return null;
+            return network;
 
         } catch (Exception e) {
             logger.error("SQL error occurred: " + e.getMessage(), e);
         }
         // Return a default value if the method cannot return a valid result
-        return context.emptyRDD().mapToPair(x -> new Tuple2<>("", ""));
+        return context.emptyRDD().mapToPair(x -> new Tuple2<>(new Tuple2<>(0, "default"), new Tuple2<>(0, "default")));
+
     }
 
     /**
-     * Friend-of-a-Friend Recommendation Algorithm
-     *
-     * @param network JavaPairRDD: (followed: String, follower: String) The social network
-     * @return JavaPairRDD: ((person, recommendation), strength) The friend-of-a-friend recommendations
+     * Adsorption Recommendation Algorithm!!! 
      */
-    private JavaPairRDD<Tuple2<String, String>, Integer> friendOfAFriendRecommendations(
-            JavaPairRDD<String, String> network) {
-        // TODO: Generate friend-of-a-friend recommendations by computing the set of 2nd-degree followed users. This
-        //  method should do the same thing as the `friendOfAFriendRecommendations` method in the
-        //  `FriendsOfFriendsStreams` class, but using Spark's RDDs instead of Java Streams.
-        JavaPairRDD<String, String> toNetwork = network
-                .mapToPair(pair -> new Tuple2<>(pair._2(), pair._1()));
+    private void computeEdgeRDD(
+            JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, String>> network) {
+
+        JavaPairRDD<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>, Integer> edgeRDD = network
+        .mapToPair(edge -> {
+            Tuple2<Integer, String> key = edge._1();
+            Tuple2<Integer, String> value = edge._2();
+            return new Tuple2<>(new Tuple2<>(key, value), 1);
+        });
+
+       JavaPairRDD<Tuple2<Integer, String>, Integer> userWeightsSum = edgeRDD
+        .filter(edge -> edge._1()._1()._2().equals("u"))
+        .mapToPair(edge -> {
+            Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
+            Tuple2<Integer, String> value = edge._2();
+            // Check the second part of the key tuple and map to the appropriate key
+            if (key._2()._2().equals("p")) {
+                return new Tuple2<>(new Tuple2<>(key._1()._1(), "p"), value);
+            } else if (key._2()._2().equals("h")) {
+                return new Tuple2<>(new Tuple2<>(key._1()._1(), "h"), value);
+            } else if (key._2()._2().equals("u")) {
+                return new Tuple2<>(new Tuple2<>(key._1()._1(), "u"), value);
+            } else {
+                // Return a default tuple if the condition is not met
+                return new Tuple2<>(new Tuple2<>(0, "default"), 0);
+            }
+        })
+        .filter(edge -> !edge._1()._2().equals("default")) // Filter out the default tuples
+        .reduceByKey(Integer::sum);
+
         
-        JavaPairRDD<String, String> joined = network.join(toNetwork)
-            .mapToPair(pair -> new Tuple2<>(pair._2()._1(), pair._2()._2()));
 
-        JavaPairRDD<String, String> filtered = joined
-                .filter(pair -> !pair._1().equals(pair._2()));
-
-        filtered = filtered
-            .subtract(toNetwork);
-
-        JavaPairRDD<Tuple2<String, String>, Integer> recommendations = filtered
-            .mapToPair(pair -> new Tuple2<>(pair, 1))
-            .reduceByKey(Integer::sum);
-
-        // count = recommendations.count();
-        // System.out.println("Number of items in the network JavaPairRDD: " + count);
-        return recommendations;
+        // return edgeRDD;
     }  
 
     /**
-     * Send recommendation results back to the database
-     *
-     * @param recommendations List: (followed: String, follower: String)
-     *                        The list of recommendations to send back to the database
+     * Send back to database
      */
     public void sendResultsToDatabase(List<Tuple2<Tuple2<String, String>, Integer>> recommendations) {
         try (Connection connection = DriverManager.getConnection(Config.DATABASE_CONNECTION, Config.DATABASE_USERNAME,
                 Config.DATABASE_PASSWORD)) {
-            // TODO: Write your recommendations data back to imdbdatabase.
-            String sql;
-            sql = "DROP TABLE IF EXISTS recommendations_2";
-            Statement stmt1 = connection.createStatement();
-            stmt1.execute(sql);
+        //     // TODO: Write your recommendations data back to imdbdatabase.
+        //     String sql;
+        //     sql = "DROP TABLE IF EXISTS recommendations_2";
+        //     Statement stmt1 = connection.createStatement();
+        //     stmt1.execute(sql);
 
-            sql = "CREATE TABLE IF NOT EXISTS recommendations_2 (" +
-                "person VARCHAR(10)," +
-                "recommendation VARCHAR(10)," +
-                "strength INT," +
-                "PRIMARY KEY (person, recommendation)," + 
-                "FOREIGN KEY (person) REFERENCES names(nconst)," +
-                "FOREIGN KEY (recommendation) REFERENCES names(nconst)" +
-            ")";
+        //     sql = "CREATE TABLE IF NOT EXISTS recommendations_2 (" +
+        //         "person VARCHAR(10)," +
+        //         "recommendation VARCHAR(10)," +
+        //         "strength INT," +
+        //         "PRIMARY KEY (person, recommendation)," + 
+        //         "FOREIGN KEY (person) REFERENCES names(nconst)," +
+        //         "FOREIGN KEY (recommendation) REFERENCES names(nconst)" +
+        //     ")";
 
-            Statement stmt2 = connection.createStatement();
-            stmt2.execute(sql);
+        //     Statement stmt2 = connection.createStatement();
+        //     stmt2.execute(sql);
 
-           sql = "INSERT INTO recommendations_2 (person, recommendation, strength) VALUES (?, ?, ?)";
-           PreparedStatement stmt = connection.prepareStatement(sql);
+        //    sql = "INSERT INTO recommendations_2 (person, recommendation, strength) VALUES (?, ?, ?)";
+        //    PreparedStatement stmt = connection.prepareStatement(sql);
 
-            for (Tuple2<Tuple2<String, String>, Integer> rec : recommendations) {
-                // String query3 = "SELECT COUNT(*) FROM (SELECT DISTINCT person, recommendation FROM recommendations_2) AS temp";
-                // Statement stmt3 = connection.createStatement();
-                // ResultSet resultSet = stmt3.executeQuery(query3);
-                // while (resultSet.next()) {
-                //     System.out.println(resultSet.getInt(1));
-                // }
-                String friend = rec._1()._1();
-                String followed = rec._1()._2();
-                int strength = rec._2();
-                stmt.setString(1, friend);
-                stmt.setString(2, followed);
-                stmt.setInt(3, strength);
-                stmt.executeUpdate(); // Execute the insert statement for each record
-            }
-        stmt.close();
+        //     for (Tuple2<Tuple2<String, String>, Integer> rec : recommendations) {
+        //         // String query3 = "SELECT COUNT(*) FROM (SELECT DISTINCT person, recommendation FROM recommendations_2) AS temp";
+        //         // Statement stmt3 = connection.createStatement();
+        //         // ResultSet resultSet = stmt3.executeQuery(query3);
+        //         // while (resultSet.next()) {
+        //         //     System.out.println(resultSet.getInt(1));
+        //         // }
+        //         String friend = rec._1()._1();
+        //         String followed = rec._1()._2();
+        //         int strength = rec._2();
+        //         stmt.setString(1, friend);
+        //         stmt.setString(2, followed);
+        //         stmt.setInt(3, strength);
+        //         stmt.executeUpdate(); // Execute the insert statement for each record
+        //     }
+        // stmt.close();
         } catch (SQLException e) {
             logger.error("Error sending recommendations to database: " + e.getMessage(), e);
         }
@@ -238,33 +269,28 @@ public class FriendsOfFriendsSpark {
     }
 
     /**
-     * Main functionality in the program: read and process the social network. Do not modify this method.
-     *
-     * @throws IOException          File read, network, and other errors
-     * @throws InterruptedException User presses Ctrl-C
+     * RUN Spark
      */
     public void run() throws IOException, InterruptedException {
         logger.info("Running");
 
         // Load the social network:
-        // Format of JavaPairRDD = (followed, follower)
-        JavaPairRDD<String, String> network = getSocialNetworkFromJDBC();
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, String>> network = getSocialNetworkFromJDBC();
 
         // Friend-of-a-Friend Recommendation Algorithm:
-        // Format of JavaPairRDD = ((person, recommendation), strength)
-        JavaPairRDD<Tuple2<String, String>, Integer> recommendations = friendOfAFriendRecommendations(network);
+        computeEdgeRDD(network);
 
-        // Collect results and send results back to database:
-        // Format of List = ((person, recommendation), strength)
-        if (recommendations == null) {
-            logger.error("Recommendations are null");
-            return;
-        }
-        List<Tuple2<Tuple2<String, String>, Integer>> collectedRecommendations = recommendations.collect();
-        writeResultsCsv(collectedRecommendations);
-        sendResultsToDatabase(collectedRecommendations);
+        // // Collect results and send results back to database:
+        // // Format of List = ((person, recommendation), strength)
+        // if (recommendations == null) {
+        //     logger.error("Recommendations are null");
+        //     return;
+        // }
+        // List<Tuple2<Tuple2<String, String>, Integer>> collectedRecommendations = recommendations.collect();
+        // writeResultsCsv(collectedRecommendations);
+        // sendResultsToDatabase(collectedRecommendations);
 
-        logger.info("*** Finished friend of friend recommendations! ***");
+        logger.info("*** Finished Adsorption! ***");
     }
 
     /**
