@@ -284,37 +284,15 @@ var removeFriend = async function(req, res) {
           .then((result) => {
             console.log(result);
             if(!result) {
-              return res.status(500).json({ error: 'Error uploading photo with embeddings.' });
+              return res.status(500).json({ error: 'Error uploading embeddings.' });
             }
           })
           .catch((error) => {
             console.error(error);
-            return res.status(500).json({ error: 'Error uploading photo with embeddings.' });
+            return res.status(500).json({ error: 'Error uploading embeddings.' });
           });
         }
-        // Handle image content and S3 access if content is provided
-        if (content) {
-          try {
-              // Save content to S3 bucket
-              const bucketName = "best-network-nets212-sp24";
-              const s3Path = `/posts/${last_id}`;
-              const s3Url = `https://${bucketName}.s3.amazonaws.com${s3Path}`;
       
-              // Upload content to S3
-              await s3Access.put_by_key(bucketName, s3Path, content.buffer, content.mimetype);
-      
-              // Update the user's profile photo URL in the database if needed
-              const pfpQuery = `UPDATE users SET profilePhoto = ? WHERE id = ?`;
-              await db.send_sql(pfpQuery, [s3Url, author_id]);
-      
-              // Return successful response
-              return res.status(201).json({ message: 'Post created and photo uploaded successfully.' });
-          } catch (error) {
-              console.error('Error uploading photo:', error);
-              return res.status(500).json({ error: 'Error uploading photo.' });
-          }
-      } 
-
         // Return successful response
         return res.status(201).json({ message: 'Post created.' });
     } catch (error) {
@@ -351,12 +329,12 @@ var uploadPost = async function(req, res) {
   }
 
   try {
-    await s3Access.put_by_key("best-network-nets212-sp24", "/posts/" + userID, post.buffer, post.mimetype);
+    await s3Access.put_by_key("best-network-nets212-sp24", "/posts/" + last_id, post.buffer, post.mimetype);
     // Get the photo URL from S3
-    const photoURL = `https://best-network-nets212-sp24.s3.amazonaws.com//posts/${userID}`
+    const photoURL = `https://best-network-nets212-sp24.s3.amazonaws.com//posts/${last_id}`
 
     // Update the user's profile photo URL in the database
-    const pfpQuery = `UPDATE posts SET content = '${photoURL}' WHERE post_id = ${last_id};`;
+    const pfpQuery = `UPDATE posts SET photo = '${photoURL}' WHERE last_id = ${last_id};`;
     await db.send_sql(pfpQuery);
 
     // upload to chromaDB collection
