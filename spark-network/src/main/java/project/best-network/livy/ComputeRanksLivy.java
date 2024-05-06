@@ -32,22 +32,18 @@ public class ComputeRanksLivy {
         }
         boolean debug = false;
 
-        // String livy = SparkJob.getLivyUrl(args);
+        String livy = SparkJob.getLivyUrl(args);
 
 
-        // SocialRankJob blJob = new SocialRankJob(d_max, i_max, 1000, true, debug);
+        SocialRankJob blJob = new SocialRankJob(debug);
 
-        // List<MyPair<String, Double>> backlinksResult = SparkJob.runJob(livy, blJob);
+        List<MyPair<String, Double>> result = SparkJob.runJob(livy, blJob);
       
-        // out.print("Hey julia!");
-            
 
-       
-            // logger.error("Error writing to file: " + e.getMessage());
         
         
 
-        // logger.info("*** Finished social network ranking! ***");
+        logger.info("*** Finished social network ranking! ***");
 
     }
 

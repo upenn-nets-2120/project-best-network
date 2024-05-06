@@ -12,10 +12,33 @@ import java.util.*;
 import org.apache.livy.JobContext;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.sql.SparkSession;
 
 import project.config.Config;
 import project.bestnetwork.SparkJob;
 import scala.Tuple2;
+
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.*;
+
+import project.config.Config;
+import project.storage.SparkConnector;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
+
 
 public class SocialRankJob extends SparkJob<List<MyPair<String, Double>>> {
     /**
@@ -33,55 +56,251 @@ public class SocialRankJob extends SparkJob<List<MyPair<String, Double>>> {
     }
 
     /**
-     * Fetch the social network from the S3 path, and create a (followed, follower)
-     * edge graph
-     *
-     * @param filePath
-     * @return JavaPairRDD: (followed: String, follower: String)
+     * get network
      */
-    protected JavaPairRDD<String, String> getSocialNetwork(String filePath) {
-        JavaRDD<String> file = context.textFile(filePath, Config.PARTITIONS);
+    public JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, String>> getSocialNetworkFromJDBC() {
+        try {
+            Connection connection = null;
 
-        // TODO Load the file filePath into an RDD (take care to handle both spaces and
-        // tab characters as separators)
+            try {
+                connection = DriverManager.getConnection(Config.DATABASE_CONNECTION, Config.DATABASE_USERNAME,
+                        Config.DATABASE_PASSWORD);
+            } catch (SQLException e) {
+                System.exit(1);
+            }
 
-        //Map each line to a new Pair
-        JavaPairRDD<String, String> socialNetwork = file.mapToPair(line -> {
-            String[] parts = line.split("[\\s\\t]+"); // regex = split by space or tab
-            return new Tuple2<>(parts[1], parts[0]); // (followed, follower)
-        }).distinct();
+            if (connection == null) {
+                System.exit(1);
+            }
 
-        return socialNetwork;
+
+            List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>> networkList = new ArrayList<>();
+            
+            
+            // SQL query to select users and their posts where parent_post is NULL
+            String userPostSql = "SELECT l.userID, l.postID " +
+                     "FROM likeToPost l " +
+                     "JOIN posts p ON l.postID = p.post_id " +
+                     "WHERE p.parent_post IS NULL";
+
+            Statement userPostStmt = connection.createStatement();
+            ResultSet userPostResultSet = userPostStmt.executeQuery(userPostSql);
+            while (userPostResultSet.next()) {
+                int user_id = userPostResultSet.getInt("userID");
+                int post_id = userPostResultSet.getInt("postID");
+                networkList.add(new Tuple2<>(new Tuple2<>(user_id, "u"), new Tuple2<>(post_id, "p")));
+                networkList.add(new Tuple2<>(new Tuple2<>(post_id, "p"), new Tuple2<>(user_id, "u")));
+            }
+            userPostResultSet.close();
+            userPostStmt.close();
+
+            // SQL query to select users and hashtags they are interested in
+            String userHashtagSql = "SELECT userID, hashtagID " +
+                                    "FROM hashtagInterests";
+            Statement userHashtagStmt = connection.createStatement();
+            ResultSet userHashtagResultSet = userHashtagStmt.executeQuery(userHashtagSql);
+            while (userHashtagResultSet.next()) {
+                int user_id = userHashtagResultSet.getInt("userID");
+                int hashtag_id = userHashtagResultSet.getInt("hashtagID");
+                networkList.add(new Tuple2<>(new Tuple2<>(user_id, "u"), new Tuple2<>(hashtag_id, "h")));
+                networkList.add(new Tuple2<>(new Tuple2<>(hashtag_id, "h"), new Tuple2<>(user_id, "u")));
+            }
+            userHashtagResultSet.close();
+            userHashtagStmt.close();
+
+            // SQL query to select posts and hashtags associated with them
+            String postHashtagSql = "SELECT post_id, hashtag_id " +
+                                    "FROM post_to_hashtags";
+
+            Statement postHashtagStmt = connection.createStatement();
+            ResultSet postHashtagResultSet = postHashtagStmt.executeQuery(postHashtagSql);
+            while (postHashtagResultSet.next()) {
+                int post_id = postHashtagResultSet.getInt("post_id");
+                int hashtag_id = postHashtagResultSet.getInt("hashtag_id");
+                networkList.add(new Tuple2<>(new Tuple2<>(post_id, "p"), new Tuple2<>(hashtag_id, "h")));
+                networkList.add(new Tuple2<>(new Tuple2<>(hashtag_id, "h"), new Tuple2<>(post_id, "p")));
+            }
+            postHashtagResultSet.close();
+            postHashtagStmt.close();
+
+
+            // SQL query to select friends/followers
+            String friendsSql = "SELECT followed, follower FROM friends";
+
+            Statement friendsStmt = connection.createStatement();
+            ResultSet friendsResultSet = friendsStmt.executeQuery(friendsSql);
+            while (friendsResultSet.next()) {
+                int followedUserId = friendsResultSet.getInt("followed");
+                int followerUserId = friendsResultSet.getInt("follower");
+                networkList.add(new Tuple2<>(new Tuple2<>(followedUserId, "u"), new Tuple2<>(followerUserId, "u")));
+            }
+            friendsResultSet.close();
+            friendsStmt.close();
+
+            // Convert the list to JavaRDD and then to JavaPairRDD
+            JavaRDD<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>> rdd = context.parallelize(networkList);
+            JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, String>> network = rdd.mapToPair(pair -> new Tuple2<>(pair._1(), pair._2()));
+
+            // Show the result
+            // network.foreach(pair -> System.out.println(pair._1() + " -> " + pair._2()));
+
+            return network;
+
+        } catch (Exception e) {
+        }
+        // Return a default value if the method cannot return a valid result
+        return context.emptyRDD().mapToPair(x -> new Tuple2<>(new Tuple2<>(0, "default"), new Tuple2<>(0, "default")));
+
     }
 
     /**
-     * Retrieves the sinks from the given network.
-     *
-     * @param network the input network represented as a JavaPairRDD
-     * @return a JavaRDD containing the nodes with no outgoing edges (sinks)
+     * get Users RDD for user labels and weights
      */
-    protected JavaRDD<String> getSinks(JavaPairRDD<String, String> network) {
-        // TODO Your code from ComputeRanks here
+    public JavaRDD<Integer> getUsersFromJDBC() {
+        try {
+            Connection connection = null;
 
-        //using subtract
+            try {
+                connection = DriverManager.getConnection(Config.DATABASE_CONNECTION, Config.DATABASE_USERNAME,
+                        Config.DATABASE_PASSWORD);
+            } catch (SQLException e) {
+                System.exit(1);
+            }
 
-        JavaRDD<String> nodes = network.flatMap(tuple -> {
-            Set<String> nodes2 = new HashSet<>(); //we do this way bc flatmap expects iterable set of elements
-            nodes2.add(tuple._1()); // Add followed
-            nodes2.add(tuple._2()); // Add follower
-            return nodes2.iterator();
-        }).distinct();
-
-        //this contains all nonsink nodes
-        JavaRDD<String> nonsinks = network.flatMap(tuple -> {
-            Set<String> nodes2 = new HashSet<>(); //we do this way bc flatmap expects iterable set of elements
-            nodes2.add(tuple._2()); // Add follower
-            return nodes2.iterator();
-        }).distinct();
+            if (connection == null) {
+                System.exit(1);
+            }
 
 
-        return nodes.subtract(nonsinks);
+            List<Integer> usersList = new ArrayList<>();
+
+            String sql = "SELECT id FROM users";
+            Statement stmt = connection.createStatement();
+            ResultSet resultSet = stmt.executeQuery(sql);
+
+            while (resultSet.next()) {
+                int user_id = resultSet.getInt("id");
+                usersList.add(user_id);
+            }
+
+            resultSet.close();
+            stmt.close();
+
+            JavaRDD<Integer> usersRDD = context.parallelize(usersList);
+
+            return usersRDD;
+
+        } catch (Exception e) {
+        }
+        // Return a default value if the method cannot return a valid result
+        return context.emptyRDD();
+
     }
+
+    /**
+     * Edge Computation for Network for adsorption algorithm!! 
+     */
+    private JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> computeEdgeRDD(
+            JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, String>> networkRDD) {
+
+       JavaPairRDD<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>, Integer> edgeRDD = networkRDD
+            .mapToPair(edge -> {
+                Tuple2<Integer, String> key = edge._1();
+                Tuple2<Integer, String> value = edge._2();
+                return new Tuple2<>(new Tuple2<>(key, value), 1);
+            });
+        
+        JavaPairRDD<Tuple2<Integer, String>, Double> userHashtagWeightsSum = edgeRDD
+            .filter(edge -> edge._1()._1()._2().equals("u") && edge._1()._2()._2().equals("h")) 
+            .mapToPair(edge -> {
+                Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
+                Integer value = edge._2();
+                return new Tuple2<>(key._1(), value);
+            })
+            .reduceByKey(Integer::sum)
+            .mapToPair(tuple -> new Tuple2<>(tuple._1(), .3 / tuple._2())); 
+
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> userHashtagEdges = networkRDD
+            .filter(edge -> edge._1()._2().equals("u") && edge._2()._2().equals("h"))
+            .join(userHashtagWeightsSum);
+
+
+
+        JavaPairRDD<Tuple2<Integer, String>, Double> userPostWeightsSum = edgeRDD
+            .filter(edge -> edge._1()._1()._2().equals("u") && edge._1()._2()._2().equals("p")) 
+            .mapToPair(edge -> {
+                Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
+                Integer value = edge._2();
+                return new Tuple2<>(key._1(), value);
+            })
+            .reduceByKey(Integer::sum)
+            .mapToPair(tuple -> new Tuple2<>(tuple._1(), .4 / tuple._2())); 
+
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> userPostEdges = networkRDD
+            .filter(edge -> edge._1()._2().equals("u") && edge._2()._2().equals("p"))
+            .join(userPostWeightsSum);
+
+        
+        JavaPairRDD<Tuple2<Integer, String>, Double> userUserWeightsSum = edgeRDD
+            .filter(edge -> edge._1()._1()._2().equals("u") && edge._1()._2()._2().equals("u")) 
+            .mapToPair(edge -> {
+                Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
+                Integer value = edge._2();
+                return new Tuple2<>(key._1(), value);
+            })
+            .reduceByKey(Integer::sum)
+            .mapToPair(tuple -> new Tuple2<>(tuple._1(), .4 / tuple._2())); 
+
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> userUserEdges = networkRDD
+            .filter(edge -> edge._1()._2().equals("u") && edge._2()._2().equals("u"))
+            .join(userUserWeightsSum);
+
+
+
+        JavaPairRDD<Tuple2<Integer, String>, Double> postWeightsSum = edgeRDD
+            .filter(edge -> edge._1()._1()._2().equals("p")) 
+            .mapToPair(edge -> {
+                Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
+                Integer value = edge._2();
+                return new Tuple2<>(key._1(), value);
+            })
+            .reduceByKey(Integer::sum)
+            .mapToPair(tuple -> new Tuple2<>(tuple._1(), 1.0 / tuple._2())); 
+
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> postEdges = networkRDD
+            .filter(edge -> edge._1()._2().equals("p"))
+            .join(postWeightsSum);
+
+
+        
+         JavaPairRDD<Tuple2<Integer, String>, Double> hashtagWeightsSum = edgeRDD
+            .filter(edge -> edge._1()._1()._2().equals("h")) 
+            .mapToPair(edge -> {
+                Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
+                Integer value = edge._2();
+                return new Tuple2<>(key._1(), value);
+            })
+            .reduceByKey(Integer::sum)
+            .mapToPair(tuple -> new Tuple2<>(tuple._1(), 1.0 / tuple._2())); 
+
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> hashtagEdges = networkRDD
+            .filter(edge -> edge._1()._2().equals("h"))
+            .join(hashtagWeightsSum);
+
+
+        
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> combinedEdges = userHashtagEdges
+            .union(userPostEdges)
+            .union(userUserEdges)
+            .union(postEdges)
+            .union(hashtagEdges);
+
+
+        combinedEdges.foreach(edge -> System.out.println(edge));
+
+        return combinedEdges;
+    }  
+
 
 
 
@@ -89,11 +308,30 @@ public class SocialRankJob extends SparkJob<List<MyPair<String, Double>>> {
         System.err.println("Running");
 
       
-       
-       
+        // Load the social network:
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, String>> network = getSocialNetworkFromJDBC();
 
-      return new ArrayList<>();
+        // Get users RDD for user labels and weights
+        JavaRDD<Integer> usersRDD = getUsersFromJDBC();
+
+        // Friend-of-a-Friend Recommendation Algorithm:
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> edgeRDD = computeEdgeRDD(network);
+
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> vertexLabels = adsorptionPropagation(edgeRDD, usersRDD);
+        List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>>> vertexLabelsList = vertexLabels.collect();
+
+        List<MyPair<String, Double>> resultList = new ArrayList<>();
+        for (Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>> tuple : vertexLabelsList) {
+            MyPair<String, Double> pair = new MyPair<>(
+                tuple._1()._2(), 
+                tuple._2()._2() 
+            );
+            resultList.add(pair);
+        }
+        return resultList;
     }
+
+
 
     @Override
     public List<MyPair<String, Double>> call(JobContext arg0) throws Exception {
@@ -101,109 +339,87 @@ public class SocialRankJob extends SparkJob<List<MyPair<String, Double>>> {
         return run(false);
     }
 
-    /**
-     *    Initialize the SocialRank with a value of 1 at all nodes.
-          Use a decay factor of .15
-          Compute the SocialRank after either the largest change in a node's rank from iteration
-              i to iteration i + 1 is d_max or after i_max iterations have passed
-     */
+  
 
-    static JavaPairRDD<String, Double> getSocialRank(JavaPairRDD<String, String> edgeRDD, double dMax, int iMax, boolean debug) {
+    static JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> adsorptionPropagation(
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> edgeRDD,
+        JavaRDD<Integer> usersRDD) {
 
-        int i = 1; // keeps track of what iteration we are on
-        final boolean[] finalPassedDMax = {false};
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> userLabelsMapped = usersRDD
+                .mapToPair(user -> new Tuple2<>(new Tuple2<>(user, "u"), new Tuple2<>(user, 1.0)));
+
+        JavaPairRDD<Tuple2<Integer,String>, Tuple2<Integer, Double>> vertexLabels = userLabelsMapped;
         
-        System.err.println("Spark Context: " + edgeRDD.context().toString());
-
-        // ranks initialzed to 1
-        JavaPairRDD<String, Double> ranks = edgeRDD.keys().distinct().mapToPair(vertex -> new Tuple2<>(vertex, 1.0));
-        System.err.println("Spark Context Rank: " + ranks.context().toString());
-
-
-        //edgerdd is followed, follower -> sum of occurences of how many times a node appears as a follower is the outdegree
-        JavaPairRDD<String, Integer> outDegrees = edgeRDD.mapToPair(edge -> new Tuple2<>(edge._2(), 1)).reduceByKey(Integer::sum);
-        System.err.println("outDegrees: " + outDegrees.collect());
-        System.err.println("Spark Context Outdegrees: " + outDegrees.context().toString());
-
-
-
-
-
-        while (true) {
-            //edgeRdd = (followed, follower)
-            // for each node - calculate contributions from the in-neighbors
-            JavaPairRDD<String, Double> contributions = edgeRDD.mapToPair(edge -> new Tuple2<>(edge._2(), edge._1()))
-                    .join(ranks)
-                    //edges in form followed, follower originally. we join this w/ ranks so we have {follower, (followed, follower node's rank)}
-                    .join(outDegrees)
-                    //now this is {follower, {(followed, follower node's rank), follwer node's outdegree}
-                    .mapToPair(pair -> {
-                        String follower = pair._1();
-                        String followed = pair._2()._1()._1();
-                        double followerRank = pair._2()._1()._2();
-                        int followerOutdegree = pair._2()._2();
-                        //this tuple is {followed, 1/outdegree * follower's rank}
-                        return new Tuple2<>(followed, 1.0 / followerOutdegree * followerRank);
-                    })
-                    .reduceByKey(Double::sum);
-
-            // Update ranks using the SocialRank formula
-            JavaPairRDD<String, Double> newRanks = ranks.join(contributions)
-                //after this join -> {followed node, (old rank, new contribution)}
-                    .mapToPair(pair -> {
-                        String node = pair._1();
-                        double oldRank = pair._2()._1();
-                        double contributionSum = pair._2()._2();
-                        double newRank = .15 + (1 - .15) * contributionSum;
-                         
-                        /** 
-                        if (Math.abs(newRank - oldRank) >= dMax) {
-                            finalPassedDMax[0] = true;
-                        }
-                        */
-                        
-                        return new Tuple2<>(node, newRank);
-                    });
-            
-            // Calculate the maximum difference between newRank and oldRank 
-            
-            Double maxDiff = newRanks.join(ranks)
-                //{node, (new rank, old rank)}
-                .map(pair -> {
-                    String node = pair._1();
-                    double newRank = pair._2()._1();
-                    double oldRank = pair._2()._2();
+        int i = 0;
+        double d_max = .1;
+        while (i < 1) {
+            i = i +1 ;
+            //propogate labels ie for each label move across an edge so edgeRDD.join labels then multiple the edge._2._1 weight times the label weight label._2() and store in new tuple <edge._2._1,
+            JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> propagatedVertexLabels = vertexLabels
+                .join(edgeRDD)
+                .mapToPair(pair -> {
+                    Tuple2<Integer, Double> label = pair._2()._1();
+                    Tuple2<Tuple2<Integer, String>, Double> edge = pair._2()._2();
                     
-                    // Calculate the difference between newRank and oldRank
-                    double difference = Math.abs(newRank - oldRank);
-                    
-                    return difference;
+                    Tuple2<Integer, String> vertex = edge._1();
+                    Double edgeWeight = edge._2();
+                    Double labelWeight = label._2();
+                    Double propagatedWeight = edgeWeight * labelWeight;
+                    Integer userLabel = label._1(); 
+                    return new Tuple2<>(new Tuple2<>(vertex, userLabel), propagatedWeight);
                 })
-                .reduce(Math::max);
+                .reduceByKey(Double::sum) //get sum for a given vertex and user
+                .mapToPair(pair -> new Tuple2<>(pair._1()._1(), new Tuple2<>(pair._1()._2(), pair._2())));
+
+            //normalize get sum of all labels for vertex
+            JavaPairRDD<Tuple2<Integer, String>, Double> sumsByVertex = propagatedVertexLabels
+                .mapValues(tuple -> tuple._2()) 
+                .reduceByKey(Double::sum);
+
+            propagatedVertexLabels = propagatedVertexLabels
+                .join(sumsByVertex) 
+                .mapValues(pair -> {
+                    Double value = pair._1()._2(); 
+                    Double sum = pair._2(); 
+                    Double normalizedValue = value / sum; 
+                    return new Tuple2<>(pair._1()._1(), normalizedValue); 
+                });
             
 
+            propagatedVertexLabels = propagatedVertexLabels
+                .mapToPair(pair -> {
+                    if (pair._1._2().equals("u") && pair._1._1().equals(pair._2._1())) {
+                        return new Tuple2<>(pair._1(), new Tuple2<>(pair._2._1(), 1.0));
+                    } else {
+                        return pair;
+                    }
+                });
 
 
-            if (debug) {
-                System.out.println("Iteration " + i + ":");
-                newRanks.foreach(tuple -> System.out.println(tuple._1() + ": " + tuple._2()));
+        
+            JavaPairRDD<Tuple2<Integer, String>,Tuple2<Integer, Double>> entriesToAdd = userLabelsMapped
+                .subtractByKey(propagatedVertexLabels);
+            propagatedVertexLabels = propagatedVertexLabels
+                .union(entriesToAdd);
+
+            JavaPairRDD<Tuple2<Integer, String>, Double> differences = propagatedVertexLabels.join(vertexLabels)
+                        .mapValues(tuple -> Math.abs(tuple._1._2 - tuple._2._2));
+            Double maxDifference = differences.values().max(Comparator.naturalOrder());
+            System.out.println("MaxDifference: " + maxDifference);
+            vertexLabels = propagatedVertexLabels;
+            if (maxDifference <= d_max){
+                break;
             }
-            System.out.println("Iteration " + i + ":");
-            //System.out.println(maxDiff);
-            System.out.println(dMax);
-
-
-            ranks = newRanks;
-
-            //check if we should stop now - i >= imax or dmax condition
-            if (i >= iMax || maxDiff < dMax) {
-                return ranks;
-            }
-
-
-            i++;
-
         }
+
+
+        vertexLabels.foreach(edge -> System.out.println(edge));
+        return vertexLabels;
+
+
+
+
+
     }
 
 }

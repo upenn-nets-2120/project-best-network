@@ -26,12 +26,10 @@ export default function Friends() {
         username: string;
     }
 
-    interface Recommendation {
-        primaryName: string;
-    }
+
     const [onlineFriends, setOnlineFriends] = useState<Friend[]>([]);
     const [offlineFriends, setOfflineFriends] = useState<Friend[]>([]);
-    const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+    const [recommendations, setRecommendations] = useState<Friend[]>([]);
     const [newFriendName, setNewFriendName] = useState('');
     const [removeFriendName, setRemoveFriendName] = useState('');
 
@@ -52,8 +50,8 @@ export default function Friends() {
                 const offlineFriendsResponse = await axios.get(`${rootURL}/${username}/offlineFriends`, { withCredentials: true });
                 setOfflineFriends(offlineFriendsResponse.data.results);
 
-                //const recommendationsResponse = await axios.get(`${rootURL}/${username}/recommendations`, { withCredentials: true });
-                //setRecommendations(recommendationsResponse.data.results);
+                const recommendationsResponse = await axios.get(`${rootURL}/${username}/recommendedFriends`, { withCredentials: true });
+                setRecommendations(recommendationsResponse.data.results);
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
@@ -73,6 +71,9 @@ export default function Friends() {
 
             const offlineFriendsResponse = await axios.get(`${rootURL}/${username}/offlineFriends`, { withCredentials: true });
             setOfflineFriends(offlineFriendsResponse.data.results);
+
+            const recommendationsResponse = await axios.get(`${rootURL}/${username}/recommendedFriends`, { withCredentials: true });
+            setRecommendations(recommendationsResponse.data.results);
         } catch (error) {
             alert("Error adding friend :(");
 
@@ -94,7 +95,9 @@ export default function Friends() {
             const offlineFriendsResponse = await axios.get(`${rootURL}/${username}/offlineFriends`, { withCredentials: true });
             setOfflineFriends(offlineFriendsResponse.data.results);
 
-            
+            const recommendationsResponse = await axios.get(`${rootURL}/${username}/recommendedFriends`, { withCredentials: true });
+            setRecommendations(recommendationsResponse.data.results);
+        
         } catch (error) {
             alert("Error removing friend :(");
             console.error('Error removing friend:', error);
@@ -153,8 +156,8 @@ export default function Friends() {
                     {`${username}'s recommended friends`}
                     {recommendations && recommendations.length > 0 ? (
                         <div className='space-y-2'>
-                            {recommendations.map((rec, index) => (
-                                <FriendComponent key={index} name={rec.primaryName} add={true} remove={true} />
+                            {recommendations.map((friend, index) => (
+                                <FriendComponent key={index} name={friend.username} add={true} remove={true} />
                             ))}
                         </div>
                     ) : (

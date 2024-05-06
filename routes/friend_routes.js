@@ -6,19 +6,7 @@ const { uploadEmbeddingsForPost } = require('../routes/friend_routes_helper.js')
 /*
 const { RecursiveCharacterTextSplitter } = require("langchain/text_splitter");
 */
-const { OpenAIEmbeddings } = require("@langchain/openai");
-/*
-const { MemoryVectorStore } = require("langchain/vectorstores/memory");
-const { createStuffDocumentsChain } = require("langchain/chains/combine_documents");
-const { Document } = require("@langchain/core/documents");
-const { createRetrievalChain } = require("langchain/chains/retrieval");
 
-const { formatDocumentsAsString } = require("langchain/util/document");
-const {
-    RunnableSequence,
-    RunnablePassthrough,
-  } = require("@langchain/core/runnables");
- */ 
 const { Chroma } = require("@langchain/community/vectorstores/chroma");
 
 //const PORT = config.serverPort;
@@ -30,20 +18,6 @@ var getHelloWorld = function(req, res) {
   res.status(200).send({message: "Hello, world!"});
 }
 
-var getVectorStore = async function(req) {
-  if (vectorStore == null) {
-      const embeddings = new OpenAIEmbeddings({
-        apiKey: process.env.OPENAI_API_KEY, // In Node.js defaults to process.env.OPENAI_API_KEY
-        batchSize: 512, // Default value if omitted is 512. Max is 2048
-        model: "text-embedding-3-small",
-      });
-      vectorStore = await Chroma.fromExistingCollection(embeddings, {
-          collectionName: "posts_new",
-          url: "http://localhost:8000", // Optional, will default to this value
-          });
-  }
-  return vectorStore;
-}
 
 // POST /addFriend
 var addFriend = async function(req, res) {
@@ -183,8 +157,8 @@ var getOfflineFriends = async function(req, res) {
           WHERE friends.follower = ${req.session.user_id} AND users.logged_in = 0;
       `;
       const offlineFriends = await db.send_sql(offlineFriendsQuery);
-
-      console.log("Offline friends: " + offlineFriends);
+      
+      console.log(offlineFriends);
       // Return the online friends
       return res.status(200).json({ results: offlineFriends });
   } catch (error) {
@@ -193,6 +167,35 @@ var getOfflineFriends = async function(req, res) {
       return res.status(500).json({ error: 'Error querying database.' });
   }
 };
+
+var getRecommendedFriends = async function (req, res) {
+  try {
+    // Check if a user is logged in
+    if (!req.session.user_id) {
+        return res.status(403).json({ error: 'Not logged in.' });
+    }
+
+    // Query to get friend recommendations
+    const recommendationsQuery = `
+      SELECT users.*
+      FROM socialNetworkFriendRecommendations s
+      JOIN users ON s.userID = users.id
+      WHERE s.userLabelID = ${req.session.user_id}
+      ORDER BY s.weight DESC;
+  `;
+
+   
+    const recommendedFriends = await db.send_sql(recommendationsQuery);
+    console.log("friend recs: ")
+    console.log(recommendedFriends);
+
+    return res.status(200).json({ results: recommendedFriends });
+} catch (error) {
+    // Handle database query errors
+    console.error("Error querying database:", error);
+    return res.status(500).json({ error: 'Error querying database.' });
+}
+}
 
 
 
@@ -203,7 +206,8 @@ var getOfflineFriends = async function(req, res) {
     remove_friend: removeFriend,
 
     get_online_friends: getOnlineFriends,
-    get_offline_friends: getOfflineFriends
+    get_offline_friends: getOfflineFriends,
+    get_recommended_friends: getRecommendedFriends
   };
   
   module.exports = routes;

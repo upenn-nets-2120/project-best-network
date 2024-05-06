@@ -302,6 +302,31 @@
                             </compilerArgs>
                         </configuration>
                     </execution>
+                     <execution>
+                        <id>foaf_spark_livy</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>project.bestnetwork.livy.ComputeRanksLivy</mainClass>
+                            <compilerArgs>
+                                <arg>--add-exports=java.base/java.lang=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.lang.invoke=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.lang.reflect=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.io=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.net=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.nio=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.util=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.util.concurrent=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/java.util.concurrent.atomic=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/sun.nio.ch=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/sun.nio.cs=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/sun.security.action=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/sun.util.calendar=ALL-UNNAMED</arg>
+                                <arg>--add-exports=java.base/security.jgss/sun.security.krb5=ALL-UNNAMED</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>local</id>
                         <goals>
