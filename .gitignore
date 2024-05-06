@@ -38,3 +38,4 @@ target/
 **/chroma.sqlite3
 **/chroma.log
 chroma_data/*
+/face-matching/chroma_data/**
