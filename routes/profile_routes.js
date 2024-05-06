@@ -80,7 +80,20 @@ var get_recommended_hashtags = async function(req, res) {
     //if hashtag is new then add to database of hashtags,
     //otherwise increment the hashtag data base count 
     //then update user database with user's new hashtags
-    res.status(200).json({hashtags:["#juliaslays", "#jsusser", "#juliarules"]})
+
+    var hashtagQuery = 
+    `SELECT hashtags.text 
+        FROM hashtags
+        JOIN socialNetworkHashtagRecommendations hr ON hr.hashtagID = hashtags.id
+        WHERE hr.userLabelID = '${req.session.user_id}'
+        LIMIT 10;`
+
+    var hashtags = await db.send_sql(hashtagQuery);
+    var hashtagsTextList = hashtags.map(hashtag => hashtag.text);
+    console.log(hashtagsTextList);
+
+
+    res.status(200).json({hashtags:hashtagsTextList});
 
 
 }
