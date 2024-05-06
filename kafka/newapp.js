@@ -50,24 +50,30 @@ const handleIncomingPost = async (username, source_site, post_uuid_within_site, 
     console.log(federatedUsername); 
 
     // Check if the user exists in system 
-    let userExists = true;
+    let userExists = false;
 
-    // try {
-    //     // Make a POST request to the /checkUserRegistration endpoint
-    //     const url = `http://localhost:8080/checkRegistration?federatedUsername=${encodeURIComponent(federatedUsername)}`;
+    try {
+        // Make a GET request to the /checkRegistration endpoint
 
-    //     // const checkRegistrationResponse = await axios.get('http://localhost:8080/checkRegistration', {
-    //     //     federatedUsername: federatedUsername,
-    //     // });
-        
-    //     const checkRegistrationResponse = await axios.get(url); 
+        const checkRegistrationResponse = await axios.post(
+            'http://localhost:8080/checkRegistration',
+            {
+                federatedUsername: federatedUsername, 
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json', 
+                },
+                withCredentials: true,
+            }
+        );
 
-    //     // Parse the response to check if the user is registered
-    //     userExists = checkRegistrationResponse.data.registered;
-    // } catch (error) {
-    //     console.error('Failed to check user registration:', error);
-    //     return; 
-    // }
+        // Parse the response to check if the user is registered
+        userExists = checkRegistrationResponse.data.registered;
+    } catch (error) {
+        console.error('Failed to check user registration:', error);
+        return; 
+    }
 
     // If the user does not exist, register a new user
     if (!userExists) {
@@ -97,21 +103,21 @@ const handleIncomingPost = async (username, source_site, post_uuid_within_site, 
     const hashtags = extractHashtags(post_text);
 
     // // Define the post data for the /createPost route
-    // const postData = {
-    //     title: 'Federated Post', 
-    //     content: post_text,
-    //     parent_id: null, 
-    //     hashtags: hashtags
+    const postData = {
+        title: 'Federated Post', 
+        content: post_text,
+        parent_id: null, 
+        hashtags: hashtags,
+        username: federatedUsername
+    };
 
-    // };
-
-    // try {
-    //     // Call the /createPost route to create a new post
-    //     const createPostResponse = await axios.post(`http://localhost:8080/${federatedUsername}/createPost`, postData);
-    //     console.log(`Post created successfully for user ${federatedUsername}:`, createPostResponse.data);
-    // } catch (error) {
-    //     console.error(`Failed to create post for user ${federatedUsername}:`, error);
-    // }
+    try {
+        // Call the /createPost route to create a new post
+        const createPostResponse = await axios.post(`http://localhost:8080/${federatedUsername}/createPost`, postData);
+        console.log(`Post created successfully for user ${federatedUsername}:`, createPostResponse.data);
+    } catch (error) {
+        console.error(`Failed to create post for user ${federatedUsername}:`, error);
+    }
 
     // Log the incoming post details
     console.log(`Received post from ${username} on site ${source_site}: ${post_text}`);
@@ -148,10 +154,10 @@ const runProducer = async () => {
 
     // Example post structure
     const post = {
-        username: 'kl',
+        username: 'rando',
         source_site: config.groupId,
         post_uuid_within_site: 'uuid_1234',
-        post_text: 'garfield #jam #cat',
+        post_text: 'heiheph',
         content_type: 'text/plain'
     };
 

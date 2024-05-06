@@ -42,8 +42,38 @@ const handleIncomingTweet = (tweet) => {
     const authorId = tweet.author_id;
     const tweetText = tweet.text;
     const hashtags = tweet.hashtags || [];
+    const created_at = tweet.created_at; 
+    const conversation_id = tweet.conversation_id;
+    const quoted_tweet_id = tweet.quoted_tweet_id;
+    const quotes = tweet.quotes; 
+    const urls = tweet.urls; 
+    const replies = tweet.replies; 
+    const replied_to_tweet_id = tweet.replied_to_tweet_id;
+    const mentions = tweet.mentions;  
+    const retweets = tweet.retweets; 
+    const retweet_id = tweet.retweet_id; 
+    const likes = tweet.likes; 
 
     // need to add logic to handle the tweet itself 
+    const tweetData = {
+        id: tweetId, 
+        text: tweetText, 
+        created_at: created_at, 
+        conversation_id: conversation_id, 
+        author_id: authorId,
+        quoted_tweet_id: quoted_tweet_id, 
+        replied_to_tweet_id: replied_to_tweet_id,
+        quotes: quotes, 
+        urls: urls, 
+        replies: replies, 
+        hashtags: hashtags,
+        mentions: mentions, 
+        retweets: retweets, 
+        retweet_id: retweet_id, 
+        likes: likes, 
+        username: federatedUsername
+    };
+
 
     // Log the incoming tweet for reference
     console.log(`Received tweet from author ID ${authorId}: ${tweetText}`);

@@ -404,7 +404,9 @@ var sendLike = async function(req, res) {
 // GET /getComments
 var getComments = async function(req, res) {
   try {
+    console.log(req.body); 
     const {post_id} = req.body;
+    console.log(post_id); 
     // select from posts those with parent id of the post
     const commentQuery = `SELECT * FROM posts WHERE parent_post = ${post_id}`;
     const comments = await db.send_sql(commentQuery);
@@ -483,7 +485,7 @@ var createTweet = async function(req, res) {
 */
 
   // Extract post parameters from the request body
-  const { id ,text, created_at, conversation_id, hashtags, author_id,
+  const { id, text, created_at, conversation_id, hashtags, author_id,
     quoted_tweet_id, replied_to_tweet_id, quotes, urls, replies,
      mentions, retweets, retweet_id, likes } = req.body;
 

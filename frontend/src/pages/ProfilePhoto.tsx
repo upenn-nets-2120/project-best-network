@@ -31,6 +31,7 @@ export default function SetProfilePhoto() {
         // Create a FormData object and append the file
         const formData = new FormData();
         formData.append('profilePhoto', selectedFile);
+        console.log(formData); 
 
         // Perform the file upload request
         try {
