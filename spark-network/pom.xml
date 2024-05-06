@@ -278,21 +278,12 @@
                 <version>1.2.1</version>
                 <executions>
                     <execution>
-                        <id>foaf_streams</id>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                        <configuration>
-                            <mainClass>bestnetwork.FriendsOfFriendsStreams</mainClass>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>foaf_spark</id>
                         <goals>
                             <goal>java</goal>
                         </goals>
                         <configuration>
-                            <mainClass>project.bestnetwork.FriendsOfFriendsSpark</mainClass>
+                            <mainClass>project.bestnetwork.local.runSocialNetwork</mainClass>
                             <compilerArgs>
                                 <arg>--add-exports=java.base/java.lang=ALL-UNNAMED</arg>
                                 <arg>--add-exports=java.base/java.lang.invoke=ALL-UNNAMED</arg>
