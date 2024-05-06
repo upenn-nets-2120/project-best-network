@@ -329,7 +329,7 @@ public class FriendsOfFriendsSpark {
             .mapToPair(pair -> new Tuple2<>(pair._1(), new Tuple2<>(pair._2()._1(), pair._2()._2())));
 
         //propogate labels ie for each label move across an edge so edgeRDD.join labels then multiple the edge._2._1 weight times the label weight label._2() and store in new tuple <edge._2._1,
-        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> propagatedLabels = vertexLabels
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> propagatedVertexLabels = vertexLabels
             .join(edgeRDD)
             .mapToPair(pair -> {
                 Tuple2<Integer, Double> label = pair._2()._1();
@@ -345,11 +345,11 @@ public class FriendsOfFriendsSpark {
             .reduceByKey(Double::sum)
             .mapToPair(pair -> new Tuple2<>(pair._1()._1(), new Tuple2<>(pair._1()._2(), pair._2())));
 
-        JavaPairRDD<Tuple2<Integer, String>, Double> sumsVertex = propagatedLabels
-            .mapValues(tuple -> tuple._2()) // Extract the double value from the Tuple2<Integer, Double>
+        JavaPairRDD<Tuple2<Integer, String>, Double> sumsByVertex = propagatedVertexLabels
+            .mapValues(tuple -> tuple._2()) 
             .reduceByKey(Double::sum);
 
-        labels = propagatedLabels
+        vertexLabels = propagatedVertexLabels
             .join(sumsByVertex) 
             .mapValues(pair -> {
                 Double value = pair._1()._2(); 
@@ -359,24 +359,28 @@ public class FriendsOfFriendsSpark {
             });
         
 
-        labels = labels
-            .mapValues(pair -> {
-                if (pair._1().equals(pair._2()._1()) && pair._1()._2().equals("u")) {
-                    return new Tuple2<>(pair._1(), 1.0);
+        vertexLabels = vertexLabels
+            .mapToPair(pair -> {
+                Tuple2<Integer, String> key = pair._1();
+                Tuple2<Integer, Double> value = pair._2();
+
+                if (key._2().equals("u") && key._1().equals(value._1())) {
+                    return new Tuple2<>(key, new Tuple2<>(value._1(), 1.0));
                 } else {
                     return pair;
                 }
             });
-            
+
+
         JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> userLabelsMapped = userLabelsRDD
-            .mapToPair(pair -> new Tuple2<>(new Tuple2<>(pair._1(), "u"), new Tuple2<>pair._1(), 1.0));
+            .mapToPair(pair -> new Tuple2<>(new Tuple2<>(pair._1(), "u"), new Tuple2<>(pair._1(), 1.0)));
         JavaPairRDD<Tuple2<Integer, String>,Tuple2<Integer, Double>> entriesToAdd = userLabelsMapped
-            .subtractByKey(normalizedLabels);
-        labels = labels
+            .subtractByKey(vertexLabels);
+        vertexLabels = vertexLabels
             .union(entriesToAdd);
 
 
-        labels.foreach(edge -> System.out.println(edge));
+        vertexLabels.foreach(edge -> System.out.println(edge));
     }   
     /**
      * Send back to database
