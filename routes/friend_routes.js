@@ -470,7 +470,7 @@ var createTweet = async function(req, res) {
 */
 
   // Extract post parameters from the request body
-  const { id ,text, created_at, conversation_id, hashtags, author_id,
+  const { id, text, created_at, conversation_id, hashtags, author_id,
     quoted_tweet_id, replied_to_tweet_id, quotes, urls, replies,
      mentions, retweets, retweet_id, likes } = req.body;
 

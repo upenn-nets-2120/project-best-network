@@ -109,6 +109,7 @@ async function create_tables(db) {
       FOREIGN KEY (postID) REFERENCES posts(post_id) \
     );
     `)
+  // tweet tables
   const q11 = db.create_tables(`
   CREATE TABLE tweets ( \
     id BIGINT PRIMARY KEY, \

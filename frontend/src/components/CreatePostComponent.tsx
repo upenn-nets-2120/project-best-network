@@ -1,23 +1,21 @@
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import config from '../../config.json';
-import { useParams } from 'react-router-dom';
 
 function CreatePostComponent({ updatePosts }) {
     const { username } = useParams();
+    const rootURL = config.serverRootURL;
 
     // State variables for form inputs
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
-    const [image, setImage] = useState(null);
-    const [hashtags, setHashtags] = useState('');
+    const [image, setImage] = useState<File | null>(null);
 
     // Event handler for file input change
     const handleFileChange = (event) => {
         const file = event.target.files && event.target.files[0];
-        if (file) {
-            setImage(file);
-        }
+        setImage(file);
     };
 
     // Event handlers for text input changes
@@ -29,55 +27,75 @@ function CreatePostComponent({ updatePosts }) {
         setContent(event.target.value);
     };
 
-    const handleHashtagsChange = (event) => {
-        setHashtags(event.target.value);
+    // Function to parse hashtags from the content
+    const parseHashtags = (content) => {
+        // Regex pattern to match hashtags
+        const hashtagPattern = /#\w+/g;
+        // Match all hashtags in the content and return them as an array
+        const hashtagsArray = content.match(hashtagPattern) || [];
+        // Remove the `#` from each hashtag and return the array
+        return hashtagsArray.map(tag => tag.slice(1));
     };
 
     // Event handler for form submission
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        // Validate that at least one field (content, image, or hashtags) is not empty
-        if (!content && !image && hashtags.trim() === '') {
-            alert('Post must contain some content, an image, or hashtags.');
+        // Validate that at least one field (content or image) is not empty
+        if (!content && !image) {
+            alert('Post must contain some content or an image.');
             return;
         }
 
-        // Convert comma-separated hashtags to an array
-        const hashtagsArray = hashtags.split(',').map(tag => tag.trim());
+        // Parse hashtags from the content
+        const hashtagsArray = parseHashtags(content);
 
         // Create a JavaScript object for the post data
         const postData = {
             title,
             content,
-            hashtags: hashtagsArray, // Use the hashtags array instead of the raw string
-            image,
-            username: username
+            hashtags: hashtagsArray,
+            username,
         };
 
-        console.log(image); 
-
-        // Convert the JavaScript object to JSON format
-        const jsonData = JSON.stringify(postData);
-
         // Log the JSON data being sent
-        console.log('JSON data being sent:', jsonData);
+        console.log('Post data:', postData);
 
         try {
             // Send a POST request to the server with JSON data
-            const response = await axios.post(`${config.serverRootURL}/${username}/createPost`, jsonData, {
+            const response = await axios.post(`${rootURL}/${username}/createPost`, postData, {
+                withCredentials: true,
                 headers: {
-                    'Content-Type': 'application/json', 
+                    'Content-Type': 'application/json',
                 },
             });
 
             console.log('Post created successfully:', response.data);
+
+            // If there is an image, upload it using multipart form data
+            console.log(image); 
+               if (image) {
+                const formData = new FormData();
+                formData.append('post', image);
+
+                console.log(formData); 
+
+                const imageResponse = await axios.post(`${rootURL}/${username}/uploadPost`, formData, {
+                    withCredentials: true,
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                });
+
+                console.log('Image uploaded successfully:', imageResponse.data);
+            }
+
+            // Update posts on successful submission
             updatePosts();
 
-            // Reset form fields after successful post creation
+            // Reset form fields
             setTitle('');
             setContent('');
-            setHashtags('');
             setImage(null);
         } catch (error) {
             console.error('Error creating post:', error);
@@ -112,17 +130,6 @@ function CreatePostComponent({ updatePosts }) {
                             onChange={handleContentChange}
                             className="border border-gray-300 p-2 rounded-md"
                             rows={4}
-                        />
-                    </div>
-                    <div className="flex space-x-4 items-center justify-between">
-                        <label htmlFor="hashtags" className="font-semibold">Hashtags</label>
-                        <input
-                            id="hashtags"
-                            type="text"
-                            className="outline-none bg-white rounded-md border border-slate-100 p-2"
-                            value={hashtags}
-                            onChange={handleHashtagsChange}
-                            placeholder="e.g., #nature, #travel"
                         />
                     </div>
                     <div className="flex space-x-4 items-center justify-between">

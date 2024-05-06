@@ -97,21 +97,21 @@ const handleIncomingPost = async (username, source_site, post_uuid_within_site, 
     const hashtags = extractHashtags(post_text);
 
     // // Define the post data for the /createPost route
-    // const postData = {
-    //     title: 'Federated Post', 
-    //     content: post_text,
-    //     parent_id: null, 
-    //     hashtags: hashtags
+    const postData = {
+        title: 'Federated Post', 
+        content: post_text,
+        parent_id: null, 
+        hashtags: hashtags,
+        username: federatedUsername
+    };
 
-    // };
-
-    // try {
-    //     // Call the /createPost route to create a new post
-    //     const createPostResponse = await axios.post(`http://localhost:8080/${federatedUsername}/createPost`, postData);
-    //     console.log(`Post created successfully for user ${federatedUsername}:`, createPostResponse.data);
-    // } catch (error) {
-    //     console.error(`Failed to create post for user ${federatedUsername}:`, error);
-    // }
+    try {
+        // Call the /createPost route to create a new post
+        const createPostResponse = await axios.post(`http://localhost:8080/${federatedUsername}/createPost`, postData);
+        console.log(`Post created successfully for user ${federatedUsername}:`, createPostResponse.data);
+    } catch (error) {
+        console.error(`Failed to create post for user ${federatedUsername}:`, error);
+    }
 
     // Log the incoming post details
     console.log(`Received post from ${username} on site ${source_site}: ${post_text}`);
