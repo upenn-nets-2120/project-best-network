@@ -3,6 +3,7 @@ const multer = require('multer');
 const friend_routes = require('./friend_routes.js');
 const account_routes = require('./account_routes.js');
 const profile_routes = require('./profile_routes.js');
+const feed_routes = require('./feed_routes.js');
 const actor_routes = require('./actor_routes.js');
 const { ChromaClient } = require("chromadb");
 
@@ -55,11 +56,12 @@ function register_routes(app) {
 
 
     //feed routes
-    app.post('/:username/createPost', friend_routes.create_post); 
-    app.post('/:username/createTweet', friend_routes.create_tweet); 
-    app.post('/:username/uploadPost', upload.single('post'), friend_routes.upload_post); 
-    app.get('/:username/feed', friend_routes.get_feed);
-    app.post('/:username/sendLike', friend_routes.send_like);
+    app.post('/:username/createPost', feed_routes.create_post); 
+    app.post('/createTweet', feed_routes.create_tweet); 
+    app.get('/:username/getComment', feed_routes.get_comments);
+    app.post('/:username/uploadPost', upload.single('post'), feed_routes.upload_post); 
+    app.get('/:username/feed', feed_routes.get_feed);
+    app.post('/:username/sendLike', feed_routes.send_like);
 
     //actor routes
     app.get('/:username/getActors', actor_routes.get_actors);

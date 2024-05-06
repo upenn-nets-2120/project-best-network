@@ -85,6 +85,7 @@ async function create_tables(db) {
         content VARCHAR(255), \
         author_id INT, \
         like_count INT, \
+        photo VARCHAR(255), \
         FOREIGN KEY (parent_post) REFERENCES posts(post_id), \
         FOREIGN KEY (author_id) REFERENCES users(id), \
         PRIMARY KEY (post_id) \
@@ -96,6 +97,7 @@ async function create_tables(db) {
       FOREIGN KEY (follower) REFERENCES users(id), \
       FOREIGN KEY (followed) REFERENCES users(id) \
     );')
+
     // create hashtag table
     const q9 = db.create_tables('CREATE TABLE IF NOT EXISTS post_to_hashtags ( \
       post_id INT, \
@@ -103,6 +105,34 @@ async function create_tables(db) {
       FOREIGN KEY (post_id) REFERENCES posts(post_id), \
       FOREIGN KEY (hashtag_id) REFERENCES hashtags(id) \
     );')
+    const q10 = db. create_tables(`
+      CREATE TABLE IF NOT EXISTS likeToPost ( \
+        userID INT, \
+        postID INT, \
+        FOREIGN KEY (userID) REFERENCES users(id), \
+        FOREIGN KEY (postID) REFERENCES posts(post_id) \
+      );
+      `)
+    const q11 = db.create_tables(`
+    CREATE TABLE IF NOT EXISTS tweets ( \
+      id BIGINT PRIMARY KEY, \
+      created_at DATETIME, \
+      text TEXT, \
+      author_id BIGINT, \
+      quoted_tweet_id BIGINT, \
+      replied_to_tweet_id BIGINT, \
+      quotes INT, \
+      urls TEXT, \
+      replies INT, \
+      conversation_id BIGINT, \
+      retweets INT, \
+      retweet_id BIGINT, \
+      likes INT, \
+      hashtags TEXT, \
+      mentions TEXT  \
+    );
+    `)
+
   const q10 = db. create_tables(`
     CREATE TABLE IF NOT EXISTS likeToPost ( \
       userID INT, \

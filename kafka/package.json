@@ -4,7 +4,7 @@
     "description": "A basic Express.js application",
     "main": "app.js",
     "scripts": {
-        "start": "node twitter.js"
+        "start": "node newapp.js"
     },
     "keywords": [
         "express"
