@@ -283,7 +283,7 @@
                             <goal>java</goal>
                         </goals>
                         <configuration>
-                            <mainClass>project.bestnetwork.runSocialNetwork</mainClass>
+                            <mainClass>project.bestnetwork.local.runSocialNetwork</mainClass>
                             <compilerArgs>
                                 <arg>--add-exports=java.base/java.lang=ALL-UNNAMED</arg>
                                 <arg>--add-exports=java.base/java.lang.invoke=ALL-UNNAMED</arg>

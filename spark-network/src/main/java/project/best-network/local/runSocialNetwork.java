@@ -1,4 +1,4 @@
-package project.bestnetwork;
+package project.bestnetwork.local;
 
 import java.io.File;
 import java.io.IOException;
@@ -318,8 +318,8 @@ public class runSocialNetwork {
     /**
      * run algorithm
      */
-    private JavaPairRDD<Tuple2<Integer, String>,Tuple2<Integer, Double>> adsorptionPropagation(JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> edgeRDD,
-                                   JavaRDD<Integer> usersRDD) {
+    private List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>>> adsorptionPropagation(
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> edgeRDD, JavaRDD<Integer> usersRDD ) {
         
         JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> userLabelsMapped = usersRDD
                 .mapToPair(user -> new Tuple2<>(new Tuple2<>(user, "u"), new Tuple2<>(user, 1.0)));
@@ -390,7 +390,9 @@ public class runSocialNetwork {
 
 
         vertexLabels.foreach(edge -> System.out.println(edge));
-        return vertexLabels;
+        
+        List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>>> vertexLabelsList = vertexLabels.collect();
+        return vertexLabelsList;
     }  
 
 
@@ -453,15 +455,15 @@ public class runSocialNetwork {
     /**
      * Send back to database
      */
-    public void sendResultsToDatabase(JavaPairRDD<Tuple2<Integer, String>,Tuple2<Integer, Double>> vertexLabelRankings) {
+    public void sendResultsToDatabase(List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>>> vertexLabelsList) {
         try (Connection connection = DriverManager.getConnection(Config.DATABASE_CONNECTION, Config.DATABASE_USERNAME,
                 Config.DATABASE_PASSWORD)) {
     
        
         createAndClearTables();
 
-        List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>>> rankingsList = vertexLabelRankings.collect();
-        for (Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>> pair : rankingsList) {
+       
+        for (Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>> pair : vertexLabelsList) {
             try {
                 if (pair._1._2().equals("u") && pair._1._1().equals(pair._2._1())) {
                         return; //user obviously loves themselves :), skip
@@ -479,9 +481,6 @@ public class runSocialNetwork {
                 } else {
                     return; // Skip this entry
                 }
-                System.out.println(pair._1._1());
-                System.out.println(pair._2._1());
-                System.out.println(pair._2._2());
                 stmt.setInt(1, pair._1._1());
                 stmt.setInt(2, pair._2._1());
                 stmt.setDouble(3, pair._2._2());
@@ -500,7 +499,7 @@ public class runSocialNetwork {
     /**
      * Write the recommendations to a CSV file. 
      */
-    public void writeResultsCsv(JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> vertexLabelRankings) {
+    public void writeResultsCsv(List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>>> vertexLabelsList ) {
         // Create a new file to write the recommendations to
         File file = new File("vertexLabelRankings.csv");
         try (PrintWriter writer = new PrintWriter(file)) {
@@ -508,8 +507,7 @@ public class runSocialNetwork {
             writer.println("vertex_id,type,user_id,weight");
 
             // Write the recommendations to the file
-            List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>>> rankingsList = vertexLabelRankings.collect();
-            for (Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>> pair : rankingsList) {
+            for (Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>> pair : vertexLabelsList) {
                 writer.println(pair._1()._1() + "," + pair._1()._2() + "," + pair._2()._1() + "," + pair._2()._2());
             };
         } catch (Exception e) {
@@ -533,12 +531,12 @@ public class runSocialNetwork {
         JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> edgeRDD = computeEdgeRDD(network);
 
         // Run the adsorption propagation algorithm
-        JavaPairRDD<Tuple2<Integer, String>,Tuple2<Integer, Double>> vertexLabelRankings = adsorptionPropagation(edgeRDD, usersRDD);
+        List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>>> vertexLabelsList = adsorptionPropagation(edgeRDD, usersRDD);
 
         logger.info("*** Finished Adsorption! ***");
 
-        sendResultsToDatabase(vertexLabelRankings);
-        writeResultsCsv(vertexLabelRankings);
+        sendResultsToDatabase(vertexLabelsList);
+        writeResultsCsv(vertexLabelsList);
 
         logger.info("*** Finished Adsorption! ***");
     }
