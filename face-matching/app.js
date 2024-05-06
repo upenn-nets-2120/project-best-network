@@ -175,6 +175,7 @@ initializeFaceModels()
   console.info("Looking for files");
   const promises = [];
   // Loop through all the files in the images directory
+/**
   fs.readdir("./face-matching/images", function (err, files) {
     if (err) {
       console.error("Could not list the directory.", err);
@@ -199,13 +200,15 @@ initializeFaceModels()
             console.log(item.ids[0][i] + " (Euclidean distance = " + Math.sqrt(item.distances[0][i]) + ") in " + item.documents[0][i]);
           }
         }
-      **/
+      ** (/)
     
     })
     .catch((err) => {
       console.error("Error indexing images:", err);
     });
     });
+    **/
+   console.log("done");
 
 });
 

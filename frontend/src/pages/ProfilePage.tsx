@@ -149,16 +149,29 @@ export default function UserProfile() {
   };
 
   const handleFileUpload = async () => {
+    if (!selectedFile) {
+      alert('Please select a file.');
+      return;
+   }
+
     if (selectedFile) {
       const formData = new FormData();
-      formData.append('file', selectedFile);
+      formData.append('profilePhoto', selectedFile);
+
     
       try {
-        const response = await axios.post(`${config.serverRootURL}/${username}/setProfilePhoto`, formData);
+        const response = await axios.post(`${rootURL}/:username/setProfilePhoto`, formData, {
+          withCredentials: true,
+          headers: {
+              'Content-Type': 'multipart/form-data',
+          },
+        });
         if (response.status === 200) {
           // Profile photo uploaded successfully
-          const { photo } = response.data;
-          setProfilePhoto(photo);
+          setProfilePhoto(null);
+          setSelectedFile(null);
+          const response = await axios.get(`${rootURL}/${username}/getProfile`, { withCredentials: true });
+          setProfilePhoto(response.data.profilePhoto);
         } else {
           console.error('Failed to upload profile photo.');
         }

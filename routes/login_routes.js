@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const helper = require('../routes/login_route_helper.js');
 const process = require('process');
 const s3Access = require('../models/s3_access.js'); 
+const { useResolvedPath } = require('react-router');
 
 
 
@@ -188,10 +189,13 @@ var setProfilePhoto = async function(req, res) {
   }
 
   try {
+
+    await deleteProfilePhoto;
+    
     await s3Access.put_by_key("best-network-nets212-sp24", "/profilePictures/" + userID, profilePhoto.buffer, profilePhoto.mimetype);
     // Get the photo URL from S3
     const photoURL = `https://best-network-nets212-sp24.s3.amazonaws.com//profilePictures/${userID}`
-
+    console.log(photoURL);
     // Update the user's profile photo URL in the database
     const pfpQuery = `UPDATE users SET profilePhoto = '${photoURL}' WHERE id = '${userID}';`;
     await db.send_sql(pfpQuery);
@@ -205,6 +209,25 @@ var setProfilePhoto = async function(req, res) {
   
 };
 
+var deleteProfilePhoto = async function(req, res) {
+
+  const userID = req.session.user_id;
+
+  const usersQuery = `SELECT * from users where id = '${userID}'`;
+  var userData = await db.send_sql(usersQuery);
+  console.log(userData);
+  profilePhoto = userData[0].profilePhoto;
+  if (profilePhoto) {
+    console.log("User has existing profile photo, deleting");
+
+    await s3Access.delete_by_key("best-network-nets212-sp24", "/profilePictures/" + userID);
+    const pfpQuery = `UPDATE users SET profilePhoto = NULL WHERE id = '${userID}';`;
+
+  } else {
+    console.log("No profile photo to delete");
+  }
+}
+ 
 
 
 
@@ -304,6 +327,7 @@ var routes = {
     post_login: postLogin,
     post_register: postRegister,
     post_set_profile_photo: setProfilePhoto,
+    post_delete_profile_photo: deleteProfilePhoto,
     post_logout: postLogout,
     is_logged_in : is_logged_in
   };
