@@ -94,7 +94,7 @@ export default function PostComponent({
   };
 
   // Construct the S3 image URL based on post_id
-  const s3ImageUrl = `https://best-network-nets212-sp24.s3.amazonaws.com/posts/${post_id}`;
+  const s3ImageUrl = `https://best-network-nets212-sp24.s3.amazonaws.com//posts/${post_id}`;
 
   return (
     <div className="rounded-md bg-slate-50 p-6 w-full max-w-md space-y-2">
