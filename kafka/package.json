@@ -4,7 +4,7 @@
     "description": "A basic Express.js application",
     "main": "app.js",
     "scripts": {
-        "start": "node newapp.js"
+        "start": "node twitter.js"
     },
     "keywords": [
         "express"
@@ -13,6 +13,7 @@
     "license": "ISC",
     "dependencies": {
         "express": "^4.17.1",
-        "kafkajs": "2.2.4"
+        "kafkajs": "2.2.4",
+        "kafkajs-snappy": "^1.1.0"
     }
 }

@@ -58,9 +58,6 @@ function CreatePostComponent({ updatePosts }) {
             username,
         };
 
-        // Log the JSON data being sent
-        console.log('Post data:', postData);
-
         try {
             // Send a POST request to the server with JSON data
             const response = await axios.post(`${rootURL}/${username}/createPost`, postData, {
@@ -70,33 +67,35 @@ function CreatePostComponent({ updatePosts }) {
                 },
             });
 
-            console.log('Post created successfully:', response.data);
+            if (response.status === 201) {
+                console.log('Post created successfully:', response.data);
 
-            // If there is an image, upload it using multipart form data
-            console.log(image); 
-               if (image) {
-                const formData = new FormData();
-                formData.append('post', image);
+                // If there is an image, upload it using multipart form data
+                if (image) {
+                    const formData = new FormData();
+                    formData.append('post', image);
 
-                console.log(formData); 
+                    const imageResponse = await axios.post(`${rootURL}/${username}/uploadPost`, formData, {
+                        withCredentials: true,
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    });
 
-                const imageResponse = await axios.post(`${rootURL}/${username}/uploadPost`, formData, {
-                    withCredentials: true,
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                });
+                    console.log('Image uploaded successfully:', imageResponse.data);
+                }
 
-                console.log('Image uploaded successfully:', imageResponse.data);
+                // Update posts to refresh the feed
+                updatePosts();
+
+                // Reset form fields
+                setTitle('');
+                setContent('');
+                setImage(null);
+            } else {
+                console.error('Failed to create post:', response);
+                alert('Failed to create post.');
             }
-
-            // Update posts on successful submission
-            updatePosts();
-
-            // Reset form fields
-            setTitle('');
-            setContent('');
-            setImage(null);
         } catch (error) {
             console.error('Error creating post:', error);
             alert('Error creating post.');

@@ -6,7 +6,7 @@ const axios = require('axios');
 // Kafka setup
 const kafka = new Kafka({
     clientId: 'my-app',
-    brokers: config.bootstrapServers
+    brokers: config.bootstrapServers,
 });
 
 // Consumer setup
@@ -53,27 +53,23 @@ const handleIncomingPost = async (username, source_site, post_uuid_within_site, 
     let userExists = false;
 
     try {
-        // Make a GET request to the /checkRegistration endpoint
-
         const checkRegistrationResponse = await axios.get(
-            'http://localhost:8080/checkRegistration',
+            `http://localhost:8080/checkRegistration`,
             {
-                federatedUsername: federatedUsername, 
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json', 
+                params: {
+                    federatedUsername: federatedUsername, 
                 },
-                withCredentials: true,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                withCredentials: true, 
             }
         );
-
-        // Parse the response to check if the user is registered
-        userExists = checkRegistrationResponse.data.registered;
+        userExists = Boolean(checkRegistrationResponse.data.registered);
     } catch (error) {
         console.error('Failed to check user registration:', error);
-        return; 
-    }
+        return;
+    }    
 
     // If the user does not exist, register a new user
     if (!userExists) {
