@@ -141,7 +141,6 @@ public class FriendsOfFriendsSpark {
             while (friendsResultSet.next()) {
                 int followedUserId = friendsResultSet.getInt("followed");
                 int followerUserId = friendsResultSet.getInt("follower");
-                System.out.println(followedUserId);
                 networkList.add(new Tuple2<>(new Tuple2<>(followedUserId, "u"), new Tuple2<>(followerUserId, "u")));
             }
             friendsResultSet.close();
@@ -152,7 +151,7 @@ public class FriendsOfFriendsSpark {
             JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, String>> network = rdd.mapToPair(pair -> new Tuple2<>(pair._1(), pair._2()));
 
             // Show the result
-            network.foreach(pair -> System.out.println(pair._1() + " -> " + pair._2()));
+            // network.foreach(pair -> System.out.println(pair._1() + " -> " + pair._2()));
 
             return network;
 
@@ -168,37 +167,91 @@ public class FriendsOfFriendsSpark {
      * Adsorption Recommendation Algorithm!!! 
      */
     private void computeEdgeRDD(
-            JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, String>> network) {
+            JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, String>> networkRDD) {
 
-        JavaPairRDD<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>, Integer> edgeRDD = network
-        .mapToPair(edge -> {
-            Tuple2<Integer, String> key = edge._1();
-            Tuple2<Integer, String> value = edge._2();
-            return new Tuple2<>(new Tuple2<>(key, value), 1);
-        });
-
-       JavaPairRDD<Tuple2<Integer, String>, Integer> userWeightsSum = edgeRDD
-        .filter(edge -> edge._1()._1()._2().equals("u"))
-        .mapToPair(edge -> {
-            Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
-            Tuple2<Integer, String> value = edge._2();
-            // Check the second part of the key tuple and map to the appropriate key
-            if (key._2()._2().equals("p")) {
-                return new Tuple2<>(new Tuple2<>(key._1()._1(), "p"), value);
-            } else if (key._2()._2().equals("h")) {
-                return new Tuple2<>(new Tuple2<>(key._1()._1(), "h"), value);
-            } else if (key._2()._2().equals("u")) {
-                return new Tuple2<>(new Tuple2<>(key._1()._1(), "u"), value);
-            } else {
-                // Return a default tuple if the condition is not met
-                return new Tuple2<>(new Tuple2<>(0, "default"), 0);
-            }
-        })
-        .filter(edge -> !edge._1()._2().equals("default")) // Filter out the default tuples
-        .reduceByKey(Integer::sum);
+       JavaPairRDD<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>, Integer> edgeRDD = networkRDD
+            .mapToPair(edge -> {
+                Tuple2<Integer, String> key = edge._1();
+                Tuple2<Integer, String> value = edge._2();
+                return new Tuple2<>(new Tuple2<>(key, value), 1);
+            });
 
         
+        JavaPairRDD<Tuple2<Integer, String>, Double> userHashtagWeightsSum = edgeRDD
+            .filter(edge -> edge._1()._1()._2().equals("u") && edge._1()._2()._2().equals("h")) 
+            .mapToPair(edge -> {
+                Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
+                Integer value = edge._2();
+                return new Tuple2<>(key._1(), value);
+            })
+            .reduceByKey(Integer::sum)
+            .mapToPair(tuple -> new Tuple2<>(tuple._1(), .3 / tuple._2())); 
 
+        JavaPairRDD<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>, Double> userHashtagEdges = networkRDD
+            .filter(edge -> edge._1()._2().equals("u") && edge._2()._1().equals("h"))
+            .join(userHashtagWeightsSum)
+            .mapToPair(tuple -> new Tuple2<>(new Tuple2<>(tuple._1(), tuple._2()._1()), tuple._2()._2()));
+
+
+
+        JavaPairRDD<Tuple2<Integer, String>, Double> userPostsWeightsSum = edgeRDD
+            .filter(edge -> edge._1()._1()._2().equals("u") && edge._1()._2()._2().equals("p")) 
+            .mapToPair(edge -> {
+                Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
+                Integer value = edge._2();
+                return new Tuple2<>(key._1(), value);
+            })
+            .reduceByKey(Integer::sum)
+            .mapToPair(tuple -> new Tuple2<>(tuple._1(), .4 / tuple._2())); 
+
+        JavaPairRDD<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>, Double> userPostEdges = networkRDD
+            .filter(edge -> edge._1()._2().equals("u") && edge._2()._1().equals("p"))
+            .join(userPostsWeightsSum)
+            .mapToPair(tuple -> new Tuple2<>(new Tuple2<>(tuple._1(), tuple._2()._1()), tuple._2()._2()));
+
+
+
+        JavaPairRDD<Tuple2<Integer, String>, Double> postWeightsSum = edgeRDD
+            .filter(edge -> edge._1()._1()._1().equals("p")) 
+            .mapToPair(edge -> {
+                Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
+                Integer value = edge._2();
+                return new Tuple2<>(key._1(), value);
+            })
+            .reduceByKey(Integer::sum)
+            .mapToPair(tuple -> new Tuple2<>(tuple._1(), 1.0 / tuple._2())); 
+
+        JavaPairRDD<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>, Double> postEdges = networkRDD
+            .filter(edge -> edge._1()._2().equals("p"))
+            .join(postWeightsSum)
+            .mapToPair(tuple -> new Tuple2<>(new Tuple2<>(tuple._1(), tuple._2()._1()), tuple._2()._2())); 
+
+
+        
+         JavaPairRDD<Tuple2<Integer, String>, Double> hashtagWeightsSum = edgeRDD
+            .filter(edge -> edge._1()._1()._2().equals("h")) 
+            .mapToPair(edge -> {
+                Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
+                Integer value = edge._2();
+                return new Tuple2<>(key._1(), value);
+            })
+            .reduceByKey(Integer::sum)
+            .mapToPair(tuple -> new Tuple2<>(tuple._1(), 1.0 / tuple._2())); 
+
+        JavaPairRDD<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>, Double> hashtagEdges = networkRDD
+            .filter(edge -> edge._1()._2().equals("h"))
+            .join(hashtagWeightsSum)
+            .mapToPair(tuple -> new Tuple2<>(new Tuple2<>(tuple._1(), tuple._2()._1()), tuple._2()._2())); 
+
+
+        
+        JavaPairRDD<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>, Double> combinedEdges = userHashtagEdges
+            .union(userPostEdges)
+            .union(postEdges)
+            .union(hashtagEdges);
+
+
+        combinedEdges.foreach(edge -> System.out.println(edge));
         // return edgeRDD;
     }  
 
