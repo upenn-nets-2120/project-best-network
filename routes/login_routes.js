@@ -21,16 +21,17 @@ var getHelloWorld = function(req, res) {
 // check if user exists (Kim inputed for kafka)
 var checkRegistration = async function(req, res) {
   try {
-      // Extract the username from the request body
-      const { federatedUsername } = req.body;
+      // Extract the federatedUsername from the query parameters
+      const { federatedUsername } = req.query;
 
+      // Check if federatedUsername is provided
       if (!federatedUsername) {
-        return res.status(400).json({ error: 'Username is required.' });
-    }
+          return res.status(400).json({ error: 'Username is required.' });
+      }
 
       // Query the database to check if the user exists
-      const query = `SELECT * FROM users WHERE username = '${federatedUsername}'`;
-      const result = await db.send_sql(query);
+      const query = `SELECT * FROM users WHERE username = ?`;
+      const result = await db.send_sql(query, [federatedUsername]);
 
       // If the user exists, return a success message
       if (result.length > 0) {

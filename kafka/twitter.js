@@ -1,17 +1,22 @@
 const express = require('express');
-const { Kafka } = require('kafkajs');
+const { Kafka, CompressionTypes } = require('kafkajs');
+const SnappyCodec = require('kafkajs-snappy'); // Import Snappy codec
 const config = require('./config.json');
+const axios = require('axios');
 
-// Kafka setup
+// Kafka setup with Snappy codec
 const kafka = new Kafka({
     clientId: 'my-app',
-    brokers: config.bootstrapServers
+    brokers: config.bootstrapServers,
+    compressionCodecs: {
+        [CompressionTypes.Snappy]: SnappyCodec,
+    },
 });
 
-// consumer code
+// Consumer setup
 const consumer = kafka.consumer({
     groupId: config.groupId,
-    bootstrapServers: config.bootstrapServers
+    brokers: config.bootstrapServers,
 });
 
 // Connect and subscribe to the "Twitter-Kafka" topic
@@ -36,54 +41,67 @@ const runConsumer = async () => {
 };
 
 // Define your handler for processing incoming tweets
-const handleIncomingTweet = (tweet) => {
+const handleIncomingTweet = async (tweet) => {
     // Extract necessary fields from the tweet
     const tweetId = tweet.id;
     const authorId = tweet.author_id;
     const tweetText = tweet.text;
     const hashtags = tweet.hashtags || [];
-    const created_at = tweet.created_at; 
+    const created_at = tweet.created_at;
     const conversation_id = tweet.conversation_id;
     const quoted_tweet_id = tweet.quoted_tweet_id;
-    const quotes = tweet.quotes; 
-    const urls = tweet.urls; 
-    const replies = tweet.replies; 
+    const quotes = tweet.quotes;
+    const urls = tweet.urls;
+    const replies = tweet.replies;
     const replied_to_tweet_id = tweet.replied_to_tweet_id;
-    const mentions = tweet.mentions;  
-    const retweets = tweet.retweets; 
-    const retweet_id = tweet.retweet_id; 
-    const likes = tweet.likes; 
+    const mentions = tweet.mentions;
+    const retweets = tweet.retweets;
+    const retweet_id = tweet.retweet_id;
+    const likes = tweet.likes;
 
-    // need to add logic to handle the tweet itself 
     const tweetData = {
-        id: tweetId, 
-        text: tweetText, 
-        created_at: created_at, 
-        conversation_id: conversation_id, 
+        id: tweetId,
+        text: tweetText,
+        created_at: created_at,
+        conversation_id: conversation_id,
         author_id: authorId,
-        quoted_tweet_id: quoted_tweet_id, 
+        quoted_tweet_id: quoted_tweet_id,
         replied_to_tweet_id: replied_to_tweet_id,
-        quotes: quotes, 
-        urls: urls, 
-        replies: replies, 
+        quotes: quotes,
+        urls: urls,
+        replies: replies,
         hashtags: hashtags,
-        mentions: mentions, 
-        retweets: retweets, 
-        retweet_id: retweet_id, 
-        likes: likes, 
-        username: federatedUsername
+        mentions: mentions,
+        retweets: retweets,
+        retweet_id: retweet_id,
+        likes: likes,
     };
 
+    console.log(`Received tweet from author ID ${tweet.author_id}: ${tweet.text}`);
 
-    // Log the incoming tweet for reference
-    console.log(`Received tweet from author ID ${authorId}: ${tweetText}`);
+    try {
+        // create Tweet
+        const response = await axios.post('http://localhost:8080/createTweet', tweetData, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            withCredentials: true,
+        });
+
+        if (response.status === 201) {
+            console.log('Tweet created successfully in the application.');
+        } else {
+            console.error('Failed to create tweet in the application.');
+        }
+    } catch (error) {
+        console.error('Error creating tweet:', error);
+    }
 };
 
 // Start the consumer
 runConsumer().catch(console.error);
 
-
-// producer code 
+// Producer setup
 const producer = kafka.producer();
 
 const sendTweet = async (tweet) => {
@@ -95,6 +113,7 @@ const sendTweet = async (tweet) => {
             messages: [
                 {
                     value: tweetJson,
+                    compression: CompressionTypes.Snappy, // Use Snappy compression
                 },
             ],
         });
@@ -125,7 +144,7 @@ const runProducer = async () => {
         author_id: 17602896,
         retweets: 62,
         retweet_id: null,
-        likes: 263
+        likes: 263,
     };
 
     // Send the example tweet from Ed
