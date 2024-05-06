@@ -55,7 +55,7 @@ const handleIncomingPost = async (username, source_site, post_uuid_within_site, 
     try {
         // Make a GET request to the /checkRegistration endpoint
 
-        const checkRegistrationResponse = await axios.post(
+        const checkRegistrationResponse = await axios.get(
             'http://localhost:8080/checkRegistration',
             {
                 federatedUsername: federatedUsername, 
