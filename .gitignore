@@ -37,4 +37,4 @@ target/
 **/dependency-reduced-pom.xml
 **/chroma.sqlite3
 **/chroma.log
-**/chroma_data
+chroma_data/*
