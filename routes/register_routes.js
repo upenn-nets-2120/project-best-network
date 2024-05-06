@@ -3,11 +3,16 @@ const multer = require('multer');
 const friend_routes = require('./friend_routes.js');
 const account_routes = require('./account_routes.js');
 const profile_routes = require('./profile_routes.js');
+const actor_routes = require('./actor_routes.js');
+const { ChromaClient } = require("chromadb");
+
 
 const s3Access = require('../models/s3_access.js'); 
 
 const storage = multer.memoryStorage(); // Store files in memory
 const upload = multer({ storage: storage });
+const client = new ChromaClient();
+
 
 module.exports = {
     register_routes
@@ -55,6 +60,10 @@ function register_routes(app) {
     app.post('/:username/uploadPost', upload.single('post'), friend_routes.upload_post); 
     app.get('/:username/feed', friend_routes.get_feed);
     app.post('/:username/sendLike', friend_routes.send_like);
+
+    //actor routes
+    app.get('/:username/getActors', actor_routes.get_actors);
+    app.get('/:username/setActor', actor_routes.set_actor);
    
 
 

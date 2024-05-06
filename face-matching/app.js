@@ -14,6 +14,8 @@ const { ChromaClient } = require("chromadb");
 const fs = require('fs');
 const tf = require('@tensorflow/tfjs-node');
 const faceapi = require('@vladmandic/face-api');
+const axios = require('axios');
+
 
 
 let optionsSSDMobileNet;
@@ -55,10 +57,10 @@ async function initializeFaceModels() {
   console.log("Initializing FaceAPI...");
 
   await tf.ready();
-  await faceapi.nets.ssdMobilenetv1.loadFromDisk('model');
+  await faceapi.nets.ssdMobilenetv1.loadFromDisk('../face-matching/model');
   optionsSSDMobileNet = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5, maxResults: 1 });
-  await faceapi.nets.faceLandmark68Net.loadFromDisk('model');
-  await faceapi.nets.faceRecognitionNet.loadFromDisk('model');
+  await faceapi.nets.faceLandmark68Net.loadFromDisk('../face-matching/model');
+  await faceapi.nets.faceRecognitionNet.loadFromDisk('../face-matching/model');
 
   return;
 }
@@ -97,10 +99,31 @@ async function indexAllFaces(pathName, image, collection) {
   return success;
 }
 
-async function findTopKMatches(collection, image, k) {
+async function getEmbeddingsFromURL(url) {
+  const response = await axios.get(url,  { responseType: 'arraybuffer' })
+  const buffer = Buffer.from(response.data, "utf-8")
+  const tensor = tf.node.decodeImage(buffer, 3);
+
+  const faces = await faceapi.detectAllFaces(tensor, optionsSSDMobileNet)
+    .withFaceLandmarks()
+    .withFaceDescriptors();
+  tf.dispose(tensor);
+
+  // For each face, get the descriptor and convert to a standard array
+  return faces.map((face) => getArray(face.descriptor));
+};
+
+
+async function findTopKMatches(collection, imageURL, k) {
   var ret = [];
 
-  var queryEmbeddings = await getEmbeddings(image);
+  if (!collection) {
+    console.error("Error: Collection is not properly initialized");
+    return;
+  }
+
+
+  var queryEmbeddings = await getEmbeddingsFromURL(imageURL);
   for (var queryEmbedding of queryEmbeddings) {
     var results = await collection.query({
       queryEmbeddings: queryEmbedding,
@@ -114,6 +137,7 @@ async function findTopKMatches(collection, image, k) {
   }
   return ret;
 }
+
 
 /**
  * Example: Compare two images in files directly using FaceAPI
@@ -137,11 +161,12 @@ async function compareImages(file1, file2) {
 // Main
 
 const client = new ChromaClient();
+var collection;
 initializeFaceModels()
 .then(async () => {
 
-  const collection = await client.getOrCreateCollection({
-    name: "face-api",
+  collection = await client.getOrCreateCollection({
+    name: "face-api-2",
     embeddingFunction: null,
     // L2 here is squared L2, not Euclidean distance
     metadata: { "hnsw:space": "l2" },
@@ -150,7 +175,7 @@ initializeFaceModels()
   console.info("Looking for files");
   const promises = [];
   // Loop through all the files in the images directory
-  fs.readdir("images", function (err, files) {
+  fs.readdir("./face-matching/images", function (err, files) {
     if (err) {
       console.error("Could not list the directory.", err);
       process.exit(1);
@@ -158,21 +183,23 @@ initializeFaceModels()
 
     files.forEach(function (file, index) {
       console.info("Adding task for " + file + " to index.");
-      promises.push(indexAllFaces(path.join("images", file), file, collection));
+      promises.push(indexAllFaces(path.join("./face-matching/images", file), file, collection));
     });
     console.info("Done adding promises, waiting for completion.");
     Promise.all(promises)
     .then(async (results) => {
       console.info("All images indexed.");
   
-      const search = 'query.jpg';
-  
-      console.log('\nTop-k indexed matches to ' + search + ':');
-      for (var item of await findTopKMatches(collection, search, 5)) {
-        for (var i = 0; i < item.ids[0].length; i++) {
-          console.log(item.ids[0][i] + " (Euclidean distance = " + Math.sqrt(item.distances[0][i]) + ") in " + item.documents[0][i]);
+      /** 
+        const search = 'query.jpg';
+    
+        console.log('\nTop-k indexed matches to ' + search + ':');
+        for (var item of await findTopKMatches(collection, search, 5)) {
+          for (var i = 0; i < item.ids[0].length; i++) {
+            console.log(item.ids[0][i] + " (Euclidean distance = " + Math.sqrt(item.distances[0][i]) + ") in " + item.documents[0][i]);
+          }
         }
-      }
+      **/
     
     })
     .catch((err) => {
@@ -181,4 +208,11 @@ initializeFaceModels()
     });
 
 });
+
+module.exports = {
+  client, // Exporting the client object
+  collection,
+  findTopKMatches
+
+};
 

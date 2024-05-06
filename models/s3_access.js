@@ -1,4 +1,4 @@
-const { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand, DeleteObjectCommand,  ListObjectsV2Command } = require('@aws-sdk/client-s3');
 const { fromIni } = require('@aws-sdk/credential-provider-ini');
 const process = require('process');
 const config = require('../config.json'); // Load configuration
@@ -11,7 +11,8 @@ module.exports = {
     create_bucket,
     put_by_key,
     get_by_key,
-    delete_by_key
+    delete_by_key,
+    list_objects
 };
 
 function close_s3_client() {
@@ -106,5 +107,22 @@ async function delete_by_key(bucketName, objectKey) {
     } catch (err) {
         console.error('Error deleting photo:', err);
         return false;
+    }
+}
+
+async function list_objects(bucketName, prefix = '') {
+    const s3 = await get_s3_client();
+
+    const listParams = {
+        Bucket: bucketName,
+        Prefix: prefix
+    };
+
+    try {
+        const data = await s3.send(new ListObjectsV2Command(listParams));
+        return data.Contents;
+    } catch (err) {
+        console.error('Error listing objects:', err);
+        return null;
     }
 }
