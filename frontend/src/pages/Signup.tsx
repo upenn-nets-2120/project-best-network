@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios'; 
 import config from '../../config.json';
@@ -34,7 +35,13 @@ export default function Signup() {
     const [hashtagInterests, setHashtagInterests] = useState<string[]>([]);
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [topHashtags, setTopHashtags] = useState<string[]>([]); // State variable for top hashtags
 
+
+    useEffect(() => {
+        console.log("usereffect");
+        fetchTopHashtags();
+    }, []);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();  
@@ -77,8 +84,26 @@ export default function Signup() {
         }
     };
 
+    const fetchTopHashtags = async () => {
+        try {
+            console.log('fetching hashtags');
+
+            const response = await axios.get(`${rootURL}/tophashtags`);
+            if (response.status === 200) {
+                const topHashtagsData = response.data.topHashtags;
+                setTopHashtags(topHashtagsData);
+            } else {
+                console.error('Failed to fetch top hashtags.');
+            }
+        } catch (error) {
+            console.error('Fetch top hashtags error:', error);
+        }
+    };
+
     return (
         <div className='w-screen h-screen flex items-center justify-center'>
+            <div className="w-full max-w-lg flex flex-col items-center"> {/* Container */}
+
             <form onSubmit={handleSubmit}>
                 <div className='rounded-md bg-slate-50 p-6 space-y-2 w-full'>
                     <div className='font-bold flex w-full justify-center text-2xl mb-4'>
@@ -184,6 +209,20 @@ export default function Signup() {
                     </div>
                 </div>
             </form>
+
+            {/* Display top hashtags */}
+            {topHashtags.length > 0 && (
+                <div>
+                    <h2>Trending Hashtags</h2>
+                    <ul>
+                        {topHashtags.map((hashtag, index) => (
+                            <li key={index}>{hashtag}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
+
         </div>
     );
 }

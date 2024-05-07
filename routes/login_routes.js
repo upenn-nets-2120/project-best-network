@@ -298,6 +298,30 @@ var is_logged_in = async function(req, res) {
 };
 
 
+const getTopHashtags = async (req, res) => {
+  try {
+    // Query to fetch the top hashtags
+    const query = `
+      SELECT text
+      FROM hashtags
+      ORDER BY count DESC
+      LIMIT 10;`;
+
+    // Execute the query
+    const result = await db.send_sql(query);
+
+    // Extract the hashtags from the result
+    const topHashtags = result.map(row => row.text);
+
+    // Send the top hashtags as a response
+    res.status(200).json({ topHashtags });
+  } catch (error) {
+    console.error('Error fetching top hashtags:', error);
+    res.status(500).json({ error: 'Error fetching top hashtags.' });
+  }
+};
+
+
 
 var routes = { 
     get_helloworld: getHelloWorld,
@@ -306,7 +330,9 @@ var routes = {
     post_register: postRegister,
     post_set_profile_photo: setProfilePhoto,
     post_logout: postLogout,
-    is_logged_in : is_logged_in
+    is_logged_in : is_logged_in,
+    get_top_hashtags: getTopHashtags 
+
   };
 
 

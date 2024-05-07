@@ -16,6 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import project.bestnetwork.SparkJob;
+import project.bestnetwork.livy.SocialRankJob;
 
 import scala.Tuple2;
 
