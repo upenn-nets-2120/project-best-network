@@ -3,7 +3,7 @@ Team 13, Best Network
 
 Members: Julia Susser, Vedha Avali, Kimberly Liang, Cameron Bosio-Kim
 
-SEAS emails: julia seas email, vavali@seas.upenn.edu, kim, cameron
+SEAS emails: jsusser@seas.upenn.edu, vavali@seas.upenn.edu, kimliang@seas.upenn.ed, cbos@seas.upenn.edu
 
 ## Features Implemented:
 * User account creation and login with profile picture upload
@@ -15,6 +15,7 @@ SEAS emails: julia seas email, vavali@seas.upenn.edu, kim, cameron
 * Chat page where users are available to create, join, and leave new chat rooms and communicate with other users in chat rooms
 
 ## Instructions for Running:
+
 
 
 ## Declaration:
