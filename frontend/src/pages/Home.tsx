@@ -58,7 +58,7 @@ export default function Home() {
         </div>
         
         <div className='h-full w-full mx-auto max-w-[1800px] flex flex-col items-center space-y-4'>
-          <CreatePostComponent updatePosts={setPosts} />
+           <CreatePostComponent updatePosts={setPosts} />
           {
             // Map each post to a PostComponent
             posts.map(post => (

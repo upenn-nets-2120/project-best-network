@@ -20,6 +20,7 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
   const rootURL = config.serverRootURL;
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [image, setImage] = useState<File | null>(null); // State to hold the image file
   const navigate = useNavigate();
 
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,25 +31,53 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
     setContent(event.target.value);
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files && event.target.files[0];
+    setImage(file);
+  };
+
   const post_uuid = uuidv4();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     try {
-      const postData = {
-        post_text: content,
-        username,
-        source_site: "g13", 
-        post_uuid_within_site: post_uuid,
-        content_type: "text/plain"
-      };
+      let imageUrl = '';
+      // Check if there is an image selected
+      if (image) {
+        const formData = new FormData();
+        formData.append('post', image);
 
+        // Upload the image and get the public URL
+        const imageResponse = await axios.post(`${rootURL}/${username}/uploadPost`, formData, {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        console.log('Image uploaded successfully:', imageResponse.data);
+
+        imageUrl = imageResponse.data.url;
+      }
+
+        // Create the post data
+        const postData = {
+          post_text: content,
+          username,
+          source_site: "g13", 
+          post_uuid_within_site: post_uuid,
+          attach: `<img src="${imageUrl}" alt="Image" />`,
+          content_type: "text/html"
+        };
+
+      // Send the post data to create a federated post
       const response: AxiosResponse<Post> = await axios.post(`http://localhost:8080/${username}/createFederatedPost`, postData, {
         withCredentials: true,
         headers: {
           'Content-Type': 'application/json',
         },
       });
+
       if (response.status === 201 || 200) {
         console.log('Post created successfully:', response.data);
         updatePosts(prevPosts => [...prevPosts, response.data]);
@@ -87,6 +116,16 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
             value={content}
             onChange={handleContentChange}
             required
+          />
+        </div>
+        <div className="mb-4">
+          <label htmlFor="image" className="block text-gray-700 font-bold mb-2">Image</label>
+          <input
+            id="image"
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="w-full border rounded-md px-3 py-2 outline-none focus:border-blue-500"
           />
         </div>
         <div className="text-center">

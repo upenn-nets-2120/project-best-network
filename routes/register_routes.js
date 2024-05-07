@@ -67,6 +67,7 @@ function register_routes(app) {
     app.get('/:username/feed', feed_routes.get_feed);
     app.post('/:username/sendLike', feed_routes.send_like);
     app.get('/:username/getLikes', feed_routes.get_likes); 
+    app.post('/:username/uploadPostFromHTML', feed_routes.upload_posts_from_HTML); 
 
     //actor routes
     app.get('/:username/getActors', actor_routes.get_actors);

@@ -7,7 +7,7 @@ const { sendFederatedPost } = require('../kafka/newapp.js');
 const handleFederatedPost = async (req, res) => {
     try {
         // Extract required data from the request body
-        const { username, source_site, post_uuid_within_site, post_text, content_type } = req.body;
+        const { username, source_site, post_uuid_within_site, post_text, content_type, attach } = req.body;
 
         // Call the sendFederatedPost function
         await sendFederatedPost({
@@ -15,7 +15,8 @@ const handleFederatedPost = async (req, res) => {
             source_site,
             post_uuid_within_site,
             post_text,
-            content_type
+            content_type,
+            attach
         });
 
         // Send a success response

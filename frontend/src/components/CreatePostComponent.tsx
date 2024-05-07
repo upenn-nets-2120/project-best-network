@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import config from '../../config.json';
 import { v4 as uuidv4 } from 'uuid';
+import PostCompoennt from "../components/PostComponent"
 
 function CreatePostComponent({ updatePosts }) {
     const { username } = useParams();
@@ -86,7 +87,9 @@ function CreatePostComponent({ updatePosts }) {
                 }
 
                 // Update posts to refresh the feed
-                updatePosts(prevPosts => [...prevPosts, response.data]);
+                updatePosts((prevPosts) => [response.data, ...prevPosts]);
+
+
 
                 setTitle('');
                 setContent('');

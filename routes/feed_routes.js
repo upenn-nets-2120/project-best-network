@@ -256,6 +256,33 @@ var uploadPost = async function(req, res) {
 
 };
 
+
+var uploadImageFromHtmlTag = async function(imgTag) {
+  try {
+    // Extract the image URL from the HTML <img> tag
+    const srcRegex = /src="([^"]*)"/;
+    const match = imgTag.match(srcRegex);
+    if (!match || match.length < 2) {
+      throw new Error('Invalid HTML <img> tag');
+    }
+    const imageUrl = match[1];
+
+    // Upload the image to the posts table
+    const getLastPost = `SELECT * FROM posts ORDER BY post_id DESC LIMIT 1;`;
+    const lastPost = await db.send_sql(getLastPost);
+    const lastId = lastPost[0].post_id + 1;
+
+    // Update the posts table with the image URL
+    const updatePostQuery = `INSERT INTO posts (post_id, photo) VALUES (${lastId}, '${imageUrl}');`;
+    await db.send_sql(updatePostQuery);
+
+    console.log('Image uploaded successfully:', imageUrl);
+  } catch (error) {
+    console.error('Error uploading image from HTML tag:', error);
+    throw error;
+  }
+};
+
 // POST /like
 var sendLike = async function(req, res) {
   const { post_id } = req.body;
@@ -449,7 +476,8 @@ var createTweet = async function(req, res) {
     upload_post: uploadPost,
     send_like: sendLike,
     get_likes: getLikes, 
-    get_comments: getComments
+    get_comments: getComments,
+    upload_posts_from_HTML: uploadImageFromHtmlTag
   };
   
   module.exports = routes;
