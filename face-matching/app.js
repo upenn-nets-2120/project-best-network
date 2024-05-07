@@ -57,10 +57,10 @@ async function initializeFaceModels() {
   console.log("Initializing FaceAPI...");
 
   await tf.ready();
-  await faceapi.nets.ssdMobilenetv1.loadFromDisk('../face-matching/model');
+  await faceapi.nets.ssdMobilenetv1.loadFromDisk('./face-matching/model');
   optionsSSDMobileNet = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5, maxResults: 1 });
-  await faceapi.nets.faceLandmark68Net.loadFromDisk('../face-matching/model');
-  await faceapi.nets.faceRecognitionNet.loadFromDisk('../face-matching/model');
+  await faceapi.nets.faceLandmark68Net.loadFromDisk('./face-matching/model');
+  await faceapi.nets.faceRecognitionNet.loadFromDisk('./face-matching/model');
 
   return;
 }
