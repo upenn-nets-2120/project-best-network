@@ -81,6 +81,7 @@ public class runSocialNetwork {
 
             logger.info("Successfully connected to database!");
 
+            //Run SQL queries to populate network lists
             List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>> networkList = new ArrayList<>();
             
             
