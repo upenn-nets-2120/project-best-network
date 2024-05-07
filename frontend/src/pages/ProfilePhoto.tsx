@@ -45,7 +45,7 @@ export default function SetProfilePhoto() {
             // Handle the response
             if (response.status === 200) {
                 // Photo upload successful, navigate to the user's home page
-                navigate(`/${username}/home`);
+                navigate(`/${username}/actors`);
             } else {
                 alert('Photo upload failed.');
                 console.log(response);

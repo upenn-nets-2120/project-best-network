@@ -203,15 +203,15 @@ export default function UserProfile() {
             {actor && (
               <div>
                 <img src={`https://best-network-nets212-sp24.s3.amazonaws.com//actorImages/${nconst}.jpg`} alt={actor} style={{ maxWidth: '100px' }} />
-                <button 
+              </div>
+            )}
+            <button 
                   onClick={newActor}
                   type="button"
                   className="px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white"
                 >
-                    Change Actor
+                    Set New Actor
                 </button>
-              </div>
-            )}
           </div>
         </div>
         

@@ -67,6 +67,29 @@ export default function ActorPage() {
             } else {
                 console.error('Failed to set selected actor.');
             }
+
+            const postData = {
+                title: "Actor Update",
+                content: `${username} is now linked to ${selectedActor}`,
+                hashtags: [],
+                username: username
+            };
+
+    
+            // Log the JSON data being sent
+            console.log('Post data:', postData);
+
+            const postResponse = await axios.post(`${rootURL}/${username}/createPost`, postData, {
+                withCredentials: true,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            console.log('Post created successfully:', postResponse.data);
+
+    
+    
         } catch (error) {
         console.error('Set selected actor error:', error);
         }
