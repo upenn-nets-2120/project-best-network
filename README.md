@@ -51,6 +51,14 @@ SEAS emails: jsusser@seas.upenn.edu, vavali@seas.upenn.edu, kimliang@seas.upenn.
 **ChromaDB:**
 **OpenAI/NLP**
 
+### Kafka: 
+1. Download the nets2120-project.pem file and move it into the NETS2120 folder
+2. Go to the Terminal in the Docker container (docker exec -it nets2120 bash) and execute `nano /etc/hosts`
+3. Go to the bottom of the file and add the line: `127.0.0.1  ip-172-31-29-52`
+4. Create the EC2 tunnel to Kafka with the following:
+```
+ssh -i ~/nets2120/nets2120-project.pem -4 -L 9092:ip-172-31-29-52.ec2.internal:9092 ubuntu@ec2-44-203-65-104.compute-1.amazonaws.com
+```
 
 ### Frontend:
 - cd frontend then npm install
