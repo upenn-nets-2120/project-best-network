@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>project</groupId>
-    <artifactId>nets2120-hw3</artifactId>
+    <artifactId>project-best-network</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>NETS 2120 Project Best Network</name>
 
@@ -190,26 +190,7 @@
         </pluginManagement>
 
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>create-distribution</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <finalName>submit-hw3</finalName>
-                            <appendAssemblyId>false</appendAssemblyId>
-                            <descriptors>
-                                <descriptor>assembly/submit-hw3.xml</descriptor>
-                            </descriptors>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+            
             <plugin>
                 <groupId>com.googlecode.maven-download-plugin</groupId>
                 <artifactId>download-maven-plugin</artifactId>
@@ -307,7 +288,7 @@
                         <goals>
                             <goal>java</goal>
                         </goals>
-                        <configuration>
+                     <configuration>
                             <mainClass>project.bestnetwork.livy.ComputeRanksLivy</mainClass>
                             <compilerArgs>
                                 <arg>--add-exports=java.base/java.lang=ALL-UNNAMED</arg>

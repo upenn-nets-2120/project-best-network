@@ -25,7 +25,7 @@ public class Config {
      */
     public static String LOCAL_SPARK = "local[*]";
 
-    public static String JAR = "target/nets2120-hw3-0.0.1-SNAPSHOT.jar";
+    public static String JAR = "target/project-best-network-0.0.1-SNAPSHOT.jar";
 
     // Retrieve AWS credentials from environment variables
     public static String ACCESS_KEY_ID = System.getenv("ACCESS_KEY_ID");
