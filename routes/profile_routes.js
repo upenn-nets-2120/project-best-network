@@ -33,6 +33,7 @@ var set_profile_hashtags = async function(req, res) {
 // GET /getProfile
 var get_profile = async function(req, res) {
     var username = req.session.username;
+    console.log(username);
     if (username == null){
         return res.status(403).json({ error: 'Not logged in.' });
     }
@@ -56,7 +57,14 @@ var get_profile = async function(req, res) {
         var hashtagsTextList = hashtags.map(hashtag => hashtag.text);
         console.log(hashtagsTextList);
 
-        return res.status(200).json({email : info.email, username: info.username, hashtags: hashtagsTextList, actor:"Awesome Julia", profilePhoto:info.profilePhoto});
+        var actorQuery = `SELECT primaryName from actors WHERE nconst = '${info.actor_nconst}'`;
+        var actorResult = await db.send_sql(actorQuery);
+        var actor = '';
+        if(actorResult.length >= 1) {
+            actor = actorResult[0].primaryName;
+        }
+
+        return res.status(200).json({email : info.email, username: info.username, hashtags: hashtagsTextList, actor: actor, profilePhoto:info.profilePhoto, nconst: info.actor_nconst });
 
     } catch (error) {
         console.error('Error:', error);
@@ -66,14 +74,6 @@ var get_profile = async function(req, res) {
 };
 
 
-
-var get_most_similar_actors = async function(req, res) {
-res.status(200).json({actors:["julia", "julia susser", "julia is the best"]})
-}
-
-var post_actor = async function(req, res) {
-res.status(200).json({})
-}
 
 var get_recommended_hashtags = async function(req, res) {
 
@@ -102,6 +102,8 @@ var get_recommended_hashtags = async function(req, res) {
 var post_add_hashtag = async function(req, res) {
     const { hashtag } = req.body
     const userID = req.session.user_id;
+    console.log(userID);
+    console.log(username);
 
     var hashtagQuery = `SELECT hashtags.text 
             FROM users
@@ -202,11 +204,9 @@ var post_remove_hashtag = async function(req, res) {
 }
 
 var routes = {
-    get_most_similar_actors: get_most_similar_actors,
     get_recommended_hashtags: get_recommended_hashtags,
     post_add_hashtag: post_add_hashtag,
     post_remove_hashtag: post_remove_hashtag,
-    post_actor: post_actor,
     get_profile: get_profile
 }
 

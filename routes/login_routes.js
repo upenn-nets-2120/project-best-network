@@ -178,21 +178,24 @@ var setProfilePhoto = async function(req, res) {
   //https://github.com/upenn-nets-2120/homework-2-ms1-vavali08/blob/main/src/main/java/org/nets2120/imdbIndexer/S3Setup.java Reference - Note that this is Java
 
   const profilePhoto = req.file;
-  console.log(profilePhoto);
+  const username = req.session.username;
   const userID = req.session.user_id;
 
   if (!profilePhoto) {
     return res.status(400).json({ error: 'No profile photo uploaded.' });
   }
-  if (!userID) {
+  if (!username) {
     return res.status(403).json({ error: 'Not logged in.' });
   }
 
   try {
+
+    await deleteProfilePhoto;
+    
     await s3Access.put_by_key("best-network-nets212-sp24", "/profilePictures/" + userID, profilePhoto.buffer, profilePhoto.mimetype);
     // Get the photo URL from S3
     const photoURL = `https://best-network-nets212-sp24.s3.amazonaws.com//profilePictures/${userID}`
-
+    console.log(photoURL);
     // Update the user's profile photo URL in the database
     const pfpQuery = `UPDATE users SET profilePhoto = '${photoURL}' WHERE id = '${userID}';`;
     await db.send_sql(pfpQuery);
@@ -206,6 +209,36 @@ var setProfilePhoto = async function(req, res) {
   
 };
 
+var deleteProfilePhoto = async function(req, res) {
+
+  console.log("Delete pfp function...");
+
+  console.log(req.session.user_id);
+  const username = req.session.username;
+  const userID = req.session.user_id;
+  if (!username) {
+    return res.status(403).json({ error: 'Not logged in.' });
+  }
+
+
+  const usersQuery = `SELECT * from users where username = '${username}'`;
+  var userData = await db.send_sql(usersQuery);
+  console.log(userData);
+  if (userData[0].profilePhoto) {
+    console.log("User has existing profile photo, deleting");
+
+    await s3Access.delete_by_key("best-network-nets212-sp24", "/profilePictures/" + userID);
+    const pfpQuery = `UPDATE users SET profilePhoto = NULL WHERE id = '${userID}';`;
+    await db.send_sql(pfpQuery);
+    return res.status(200).json({ message: 'Profile photo deleted successfully.' });
+
+  } else {
+    console.log("No profile photo to delete");
+    return res.status(200).json({ message: 'No profile photo to delete' });
+
+  }
+}
+ 
 
 
 
@@ -328,7 +361,8 @@ var routes = {
     get_registration: checkRegistration,
     post_login: postLogin,
     post_register: postRegister,
-    post_set_profile_photo: setProfilePhoto,
+    set_profile_photo: setProfilePhoto,
+    delete_profile_photo: deleteProfilePhoto,
     post_logout: postLogout,
     is_logged_in : is_logged_in,
     get_top_hashtags: getTopHashtags 

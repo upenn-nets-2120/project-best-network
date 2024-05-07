@@ -5,11 +5,16 @@ const account_routes = require('./account_routes.js');
 const profile_routes = require('./profile_routes.js');
 const feed_routes = require('./feed_routes.js');
 const kafka_routes = require('./kafka_routes.js'); 
+const actor_routes = require('./actor_routes.js');
+const { ChromaClient } = require("chromadb");
+
 
 const s3Access = require('../models/s3_access.js'); 
 
 const storage = multer.memoryStorage(); // Store files in memory
 const upload = multer({ storage: storage });
+const client = new ChromaClient();
+
 
 module.exports = {
     register_routes
@@ -24,7 +29,8 @@ function register_routes(app) {
 
     app.get('/:username/logout', login_routes.post_logout);
     app.post('/register', login_routes.post_register);
-    app.post('/:username/setProfilePhoto', upload.single('profilePhoto'), login_routes.post_set_profile_photo); 
+    app.post('/:username/setProfilePhoto', upload.single('profilePhoto'), login_routes.set_profile_photo); 
+    app.post('/:username/deleteProfilePhoto', login_routes.delete_profile_photo); 
     app.get('/:username/isLoggedIn', login_routes.is_logged_in);
 
     //account changes
@@ -38,8 +44,6 @@ function register_routes(app) {
 
 
     //profile stuff
-    app.get('/:username/getMostSimilarActors', profile_routes.get_most_similar_actors);
-    app.post('/:username/setActor', profile_routes.post_actor);
     app.post('/:username/addHashtag', profile_routes.post_add_hashtag);
     app.post('/:username/removeHashtag', profile_routes.post_remove_hashtag);
     app.get('/:username/getRecommendedHashtags', profile_routes.get_recommended_hashtags);
@@ -62,6 +66,10 @@ function register_routes(app) {
     app.post('/:username/uploadPost', upload.single('post'), feed_routes.upload_post); 
     app.get('/:username/feed', feed_routes.get_feed);
     app.post('/:username/sendLike', feed_routes.send_like);
+
+    //actor routes
+    app.get('/:username/getActors', actor_routes.get_actors);
+    app.post('/:username/setActor', actor_routes.set_actor);
     app.get('/:username/getLikes', feed_routes.get_likes); 
 
     // federated post routes

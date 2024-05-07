@@ -6,8 +6,9 @@ import Friends from "./pages/Friends";
 import SearchBar from "./pages/SearchBar";
 import ChatPage from "./pages/ChatPage";
 import ProfilePage from './pages/ProfilePage'; 
-import ProfilePhoto from './pages/ProfilePhoto'
-import ProfileSettings from './pages/ProfileSettings'
+import ProfilePhoto from './pages/ProfilePhoto';
+import ProfileSettings from './pages/ProfileSettings';
+import ActorPage from './pages/ActorPage';
 import FederatedPosts from './pages/FederatedPosts'
 function App() {
   return (
@@ -22,6 +23,8 @@ function App() {
         <Route path="/:username/setProfilePhoto" element={<ProfilePhoto />} />
         <Route path="/:username/ProfilePage" element={<ProfilePage />} />
         <Route path="/:username/ProfileSettings" element={<ProfileSettings />} />
+        <Route path="/:username/Actors" element={<ActorPage />} />
+
         <Route path="/:username/federated_posts" element={<FederatedPosts />} />
         
       </Routes>
