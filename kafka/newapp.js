@@ -150,10 +150,10 @@ const runProducer = async () => {
 
     // Example post structure
     const post = {
-        username: 'rando',
+        username: 'hello',
         source_site: config.groupId,
         post_uuid_within_site: 'uuid_1234',
-        post_text: 'heiheph',
+        post_text: 'code',
         content_type: 'text/plain'
     };
 

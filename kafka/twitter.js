@@ -1,10 +1,13 @@
 const express = require('express');
-const { Kafka, CompressionTypes } = require('kafkajs');
-const SnappyCodec = require('kafkajs-snappy'); // Import Snappy codec
+const { Kafka, CompressionTypes, CompressionCodecs } = require('kafkajs');
+const SnappyCodec = require('kafkajs-snappy');
 const config = require('./config.json');
 const axios = require('axios');
+const { TimeWeightedVectorStoreRetriever } = require('langchain/retrievers/time_weighted');
 
-// Kafka setup with Snappy codec
+
+CompressionCodecs[CompressionTypes.Snappy] = SnappyCodec; 
+
 const kafka = new Kafka({
     clientId: 'my-app',
     brokers: config.bootstrapServers,
@@ -42,7 +45,7 @@ const runConsumer = async () => {
 
 // Define your handler for processing incoming tweets
 const handleIncomingTweet = async (tweet) => {
-    // Extract necessary fields from the tweet
+    // Extract fields from the tweet
     const tweetId = tweet.id;
     const authorId = tweet.author_id;
     const tweetText = tweet.text;
@@ -59,29 +62,26 @@ const handleIncomingTweet = async (tweet) => {
     const retweet_id = tweet.retweet_id;
     const likes = tweet.likes;
 
+    const post = {
+        username: 'hello',
+        source_site: config.groupId,
+        post_uuid_within_site: 'uuid_1234',
+        post_text: 'code',
+        content_type: 'text/plain'
+    };
+
     const tweetData = {
-        id: tweetId,
-        text: tweetText,
-        created_at: created_at,
-        conversation_id: conversation_id,
-        author_id: authorId,
-        quoted_tweet_id: quoted_tweet_id,
-        replied_to_tweet_id: replied_to_tweet_id,
-        quotes: quotes,
-        urls: urls,
-        replies: replies,
+        username: `TwitterUser-${authorId}`,
+        parent_id: null,
         hashtags: hashtags,
-        mentions: mentions,
-        retweets: retweets,
-        retweet_id: retweet_id,
-        likes: likes,
+        title: "Tweet",
+        content: tweetText
     };
 
     console.log(`Received tweet from author ID ${tweet.author_id}: ${tweet.text}`);
 
     try {
-        // create Tweet
-        const response = await axios.post('http://localhost:8080/createTweet', tweetData, {
+        const response = await axios.post(`http://localhost:8080/createPost`, tweetData, {
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -89,12 +89,12 @@ const handleIncomingTweet = async (tweet) => {
         });
 
         if (response.status === 201) {
-            console.log('Tweet created successfully in the application.');
+            console.log('Post created successfully in the application.');
         } else {
-            console.error('Failed to create tweet in the application.');
+            console.error('Failed to create post in the application.');
         }
     } catch (error) {
-        console.error('Error creating tweet:', error);
+        console.error('Error creating post:', error);
     }
 };
 
@@ -113,7 +113,7 @@ const sendTweet = async (tweet) => {
             messages: [
                 {
                     value: tweetJson,
-                    compression: CompressionTypes.Snappy, // Use Snappy compression
+                    compression: CompressionTypes.Snappy, 
                 },
             ],
         });

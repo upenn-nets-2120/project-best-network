@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import config from '../../config.json';
 
@@ -11,6 +11,7 @@ function CreatePostComponent({ updatePosts }) {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [image, setImage] = useState<File | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Event handler for file input change
     const handleFileChange = (event) => {
@@ -41,9 +42,17 @@ function CreatePostComponent({ updatePosts }) {
     const handleSubmit = async (event) => {
         event.preventDefault();
 
+        // Prevent multiple submissions
+        if (isSubmitting) {
+            return;
+        }
+
+        setIsSubmitting(true);
+
         // Validate that at least one field (content or image) is not empty
         if (!content && !image) {
             alert('Post must contain some content or an image.');
+            setIsSubmitting(false);
             return;
         }
 
@@ -92,6 +101,8 @@ function CreatePostComponent({ updatePosts }) {
                 setTitle('');
                 setContent('');
                 setImage(null);
+                const navigate = useNavigate(); 
+                navigate("/" + username + "/home");
             } else {
                 console.error('Failed to create post:', response);
                 alert('Failed to create post.');
@@ -100,6 +111,8 @@ function CreatePostComponent({ updatePosts }) {
             console.error('Error creating post:', error);
             alert('Error creating post.');
         }
+
+        setIsSubmitting(false);
     };
 
     // Render the form
@@ -145,6 +158,7 @@ function CreatePostComponent({ updatePosts }) {
                         <button
                             type="submit"
                             className="px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white"
+                            disabled={isSubmitting}
                         >
                             Create Post
                         </button>

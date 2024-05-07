@@ -371,6 +371,39 @@ var createTweet = async function(req, res) {
         return res.status(500).json({ error: 'Error querying database for tweet.' });
     }
   };
+
+  var getLikes = async function(req, res) {
+    try {
+        // Extract the post_id from the query parameters
+        const { post_id } = req.query;
+
+        // Convert post_id to an integer to prevent SQL injection
+        const postId = parseInt(post_id, 10);
+        if (isNaN(postId)) {
+            return res.status(400).json({ error: 'Invalid post_id.' });
+        }
+
+        // Query the database for the like count of the specified post
+        const likeQuery = `
+            SELECT like_count
+            FROM posts
+            WHERE post_id = ?
+        `;
+        const result = await db.send_sql(likeQuery, [postId]);
+
+        // Check if a result was found
+        if (result.length === 0) {
+            return res.status(404).json({ error: 'Post not found.' });
+        }
+
+        // Return the like count for the specified post
+        const likeCount = result[0].like_count;
+        return res.status(200).json({ likes: likeCount });
+    } catch (error) {
+        console.error('Error querying database for likes:', error);
+        return res.status(500).json({ error: 'Error querying database.' });
+    }
+};
   
   var getPost = async function(req, res) {
     const vs = await getVectorStore();
@@ -411,6 +444,7 @@ var createTweet = async function(req, res) {
     get_feed: feed,
     upload_post: uploadPost,
     send_like: sendLike,
+    get_likes: getLikes, 
     get_comments: getComments
   };
   
