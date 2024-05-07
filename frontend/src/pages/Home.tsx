@@ -52,7 +52,7 @@ export default function Home() {
                 <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white' onClick={chat}>Chat</button>&nbsp;
                 <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white' onClick={logout}>Logout</button>&nbsp;
                 <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white' onClick={profile}>Profile</button>
-                <div style={{ width: '5px' }} /> {/* Empty div for space */}
+                <div style={{ width: '5px' }} />
                 <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white' onClick={federatedPosts}>Federated Posts</button>
             </div>
         </div>

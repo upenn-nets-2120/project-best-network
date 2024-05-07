@@ -109,6 +109,14 @@ export default function Friends() {
             <div className='w-full h-16 bg-slate-50 flex justify-center mb-2'>
                 <div className='text-2xl max-w-[1800px] w-full flex items-center'>
                     Pennstagram - {username} &nbsp;
+                    <button 
+                        type="button" 
+                        className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
+                        onClick={() => navigate(`/${username}/home`)}
+                    >
+                        Home
+                    </button>
+                    <div style={{ width: '5px' }} />
                     <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
                         onClick={feed}>Feed</button>&nbsp;
                 <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white'
