@@ -21,16 +21,17 @@ var getHelloWorld = function(req, res) {
 // check if user exists (Kim inputed for kafka)
 var checkRegistration = async function(req, res) {
   try {
-      // Extract the username from the request body
-      const { federatedUsername } = req.body;
+      // Extract the federatedUsername from the query parameters
+      const { federatedUsername } = req.query;
 
+      // Check if federatedUsername is provided
       if (!federatedUsername) {
-        return res.status(400).json({ error: 'Username is required.' });
-    }
+          return res.status(400).json({ error: 'Username is required.' });
+      }
 
       // Query the database to check if the user exists
-      const query = `SELECT * FROM users WHERE username = '${federatedUsername}'`;
-      const result = await db.send_sql(query);
+      const query = `SELECT * FROM users WHERE username = ?`;
+      const result = await db.send_sql(query, [federatedUsername]);
 
       // If the user exists, return a success message
       if (result.length > 0) {
@@ -330,6 +331,30 @@ var is_logged_in = async function(req, res) {
 };
 
 
+const getTopHashtags = async (req, res) => {
+  try {
+    // Query to fetch the top hashtags
+    const query = `
+      SELECT text
+      FROM hashtags
+      ORDER BY count DESC
+      LIMIT 10;`;
+
+    // Execute the query
+    const result = await db.send_sql(query);
+
+    // Extract the hashtags from the result
+    const topHashtags = result.map(row => row.text);
+
+    // Send the top hashtags as a response
+    res.status(200).json({ topHashtags });
+  } catch (error) {
+    console.error('Error fetching top hashtags:', error);
+    res.status(500).json({ error: 'Error fetching top hashtags.' });
+  }
+};
+
+
 
 var routes = { 
     get_helloworld: getHelloWorld,
@@ -339,7 +364,9 @@ var routes = {
     set_profile_photo: setProfilePhoto,
     delete_profile_photo: deleteProfilePhoto,
     post_logout: postLogout,
-    is_logged_in : is_logged_in
+    is_logged_in : is_logged_in,
+    get_top_hashtags: getTopHashtags 
+
   };
 
 

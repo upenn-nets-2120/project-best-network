@@ -62,8 +62,8 @@ export default function UserProfile() {
 
   const getRecommendedHashtags = async () => {
     try {
-      const response = await axios.get(`${config.serverRootURL}/${username}/getRecommendedHashtags`);
-
+      const response = await axios.get(`${config.serverRootURL}/${username}/getRecommendedHashtags`, { withCredentials: true });
+      
       if (response.status === 200) {
         const { hashtags } = response.data;
         setRecommendedHashtags(hashtags);
@@ -228,7 +228,7 @@ export default function UserProfile() {
                   className="px-4 py-2 rounded-md bg-indigo-500 outline-none font-bold text-white"
                   onClick={() => handleHashtagButtonClick(hashtag)}
               >
-                  {hashtag}
+                  {'#' + hashtag}
               </button>
               ))}
               </div>

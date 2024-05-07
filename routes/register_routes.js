@@ -24,6 +24,8 @@ function register_routes(app) {
     app.get('/hello', login_routes.get_helloworld);
     app.get('/checkRegistration', login_routes.get_registration);
     app.post('/login', login_routes.post_login);
+    app.get('/tophashtags', login_routes.get_top_hashtags);
+
     app.get('/:username/logout', login_routes.post_logout);
     app.post('/register', login_routes.post_register);
     app.post('/:username/setProfilePhoto', upload.single('profilePhoto'), login_routes.set_profile_photo); 
@@ -52,6 +54,8 @@ function register_routes(app) {
     app.post('/:username/removeFriend', friend_routes.remove_friend);
     app.get('/:username/onlineFriends', friend_routes.get_online_friends);
     app.get('/:username/offlineFriends', friend_routes.get_offline_friends);
+    app.get('/:username/recommendedFriends', friend_routes.get_recommended_friends);
+
 
 
     //feed routes

@@ -309,21 +309,30 @@ var sendLike = async function(req, res) {
 // GET /getComments
 var getComments = async function(req, res) {
   try {
-    console.log(req.body); 
-    const {post_id} = req.body;
-    console.log(post_id); 
-    // select from posts those with parent id of the post
-    const commentQuery = `SELECT * FROM posts WHERE parent_post = ${post_id}`;
-    const comments = await db.send_sql(commentQuery);
-    console.log("comments: " + comments);
-    return res.status(200).json({ results: comments });
-  } catch (error) {
-    // Handle database query errors
-    console.error("Error querying database for comments:", error);
-    return res.status(500).json({ error: 'Error querying database.' });
-  }
+      // Extract the post_id from the query parameters
+      const { post_id } = req.query;
 
-}
+      // Convert post_id to an integer to prevent SQL injection
+      const postId = parseInt(post_id, 10);
+      if (isNaN(postId)) {
+          return res.status(400).json({ error: 'Invalid post_id.' });
+      }
+
+      // Query the database for comments and their associated usernames
+      const commentQuery = `
+          SELECT p.*, u.username
+          FROM posts p
+          JOIN users u ON p.author_id = u.id
+          WHERE p.parent_post = ?
+      `;
+      const comments = await db.send_sql(commentQuery, [postId]);
+
+      return res.status(200).json({ results: comments });
+  } catch (error) {
+      console.error("Error querying database for comments:", error);
+      return res.status(500).json({ error: 'Error querying database.' });
+  }
+};
 
 
 
