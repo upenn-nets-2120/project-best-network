@@ -66,11 +66,11 @@ function register_routes(app) {
     app.post('/:username/uploadPost', upload.single('post'), feed_routes.upload_post); 
     app.get('/:username/feed', feed_routes.get_feed);
     app.post('/:username/sendLike', feed_routes.send_like);
+    app.get('/:username/getLikes', feed_routes.get_likes); 
 
     //actor routes
     app.get('/:username/getActors', actor_routes.get_actors);
     app.post('/:username/setActor', actor_routes.set_actor);
-    app.get('/:username/getLikes', feed_routes.get_likes); 
 
     // federated post routes
     app.post('/:username/createFederatedPost', kafka_routes.create_federated_post); 

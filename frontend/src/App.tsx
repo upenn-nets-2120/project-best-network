@@ -24,7 +24,6 @@ function App() {
         <Route path="/:username/ProfilePage" element={<ProfilePage />} />
         <Route path="/:username/ProfileSettings" element={<ProfileSettings />} />
         <Route path="/:username/Actors" element={<ActorPage />} />
-
         <Route path="/:username/federated_posts" element={<FederatedPosts />} />
         
       </Routes>
