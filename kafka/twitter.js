@@ -16,69 +16,63 @@ const kafka = new Kafka({
     },
 });
 
-// Consumer setup
-const federatedConsumer = kafka.consumer({
+// Producer setup
+const producer = kafka.producer();
+
+// Example of sending a federated post
+const sendFederatedPost = async (post) => {
+    const jsonMessage = JSON.stringify(post);
+
+    await producer.send({
+        topic: 'FederatedPosts',
+        messages: [{ value: jsonMessage }]
+    });
+};
+
+// Run the producer (you can add your own logic to trigger it when needed)
+const runProducer = async () => {
+    await producer.connect();
+
+    // Example post structure
+    const post = {
+        username: 'hello',
+        source_site: config.groupId,
+        post_uuid_within_site: 'uuid_1234',
+        post_text: 'code',
+        content_type: 'text/plain'
+    };
+
+    // Send a federated post
+    await sendFederatedPost(post);
+};
+
+// Run the producer if needed (e.g., for testing)
+runProducer().catch(console.error);
+
+// CONSUMER CODE
+// Connect to consumer
+const consumer = kafka.consumer({
     groupId: config.groupId,
-    brokers: config.bootstrapServers,
+    bootstrapServers: config.bootstrapServers
 });
 
-const twitterConsumer = kafka.consumer({
-    groupId: config.groupId,
-    brokers: config.bootstrapServers,
-});
 
+const runConsumer = async (consumer) => {
+    await consumer.connect();
+    await consumer.subscribe({ topic: 'FederatedPosts', fromBeginning: true });
+    await consumer.subscribe({ topic: 'Twitter-Kafka', fromBeginning: true });
+
+    await consumer.run({
+        eachMessage: handleMessage,
+    });
+};
+
+
+// Helper function to extract hashtags from text
 const extractHashtags = (text) => {
-    const regex = /#\w+/g; // Matches words starting with '#'
+    const regex = /#\w+/g; 
     const hashtags = text.match(regex);
     return hashtags ? hashtags.map(tag => tag.slice(1)) : [];
-};
-
-// Connect and subscribe to FederatedPosts topic
-const runFederatedConsumer = async () => {
-    await federatedConsumer.connect();
-    await federatedConsumer.subscribe({ topic: 'FederatedPosts', fromBeginning: true });
-
-    // Hooking callback handler to the consumer
-    await federatedConsumer.run({
-        eachMessage: async ({ topic, partition, message }) => {
-            try {
-                // Parse the JSON message
-                const jsonMessage = JSON.parse(message.value.toString());
-
-                // Extract post details
-                const username = jsonMessage.username;
-                const source_site = jsonMessage.source_site;
-                const post_uuid_within_site = jsonMessage.post_uuid_within_site;
-                const post_text = jsonMessage.post_text;
-                const content_type = jsonMessage.content_type;
-
-                // Call handle to log what to do with the posts
-                handleIncomingPost(username, source_site, post_uuid_within_site, post_text, content_type);
-            } catch (error) {
-                console.error('Failed to process message:', error);
-            }
-        },
-    });
-};
-
-// Connect and subscribe to Twitter-Kafka topic
-const runTwitterConsumer = async () => {
-    await twitterConsumer.connect();
-    await twitterConsumer.subscribe({ topic: 'Twitter-Kafka', fromBeginning: true });
-
-    // Hooking callback handler to the consumer
-    await twitterConsumer.run({
-        eachMessage: async ({ topic, partition, message }) => {
-            try {
-                const tweet = JSON.parse(message.value.toString());
-
-                // Call existing handler to process the tweet
-                handleIncomingTweet(tweet);
-            } catch (error) {
-                console.error('Failed to process message:', error);
-            }
-        },
-    });
 };
 
 // Handler for processing incoming federated posts
@@ -87,7 +81,7 @@ const handleIncomingPost = async (username, source_site, post_uuid_within_site, 
     const federatedUsername = `${source_site}-${username}`;
     console.log(federatedUsername);
 
-    // Check if the user exists in system
+    // Check if the user exists in the system
     let userExists = false;
 
     try {
@@ -121,7 +115,7 @@ const handleIncomingPost = async (username, source_site, post_uuid_within_site, 
                 email: `${federatedUsername}@example.com`,
                 birthday: '2000-01-01',
                 affiliation: 'None',
-                hashtagInterests: []
+                hashtagInterests: [],
             };
 
             // Call the /register route to create a new user
@@ -142,7 +136,7 @@ const handleIncomingPost = async (username, source_site, post_uuid_within_site, 
         content: post_text,
         parent_id: null,
         hashtags: hashtags,
-        username: federatedUsername
+        username: federatedUsername,
     };
 
     try {
@@ -180,7 +174,7 @@ const handleIncomingTweet = async (tweet) => {
     const federatedUsername = `TwitterUser-${authorId}`;
     console.log(federatedUsername);
 
-    // Check if the user exists in system
+    // Check if the user exists in the system
     let userExists = false;
 
     try {
@@ -214,7 +208,7 @@ const handleIncomingTweet = async (tweet) => {
                 email: `${federatedUsername}@example.com`,
                 birthday: '2000-01-01',
                 affiliation: 'None',
-                hashtagInterests: []
+                hashtagInterests: [],
             };
 
             // Call the /register route to create a new user
@@ -231,8 +225,8 @@ const handleIncomingTweet = async (tweet) => {
         username: federatedUsername,
         parent_id: null,
         hashtags: hashtags,
-        title: "Tweet",
-        content: tweetText
+        title: 'Tweet',
+        content: tweetText,
     };
 
     console.log(`Received tweet from author ID ${tweet.author_id}: ${tweet.text}`);
@@ -270,7 +264,7 @@ const handleIncomingTweet = async (tweet) => {
 // Start both consumers
 const startConsumers = async () => {
     try {
-        await Promise.all([runFederatedConsumer(), runTwitterConsumer()]);
+        await Promise.all([runConsumer()]);
     } catch (error) {
         console.error('Error starting consumers:', error);
     }
@@ -278,60 +272,11 @@ const startConsumers = async () => {
 
 startConsumers().catch(console.error);
 
-// Producer setup
-const producer = kafka.producer();
-
-const sendTweet = async (tweet) => {
-    try {
-        const tweetJson = JSON.stringify(tweet);
-
-        await producer.send({
-            topic: 'Twitter-Kafka',
-            messages: [
-                {
-                    value: tweetJson,
-                    compression: CompressionTypes.Snappy,
-                },
-            ],
-        });
-
-        console.log(`Tweet sent successfully to the "Twitter-Kafka" topic: ${tweetJson}`);
-    } catch (error) {
-        console.error('Error sending tweet:', error);
-    }
-};
-
-// Run the producer
-const runProducer = async () => {
-    await producer.connect();
-
-    // Example tweet structure
-    const tweet = {
-        quoted_tweet_id: null,
-        hashtags: ['jokermovie'],
-        created_at: 1712712180000,
-        replied_to_tweet_id: null,
-        quotes: 6,
-        urls: 'https://twitter.com/IMDb/status/1777869861886009497/video/1',
-        replies: 25,
-        conversation_id: 1777869861886009497,
-        mentions: ['jokermovie'],
-        id: 1777869861886009497,
-        text: 'Together at last. @jokermovie: Folie à Deux – only in theaters October 4. #jokermovie https://t.co/wP17WQIFHn',
-        author_id: 17602896,
-        retweets: 62,
-        retweet_id: null,
-        likes: 263,
-    };
-
-    // Send the example tweet
-    await sendTweet(tweet);
-};
-
-runProducer().catch(console.error);
-
-// Express server setup for other functionalities
 const app = express();
 app.listen(config.port, () => {
     console.log(`Server is listening on port ${config.port}`);
 });
+
+module.exports = {
+    sendFederatedPost,
+};
