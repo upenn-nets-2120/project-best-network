@@ -8,6 +8,7 @@ import ChatPage from "./pages/ChatPage";
 import ProfilePage from './pages/ProfilePage'; 
 import ProfilePhoto from './pages/ProfilePhoto'
 import ProfileSettings from './pages/ProfileSettings'
+import FederatedPosts from './pages/FederatedPosts'
 function App() {
   return (
     <BrowserRouter>
@@ -21,7 +22,8 @@ function App() {
         <Route path="/:username/setProfilePhoto" element={<ProfilePhoto />} />
         <Route path="/:username/ProfilePage" element={<ProfilePage />} />
         <Route path="/:username/ProfileSettings" element={<ProfileSettings />} />
-
+        <Route path="/:username/federated_posts" element={<FederatedPosts />} />
+        
       </Routes>
     </BrowserRouter>
   )

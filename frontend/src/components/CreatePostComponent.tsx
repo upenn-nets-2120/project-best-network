@@ -1,25 +1,24 @@
 import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import config from '../../config.json';
+import { v4 as uuidv4 } from 'uuid';
 
 function CreatePostComponent({ updatePosts }) {
     const { username } = useParams();
     const rootURL = config.serverRootURL;
+    const navigate = useNavigate(); 
 
-    // State variables for form inputs
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [image, setImage] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Event handler for file input change
     const handleFileChange = (event) => {
         const file = event.target.files && event.target.files[0];
         setImage(file);
     };
 
-    // Event handlers for text input changes
     const handleTitleChange = (event) => {
         setTitle(event.target.value);
     };
@@ -28,47 +27,40 @@ function CreatePostComponent({ updatePosts }) {
         setContent(event.target.value);
     };
 
-    // Function to parse hashtags from the content
     const parseHashtags = (content) => {
-        // Regex pattern to match hashtags
         const hashtagPattern = /#\w+/g;
-        // Match all hashtags in the content and return them as an array
         const hashtagsArray = content.match(hashtagPattern) || [];
-        // Remove the `#` from each hashtag and return the array
         return hashtagsArray.map(tag => tag.slice(1));
     };
 
-    // Event handler for form submission
+    const post_uuid = uuidv4();
+
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        // Prevent multiple submissions
         if (isSubmitting) {
             return;
         }
 
         setIsSubmitting(true);
 
-        // Validate that at least one field (content or image) is not empty
         if (!content && !image) {
             alert('Post must contain some content or an image.');
             setIsSubmitting(false);
             return;
         }
 
-        // Parse hashtags from the content
         const hashtagsArray = parseHashtags(content);
 
-        // Create a JavaScript object for the post data
         const postData = {
             title,
             content,
             hashtags: hashtagsArray,
             username,
+            uuid: post_uuid,
         };
 
         try {
-            // Send a POST request to the server with JSON data
             const response = await axios.post(`${rootURL}/${username}/createPost`, postData, {
                 withCredentials: true,
                 headers: {
@@ -79,7 +71,6 @@ function CreatePostComponent({ updatePosts }) {
             if (response.status === 201) {
                 console.log('Post created successfully:', response.data);
 
-                // If there is an image, upload it using multipart form data
                 if (image) {
                     const formData = new FormData();
                     formData.append('post', image);
@@ -95,13 +86,11 @@ function CreatePostComponent({ updatePosts }) {
                 }
 
                 // Update posts to refresh the feed
-                updatePosts();
+                updatePosts(prevPosts => [...prevPosts, response.data]);
 
-                // Reset form fields
                 setTitle('');
                 setContent('');
                 setImage(null);
-                const navigate = useNavigate(); 
                 navigate("/" + username + "/home");
             } else {
                 console.error('Failed to create post:', response);
@@ -115,7 +104,6 @@ function CreatePostComponent({ updatePosts }) {
         setIsSubmitting(false);
     };
 
-    // Render the form
     return (
         <div className="w-screen h-screen flex justify-center">
             <form onSubmit={handleSubmit}>

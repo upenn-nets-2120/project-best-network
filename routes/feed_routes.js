@@ -3,6 +3,7 @@ const config = require('../config.json'); // Load configuration
 const helper = require('../routes/login_route_helper.js');
 const s3Access = require('../models/s3_access.js'); 
 const { uploadEmbeddingsForPost } = require('../routes/friend_routes_helper.js');
+
 /*
 const { RecursiveCharacterTextSplitter } = require("langchain/text_splitter");
 */
@@ -102,60 +103,62 @@ var getVectorStore = async function(req) {
 
   // POST /createPost
   var createPost = async function(req, res) {
-    // Check if a user is logged in
-    if (req.session.user_id === null) {
-        return res.status(403).json({ error: 'Not logged in.' });
-    }
-
-    // Extract post parameters from the request body
-    const { title, content, parent_id, hashtags, username } = req.body;
-    console.log('Request body:', req.body);
-    console.log('Request files:', req.file);
-    console.log(title);
-    console.log(content);
-    console.log(parent_id);
-    console.log(hashtags);
-    console.log(req.session.user_id);
-
-    try {
-        // Retrieve author_id based on username
-        const authorQuery = `SELECT id FROM users WHERE username = ?`;
-        const authorResult = await db.send_sql(authorQuery, [username]);
-
-        // Check if the user exists
-        if (authorResult.length === 0) {
-            return res.status(404).json({ error: 'User not found.' });
-        }
-
-        // Extract the author_id
-        const author_id = authorResult[0].id;
-
-        // Continue with the post creation process
-        let insertQuery;
-        if (parent_id === undefined) {
-            // If parent_id is undefined, insert NULL for parent_post
-            insertQuery = `
-                INSERT INTO posts (title, content, parent_post, author_id, like_count)
-                VALUES (?, ?, NULL, ?, 0)
-            `;
-            await db.send_sql(insertQuery, [title, content, author_id]);
-        } else {
-            // If parent_id is defined, include it in the query
-            insertQuery = `
-                INSERT INTO posts (title, content, parent_post, author_id, like_count)
-                VALUES (?, ?, ?, ?, 0)
-            `;
-            await db.send_sql(insertQuery, [title, content, parent_id, author_id]);
-        }
-
-        // Retrieve the newly created post
-        const lastPostQuery = `SELECT * FROM posts WHERE post_id = LAST_INSERT_ID()`;
-        const last_post = await db.send_sql(lastPostQuery);
-        const last_id = last_post[0].post_id;
-        console.log(last_id);
-
-        // Handle hashtags and create post-to-hashtag relationships
-        for (const element of hashtags) {
+      // Check if a user is logged in
+      if (req.session.user_id === null) {
+          return res.status(403).json({ error: 'Not logged in.' });
+      }
+  
+      // Extract post parameters from the request body
+      const { title, content, parent_id, hashtags, username, uuid } = req.body;
+      console.log('Request body:', req.body);
+      console.log('Request files:', req.file);
+      console.log(title);
+      console.log(content);
+      console.log(parent_id);
+      console.log(hashtags);
+      console.log(uuid); 
+      console.log(req.session.user_id);
+  
+      try {
+  
+          // Retrieve author_id based on username
+          const authorQuery = `SELECT id FROM users WHERE username = ?`;
+          const authorResult = await db.send_sql(authorQuery, [username]);
+  
+          // Check if the user exists
+          if (authorResult.length === 0) {
+              return res.status(404).json({ error: 'User not found.' });
+          }
+  
+          // Extract the author_id
+          const author_id = authorResult[0].id;
+  
+          // Continue with the post creation process
+          let insertQuery;
+          if (parent_id === undefined) {
+              // If parent_id is undefined, insert NULL for parent_post
+              insertQuery = `
+                  INSERT INTO posts (uuid, title, content, parent_post, author_id, like_count)
+                  VALUES (?, ?, ?, NULL, ?, 0)
+              `;
+              await db.send_sql(insertQuery, [uuid, title, content, author_id]);
+          } else {
+              // If parent_id is defined, include it in the query
+              insertQuery = `
+                  INSERT INTO posts (uuid, title, content, parent_post, author_id, like_count)
+                  VALUES (?, ?, ?, ?, ?, 0)
+              `;
+              await db.send_sql(insertQuery, [uuid, title, content, parent_id, author_id]);
+          }
+  
+          // Retrieve the newly created post
+          const lastPostQuery = `SELECT * FROM posts WHERE post_id = LAST_INSERT_ID()`;
+          const last_post = await db.send_sql(lastPostQuery);
+          const last_id = last_post[0].post_id;
+          console.log(last_id);
+  
+          // Handle hashtags and create post-to-hashtag relationships
+          for (const element of hashtags) {
             let hashtagQuery = `SELECT * FROM hashtags WHERE text = ?`;
             let hashtag_result = await db.send_sql(hashtagQuery, [element]);
             console.log(element);
@@ -205,6 +208,7 @@ var getVectorStore = async function(req) {
         return res.status(500).json({ error: 'Error querying database.' });
     }
 };
+  
 
 // POST /uploadPost
 var uploadPost = async function(req, res) {

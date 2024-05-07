@@ -4,6 +4,7 @@ const friend_routes = require('./friend_routes.js');
 const account_routes = require('./account_routes.js');
 const profile_routes = require('./profile_routes.js');
 const feed_routes = require('./feed_routes.js');
+const kafka_routes = require('./kafka_routes.js'); 
 
 const s3Access = require('../models/s3_access.js'); 
 
@@ -62,10 +63,8 @@ function register_routes(app) {
     app.get('/:username/feed', feed_routes.get_feed);
     app.post('/:username/sendLike', feed_routes.send_like);
     app.get('/:username/getLikes', feed_routes.get_likes); 
-   
 
-
-
-
+    // federated post routes
+    app.post('/:username/createFederatedPost', kafka_routes.create_federated_post); 
   }
   

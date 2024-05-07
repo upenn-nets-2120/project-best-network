@@ -84,6 +84,7 @@ async function create_tables(db) {
         author_id INT, \
         like_count INT, \
         photo VARCHAR(255), \
+        uuid VARCHAR(255), \
         FOREIGN KEY (parent_post) REFERENCES posts(post_id), \
         FOREIGN KEY (author_id) REFERENCES users(id), \
         PRIMARY KEY (post_id) \

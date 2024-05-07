@@ -6,23 +6,6 @@ import config from '../../config.json';
 
 export default function Signup() {
     const navigate = useNavigate(); 
-    
-    // TODO: set appropriate state variables 
-
-     // POST /register 
-/*  Example body: 
-    {
-      "username": "vavali",
-      "password": "1234",
-      "firstName": "Vedha",
-      "lastName": "Avali",
-      "email": "vedha.avali@gmail.com",
-      "birthday": "2004-08-08",
-      "affiliation": "Penn",
-      "hashtagInterests": ["hello", "bye"] -> this should be in list format, can be null
-    }
-
-*/
 
     const rootURL = config.serverRootURL;
 
@@ -44,45 +27,48 @@ export default function Signup() {
     }, []);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();  
-
+        event.preventDefault();
+    
         if (password !== confirmPassword) {
             alert('Passwords do not match.');
             return;
         }
-
+    
         try {
-            var response = await axios.post(`${rootURL}/register`, {
-                username: username,
-                password: password,
-                firstName: firstName, 
-                lastName: lastName, 
-                email: email, 
-                birthday: birthday, 
-                affiliation: affiliation, 
-                hashtagInterests: hashtagInterests
+            // call backend
+            const response = await axios.post(`${rootURL}/register`, {
+                username,
+                password,
+                firstName,
+                lastName,
+                email,
+                birthday,
+                affiliation,
+                hashtagInterests
             }, { withCredentials: true });
-
+    
             if (response.status === 200) {
-                var response = await axios.post(`${config.serverRootURL}/login`, {
+                // Redirect to profile photo setup if registration is successful
+                const loginResponse = await axios.post(`${config.serverRootURL}/login`, {
                     username,
                     password
-                },{ withCredentials: true });
-          
-                if (response.status === 200) {
-                    // response.render('homepage.ejs', {data: null, comments: null, message: 'Getting friends unsuccessful.', user: user});
-                navigate ("/" + username +"/setProfilePhoto")
-                //   navigate("/"+ username+"/home");
+                }, { withCredentials: true });
+    
+                if (loginResponse.status === 200) {
+                    navigate(`/${username}/setProfilePhoto`);
                 }
-                
             } else {
                 alert('Registration failed.');
             }
         } catch (error) {
+            if (error.response && error.response.data && error.response.data.error) {
+                alert(`Registration failed: ${error.response.data.error}`);
+            } else {
+                alert('Registration failed: An unknown error occurred.');
+            }
             console.error('Registration error:', error);
-            alert('Registration failed.');
         }
-    };
+    };    
 
     const fetchTopHashtags = async () => {
         try {
