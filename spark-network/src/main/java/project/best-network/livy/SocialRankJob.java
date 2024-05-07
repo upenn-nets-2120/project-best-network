@@ -77,65 +77,65 @@ public class SocialRankJob extends SparkJob<List<MyPair<String, Double>>> {
             List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>> networkList = new ArrayList<>();
             
             
-            // SQL query to select users and their posts where parent_post is NULL
-            String userPostSql = "SELECT l.userID, l.postID " +
-                     "FROM likeToPost l " +
-                     "JOIN posts p ON l.postID = p.post_id " +
-                     "WHERE p.parent_post IS NULL";
+            // // SQL query to select users and their posts where parent_post is NULL
+            // String userPostSql = "SELECT l.userID, l.postID " +
+            //          "FROM likeToPost l " +
+            //          "JOIN posts p ON l.postID = p.post_id " +
+            //          "WHERE p.parent_post IS NULL";
 
-            Statement userPostStmt = connection.createStatement();
-            ResultSet userPostResultSet = userPostStmt.executeQuery(userPostSql);
-            while (userPostResultSet.next()) {
-                int user_id = userPostResultSet.getInt("userID");
-                int post_id = userPostResultSet.getInt("postID");
-                networkList.add(new Tuple2<>(new Tuple2<>(user_id, "u"), new Tuple2<>(post_id, "p")));
-                networkList.add(new Tuple2<>(new Tuple2<>(post_id, "p"), new Tuple2<>(user_id, "u")));
-            }
-            userPostResultSet.close();
-            userPostStmt.close();
+            // Statement userPostStmt = connection.createStatement();
+            // ResultSet userPostResultSet = userPostStmt.executeQuery(userPostSql);
+            // while (userPostResultSet.next()) {
+            //     int user_id = userPostResultSet.getInt("userID");
+            //     int post_id = userPostResultSet.getInt("postID");
+            //     networkList.add(new Tuple2<>(new Tuple2<>(user_id, "u"), new Tuple2<>(post_id, "p")));
+            //     networkList.add(new Tuple2<>(new Tuple2<>(post_id, "p"), new Tuple2<>(user_id, "u")));
+            // }
+            // userPostResultSet.close();
+            // userPostStmt.close();
 
-            // SQL query to select users and hashtags they are interested in
-            String userHashtagSql = "SELECT userID, hashtagID " +
-                                    "FROM hashtagInterests";
-            Statement userHashtagStmt = connection.createStatement();
-            ResultSet userHashtagResultSet = userHashtagStmt.executeQuery(userHashtagSql);
-            while (userHashtagResultSet.next()) {
-                int user_id = userHashtagResultSet.getInt("userID");
-                int hashtag_id = userHashtagResultSet.getInt("hashtagID");
-                networkList.add(new Tuple2<>(new Tuple2<>(user_id, "u"), new Tuple2<>(hashtag_id, "h")));
-                networkList.add(new Tuple2<>(new Tuple2<>(hashtag_id, "h"), new Tuple2<>(user_id, "u")));
-            }
-            userHashtagResultSet.close();
-            userHashtagStmt.close();
+            // // SQL query to select users and hashtags they are interested in
+            // String userHashtagSql = "SELECT userID, hashtagID " +
+            //                         "FROM hashtagInterests";
+            // Statement userHashtagStmt = connection.createStatement();
+            // ResultSet userHashtagResultSet = userHashtagStmt.executeQuery(userHashtagSql);
+            // while (userHashtagResultSet.next()) {
+            //     int user_id = userHashtagResultSet.getInt("userID");
+            //     int hashtag_id = userHashtagResultSet.getInt("hashtagID");
+            //     networkList.add(new Tuple2<>(new Tuple2<>(user_id, "u"), new Tuple2<>(hashtag_id, "h")));
+            //     networkList.add(new Tuple2<>(new Tuple2<>(hashtag_id, "h"), new Tuple2<>(user_id, "u")));
+            // }
+            // userHashtagResultSet.close();
+            // userHashtagStmt.close();
 
-            // SQL query to select posts and hashtags associated with them
-            String postHashtagSql = "SELECT post_id, hashtag_id " +
-                                    "FROM post_to_hashtags";
+            // // SQL query to select posts and hashtags associated with them
+            // String postHashtagSql = "SELECT post_id, hashtag_id " +
+            //                         "FROM post_to_hashtags";
 
-            Statement postHashtagStmt = connection.createStatement();
-            ResultSet postHashtagResultSet = postHashtagStmt.executeQuery(postHashtagSql);
-            while (postHashtagResultSet.next()) {
-                int post_id = postHashtagResultSet.getInt("post_id");
-                int hashtag_id = postHashtagResultSet.getInt("hashtag_id");
-                networkList.add(new Tuple2<>(new Tuple2<>(post_id, "p"), new Tuple2<>(hashtag_id, "h")));
-                networkList.add(new Tuple2<>(new Tuple2<>(hashtag_id, "h"), new Tuple2<>(post_id, "p")));
-            }
-            postHashtagResultSet.close();
-            postHashtagStmt.close();
+            // Statement postHashtagStmt = connection.createStatement();
+            // ResultSet postHashtagResultSet = postHashtagStmt.executeQuery(postHashtagSql);
+            // while (postHashtagResultSet.next()) {
+            //     int post_id = postHashtagResultSet.getInt("post_id");
+            //     int hashtag_id = postHashtagResultSet.getInt("hashtag_id");
+            //     networkList.add(new Tuple2<>(new Tuple2<>(post_id, "p"), new Tuple2<>(hashtag_id, "h")));
+            //     networkList.add(new Tuple2<>(new Tuple2<>(hashtag_id, "h"), new Tuple2<>(post_id, "p")));
+            // }
+            // postHashtagResultSet.close();
+            // postHashtagStmt.close();
 
 
-            // SQL query to select friends/followers
-            String friendsSql = "SELECT followed, follower FROM friends";
+            // // SQL query to select friends/followers
+            // String friendsSql = "SELECT followed, follower FROM friends";
 
-            Statement friendsStmt = connection.createStatement();
-            ResultSet friendsResultSet = friendsStmt.executeQuery(friendsSql);
-            while (friendsResultSet.next()) {
-                int followedUserId = friendsResultSet.getInt("followed");
-                int followerUserId = friendsResultSet.getInt("follower");
-                networkList.add(new Tuple2<>(new Tuple2<>(followedUserId, "u"), new Tuple2<>(followerUserId, "u")));
-            }
-            friendsResultSet.close();
-            friendsStmt.close();
+            // Statement friendsStmt = connection.createStatement();
+            // ResultSet friendsResultSet = friendsStmt.executeQuery(friendsSql);
+            // while (friendsResultSet.next()) {
+            //     int followedUserId = friendsResultSet.getInt("followed");
+            //     int followerUserId = friendsResultSet.getInt("follower");
+            //     networkList.add(new Tuple2<>(new Tuple2<>(followedUserId, "u"), new Tuple2<>(followerUserId, "u")));
+            // }
+            // friendsResultSet.close();
+            // friendsStmt.close();
 
             // Convert the list to JavaRDD and then to JavaPairRDD
             JavaRDD<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>> rdd = context.parallelize(networkList);
@@ -308,27 +308,28 @@ public class SocialRankJob extends SparkJob<List<MyPair<String, Double>>> {
         System.err.println("Running");
 
       
-        // Load the social network:
+        // // Load the social network:
         JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, String>> network = getSocialNetworkFromJDBC();
 
-        // Get users RDD for user labels and weights
-        JavaRDD<Integer> usersRDD = getUsersFromJDBC();
+        // // Get users RDD for user labels and weights
+        // JavaRDD<Integer> usersRDD = getUsersFromJDBC();
 
-        // Friend-of-a-Friend Recommendation Algorithm:
-        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> edgeRDD = computeEdgeRDD(network);
+        // // Friend-of-a-Friend Recommendation Algorithm:
+        // JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> edgeRDD = computeEdgeRDD(network);
 
-        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> vertexLabels = adsorptionPropagation(edgeRDD, usersRDD);
-        List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>>> vertexLabelsList = vertexLabels.collect();
+        // JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> vertexLabels = adsorptionPropagation(edgeRDD, usersRDD);
+        // List<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>>> vertexLabelsList = vertexLabels.collect();
 
-        List<MyPair<String, Double>> resultList = new ArrayList<>();
-        for (Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>> tuple : vertexLabelsList) {
-            MyPair<String, Double> pair = new MyPair<>(
-                tuple._1()._2(), 
-                tuple._2()._2() 
-            );
-            resultList.add(pair);
-        }
-        return resultList;
+        // List<MyPair<String, Double>> resultList = new ArrayList<>();
+        // for (Tuple2<Tuple2<Integer, String>, Tuple2<Integer, Double>> tuple : vertexLabelsList) {
+        //     MyPair<String, Double> pair = new MyPair<>(
+        //         tuple._1()._2(), 
+        //         tuple._2()._2() 
+        //     );
+        //     resultList.add(pair);
+        // }
+        // return resultList;
+        return new ArrayList<>();
     }
 
 
