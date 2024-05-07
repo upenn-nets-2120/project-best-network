@@ -49,7 +49,8 @@ SEAS emails: jsusser@seas.upenn.edu, vavali@seas.upenn.edu, kimliang@seas.upenn.
 - Run `npm create_tables`.
 
 **ChromaDB:**
-- NLP
+**OpenAI/NLP**
+
 
 ### Frontend:
 - cd frontend then npm install
