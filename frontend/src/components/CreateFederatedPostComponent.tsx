@@ -60,13 +60,15 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
         imageUrl = imageResponse.data.url;
       }
 
+      const attachLink = imageUrl ? `<img src="${imageUrl}" alt="Image" />` : null;
+      
         // Create the post data
         const postData = {
           post_text: content,
           username,
           source_site: "g13", 
           post_uuid_within_site: post_uuid,
-          attach: `<img src="${imageUrl}" alt="Image" />`,
+          attach: attachLink,
           content_type: "text/html"
         };
 

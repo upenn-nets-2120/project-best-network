@@ -32,18 +32,6 @@ const sendFederatedPost = async (post) => {
 // Run the producer (you can add your own logic to trigger it when needed)
 const runProducer = async () => {
     await producer.connect();
-
-    // Example post structure
-    const post = {
-        username: 'hello',
-        source_site: config.groupId,
-        post_uuid_within_site: 'uuid_1234',
-        post_text: 'code',
-        content_type: 'text/plain'
-    };
-
-    // Send a federated post
-    await sendFederatedPost(post);
 };
 
 // Run the producer if needed (e.g., for testing)
@@ -55,6 +43,20 @@ const consumer = kafka.consumer({
     groupId: config.groupId,
     bootstrapServers: config.bootstrapServers
 });
+
+const handleMessage = async ({ topic, partition, message }) => {
+    const value = message.value.toString();
+    const parsedMessage = JSON.parse(value);
+
+    // Check the topic of the message and call the appropriate handler function
+    if (topic === 'FederatedPosts') {
+        await handleIncomingPost(parsedMessage.username, parsedMessage.source_site, parsedMessage.post_uuid_within_site, parsedMessage.post_text, parsedMessage.content_type, parsedMessage.attach);
+    } else if (topic === 'Twitter-Kafka') {
+        await handleIncomingTweet(parsedMessage);
+    } else {
+        console.error(`Received message from unknown topic: ${topic}`);
+    }
+};
 
 
 const runConsumer = async (consumer) => {
@@ -76,7 +78,7 @@ const extractHashtags = (text) => {
 };
 
 // Handler for processing incoming federated posts
-const handleIncomingPost = async (username, source_site, post_uuid_within_site, post_text, content_type) => {
+const handleIncomingPost = async (username, source_site, post_uuid_within_site, post_text, content_type, attach) => {
     // Define the format for the federated username
     const federatedUsername = `${source_site}-${username}`;
     console.log(federatedUsername);
@@ -137,6 +139,7 @@ const handleIncomingPost = async (username, source_site, post_uuid_within_site, 
         parent_id: null,
         hashtags: hashtags,
         username: federatedUsername,
+        attach: attach,
     };
 
     try {
@@ -151,6 +154,16 @@ const handleIncomingPost = async (username, source_site, post_uuid_within_site, 
     console.log(`Received post from ${username} on site ${source_site}: ${post_text}`);
     console.log(`Post details - UUID: ${post_uuid_within_site}, Content Type: ${content_type}`);
 };
+
+if (attach) {
+    try {
+        // Call the uploadPostFromHTML route to upload the image
+        const uploadResponse = await axios.post(`http://your_api_url/${username}/uploadPostFromHTML`, { attach });
+        console.log('Image uploaded successfully:', uploadResponse.data);
+    } catch (error) {
+        console.error('Error uploading image:', error.response ? error.response.data : error.message);
+    }
+}
 
 // Handler for processing incoming tweets
 const handleIncomingTweet = async (tweet) => {
