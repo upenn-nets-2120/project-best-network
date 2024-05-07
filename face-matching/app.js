@@ -175,7 +175,10 @@ initializeFaceModels()
   console.info("Looking for files");
   const promises = [];
   // Loop through all the files in the images directory
-/**
+
+  // START COMMENT BELOW WITH /**
+
+  /**
   fs.readdir("./face-matching/images", function (err, files) {
     if (err) {
       console.error("Could not list the directory.", err);
@@ -208,7 +211,9 @@ initializeFaceModels()
     });
     });
     **/
-   console.log("done");
+
+    //ADD **/ Above this line for block comment
+    console.log("done");
 
 });
 
