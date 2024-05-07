@@ -1,6 +1,8 @@
 ## Group Information
 Team 13, Best Network
+
 Members: Julia Susser, Vedha Avali, Kimberly Liang, Cameron Bosio-Kim
+
 SEAS emails: julia seas email, vavali@seas.upenn.edu, kim, cameron
 
 ## Features Implemented:
@@ -14,4 +16,6 @@ SEAS emails: julia seas email, vavali@seas.upenn.edu, kim, cameron
 
 ## Instructions for Running:
 
+
+## Declaration:
 All code submitted was written by us or inspired by previous homework assignments in this course. 
