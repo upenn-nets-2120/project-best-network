@@ -163,7 +163,7 @@ public class runSocialNetwork {
     }
 
     /**
-     * get Users RDD for user labels and weights
+     * get Users RDD for user labels, this is so users can be hard coded in algorithm to have a weight of 1 for themselves
      */
     public JavaRDD<Integer> getUsersFromJDBC() {
         try {
@@ -187,7 +187,7 @@ public class runSocialNetwork {
             logger.info("Successfully connected to database!");
 
             List<Integer> usersList = new ArrayList<>();
-
+            //get a list of all users
             String sql = "SELECT id FROM users";
             Statement stmt = connection.createStatement();
             ResultSet resultSet = stmt.executeQuery(sql);
@@ -217,7 +217,9 @@ public class runSocialNetwork {
      */
     private JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> computeEdgeRDD(
             JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, String>> networkRDD) {
-
+        
+        //convert pairings into an edgeRDD where each edge initally has weight 1, this will be normalized in next steps
+        //example: Tuple2<Tuple2<user_id,"u">, Tuple2<post_id,"p">,weight>
        JavaPairRDD<Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>>, Integer> edgeRDD = networkRDD
             .mapToPair(edge -> {
                 Tuple2<Integer, String> key = edge._1();
@@ -225,6 +227,44 @@ public class runSocialNetwork {
                 return new Tuple2<>(new Tuple2<>(key, value), 1);
             });
         
+
+
+        //for all post edges ie (id,"p") -> (id, "u or h"), get the sum of all outgoing edges by reducing by key
+        //then divide 1/(# of outgoing edges) to get weight for a given edge leaving post_id
+        //then merge back into edges to get post edges where for each post id, the sum of outgoing edges is 1
+        JavaPairRDD<Tuple2<Integer, String>, Double> postWeightsSum = edgeRDD
+            .filter(edge -> edge._1()._1()._2().equals("p")) 
+            .mapToPair(edge -> {
+                Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
+                Integer value = edge._2();
+                return new Tuple2<>(key._1(), value);
+            })
+            .reduceByKey(Integer::sum)
+            .mapToPair(tuple -> new Tuple2<>(tuple._1(), 1.0 / tuple._2())); 
+
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> postEdges = networkRDD
+            .filter(edge -> edge._1()._2().equals("p"))
+            .join(postWeightsSum);
+
+
+         //same logic as posts
+         JavaPairRDD<Tuple2<Integer, String>, Double> hashtagWeightsSum = edgeRDD
+            .filter(edge -> edge._1()._1()._2().equals("h")) 
+            .mapToPair(edge -> {
+                Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
+                Integer value = edge._2();
+                return new Tuple2<>(key._1(), value);
+            })
+            .reduceByKey(Integer::sum)
+            .mapToPair(tuple -> new Tuple2<>(tuple._1(), 1.0 / tuple._2())); 
+
+        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> hashtagEdges = networkRDD
+            .filter(edge -> edge._1()._2().equals("h"))
+            .join(hashtagWeightsSum);
+
+
+        //for users, same logic as posts but instead break into three groups because the outgoing edges from user could be user, post or hashtag
+        //the outgoing edges sum up to different numbers depending on type, hashtag=.3, user=.3, posts=.4
         JavaPairRDD<Tuple2<Integer, String>, Double> userHashtagWeightsSum = edgeRDD
             .filter(edge -> edge._1()._1()._2().equals("u") && edge._1()._2()._2().equals("h")) 
             .mapToPair(edge -> {
@@ -269,41 +309,9 @@ public class runSocialNetwork {
         JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> userUserEdges = networkRDD
             .filter(edge -> edge._1()._2().equals("u") && edge._2()._2().equals("u"))
             .join(userUserWeightsSum);
-
-
-
-        JavaPairRDD<Tuple2<Integer, String>, Double> postWeightsSum = edgeRDD
-            .filter(edge -> edge._1()._1()._2().equals("p")) 
-            .mapToPair(edge -> {
-                Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
-                Integer value = edge._2();
-                return new Tuple2<>(key._1(), value);
-            })
-            .reduceByKey(Integer::sum)
-            .mapToPair(tuple -> new Tuple2<>(tuple._1(), 1.0 / tuple._2())); 
-
-        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> postEdges = networkRDD
-            .filter(edge -> edge._1()._2().equals("p"))
-            .join(postWeightsSum);
-
-
         
-         JavaPairRDD<Tuple2<Integer, String>, Double> hashtagWeightsSum = edgeRDD
-            .filter(edge -> edge._1()._1()._2().equals("h")) 
-            .mapToPair(edge -> {
-                Tuple2<Tuple2<Integer, String>, Tuple2<Integer, String>> key = edge._1();
-                Integer value = edge._2();
-                return new Tuple2<>(key._1(), value);
-            })
-            .reduceByKey(Integer::sum)
-            .mapToPair(tuple -> new Tuple2<>(tuple._1(), 1.0 / tuple._2())); 
 
-        JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> hashtagEdges = networkRDD
-            .filter(edge -> edge._1()._2().equals("h"))
-            .join(hashtagWeightsSum);
-
-
-        
+        //now combine all edges back together to create social network with weighted edges
         JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> combinedEdges = userHashtagEdges
             .union(userPostEdges)
             .union(userUserEdges)
@@ -323,14 +331,17 @@ public class runSocialNetwork {
     private JavaPairRDD<Tuple2<Integer, String>,Tuple2<Integer, Double>> adsorptionPropagation(JavaPairRDD<Tuple2<Integer, String>, Tuple2<Tuple2<Integer, String>, Double>> edgeRDD,
                                    JavaRDD<Integer> usersRDD) {
         
+        //convert rdd of users into a pair rdd that matches vertex with user_id to the label with themselves with weight 1
+        //example:  Tuple2<user_id_julia, "u">, Tuple2<user_id_julia, 1.0>                  
         JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> userLabelsMapped = usersRDD
                 .mapToPair(user -> new Tuple2<>(new Tuple2<>(user, "u"), new Tuple2<>(user, 1.0)));
 
+        //initalize the graph with only have labels on the user because not propogation has been done, ie each user vertex has their own label with weight 1
         JavaPairRDD<Tuple2<Integer,String>, Tuple2<Integer, Double>> vertexLabels = userLabelsMapped;
         
         int i = 0;
         double d_max = .1;
-        while (i < 1) {
+        while (i < 15) {
             i = i +1 ;
             //propogate labels ie for each label move across an edge so edgeRDD.join labels then multiple the edge._2._1 weight times the label weight label._2() and store in new tuple <edge._2._1,
             JavaPairRDD<Tuple2<Integer, String>, Tuple2<Integer, Double>> propagatedVertexLabels = vertexLabels
@@ -349,11 +360,12 @@ public class runSocialNetwork {
                 .reduceByKey(Double::sum) //get sum for a given vertex and user
                 .mapToPair(pair -> new Tuple2<>(pair._1()._1(), new Tuple2<>(pair._1()._2(), pair._2())));
 
-            //normalize get sum of all labels for vertex
+            //normalize each vertex to have a sum of user labels equal to 1
+            //get sum of all labels for vertex
             JavaPairRDD<Tuple2<Integer, String>, Double> sumsByVertex = propagatedVertexLabels
                 .mapValues(tuple -> tuple._2()) 
                 .reduceByKey(Double::sum);
-
+            //then join vertex and divide by sum to normalize
             propagatedVertexLabels = propagatedVertexLabels
                 .join(sumsByVertex) 
                 .mapValues(pair -> {
@@ -363,7 +375,8 @@ public class runSocialNetwork {
                     return new Tuple2<>(pair._1()._1(), normalizedValue); 
                 });
             
-
+            //hard code user vertex to have weight 1 with their own label
+            //start by finding vertex, label pairs where user_id=user_label_id and set to 1
             propagatedVertexLabels = propagatedVertexLabels
                 .mapToPair(pair -> {
                     if (pair._1._2().equals("u") && pair._1._1().equals(pair._2._1())) {
@@ -372,14 +385,13 @@ public class runSocialNetwork {
                         return pair;
                     }
                 });
-
-
-        
+            //then find all user vertices that don't have a label for themselves and add back to vertexLabels
             JavaPairRDD<Tuple2<Integer, String>,Tuple2<Integer, Double>> entriesToAdd = userLabelsMapped
                 .subtractByKey(propagatedVertexLabels);
             propagatedVertexLabels = propagatedVertexLabels
                 .union(entriesToAdd);
 
+            //then find max difference in user_label at a given vertex to check for convergence
             JavaPairRDD<Tuple2<Integer, String>, Double> differences = propagatedVertexLabels.join(vertexLabels)
                         .mapValues(tuple -> Math.abs(tuple._1._2 - tuple._2._2));
             Double maxDifference = differences.values().max(Comparator.naturalOrder());
