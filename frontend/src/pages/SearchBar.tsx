@@ -41,7 +41,7 @@ export default function ChatInterface() {
         
         try {
             // TODO: make a call to the getMovies route 
-            const response = await axios.post(`${rootURL}/${username}/movies`, { context : prevMessages, question: input }, { withCredentials: true });
+            const response = await axios.post(`${rootURL}/${username}/getPost`, { context : prevMessages, question: input }, { withCredentials: true });
 
              // TODO: add the chatbot's response to the messages state
             if (response.data && response.data.message) {

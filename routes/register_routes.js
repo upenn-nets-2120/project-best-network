@@ -4,8 +4,13 @@ const friend_routes = require('./friend_routes.js');
 const account_routes = require('./account_routes.js');
 const profile_routes = require('./profile_routes.js');
 const feed_routes = require('./feed_routes.js');
+
+const search_routes = require('./search_routes');
+/*
 const kafka_routes = require('./kafka_routes.js'); 
+
 const actor_routes = require('./actor_routes.js');
+*/
 const { ChromaClient } = require("chromadb");
 
 
@@ -42,7 +47,10 @@ function register_routes(app) {
     app.put('/:username/change-affiliation', account_routes.change_affiliation);
     app.put('/:username/change-password', account_routes.change_password);
 
-
+    //search
+    
+    
+    
     //profile stuff
     app.post('/:username/addHashtag', profile_routes.post_add_hashtag);
     app.post('/:username/removeHashtag', profile_routes.post_remove_hashtag);
@@ -57,9 +65,10 @@ function register_routes(app) {
     app.get('/:username/offlineFriends', friend_routes.get_offline_friends);
     app.get('/:username/recommendedFriends', friend_routes.get_recommended_friends);
 
-
+    app.get('/:username/search', search_routes.get_post)
 
     //feed routes
+    
     app.post('/:username/createPost', feed_routes.create_post); 
     app.post('/createTweet', feed_routes.create_tweet); 
     app.get('/:username/getComment', feed_routes.get_comments);
@@ -68,13 +77,16 @@ function register_routes(app) {
     app.post('/:username/sendLike', feed_routes.send_like);
     app.get('/:username/getLikes', feed_routes.get_likes); 
     app.post('/:username/uploadPostFromHTML', feed_routes.upload_posts_from_HTML); 
-
+    
     //actor routes
+    /*
     app.get('/:username/getActors', actor_routes.get_actors);
     app.post('/:username/setActor', actor_routes.set_actor);
-
+    */
     // federated post routes
+    /*
     app.post('/:username/createFederatedPost', kafka_routes.create_federated_post); 
     app.post('/:username/uploadFederatedPost', upload.single('post'), feed_routes.upload_federated_post);
-  }
+    */
+}
   

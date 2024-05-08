@@ -1,16 +1,12 @@
 const { ChromaClient } = require("chromadb");
 const {OpenAIEmbeddingFunction} = require('chromadb');
 
-async function uploadEmbeddingsForPost(hashtags, author_id, post_id) {
+async function uploadEmbeddingsForPost(content, author_id, post_id, title) {
     let embedder = new OpenAIEmbeddingFunction({
         openai_api_key: "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",
         model: "text-embedding-3-small"
     })
     console.log("The model is:", embedder.model);
-
-    if (!hashtags || hashtags.length === 0) {
-      return { error: 'No hashtags provided.' };
-    }  
     try {
       // Connect to Chroma collection
         const client = new ChromaClient();
@@ -20,13 +16,12 @@ async function uploadEmbeddingsForPost(hashtags, author_id, post_id) {
             metadata: { "hnsw:space": "l2" },
         });
         // Concatenate all hashtags into a single string
-        const concatenatedHashtags = hashtags.join(' ');
 
         // Add embedding data to the collection
         const res = await collection.add({ 
             ids: [`${post_id}`],
-            metadatas: [{ source: `from author: ${author_id}` }],
-            documents: [concatenatedHashtags] 
+            metadatas: [{ source: `title: ${title} from author: ${author_id}` }],
+            documents: [content] 
         });
         if (res === true) {
             console.log("Added embeddings to collection.");

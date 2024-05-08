@@ -2,14 +2,7 @@ const dbsingleton = require('../models/db_access.js');
 const config = require('../config.json'); // Load configuration
 const helper = require('../routes/login_route_helper.js');
 const s3Access = require('../models/s3_access.js'); 
-const { uploadEmbeddingsForPost } = require('../routes/friend_routes_helper.js');
-/*
-const { RecursiveCharacterTextSplitter } = require("langchain/text_splitter");
-*/
 
-const { Chroma } = require("@langchain/community/vectorstores/chroma");
-
-//const PORT = config.serverPort;
 const db = dbsingleton;
 db.get_db_connection();
 const PORT = config.serverPort;

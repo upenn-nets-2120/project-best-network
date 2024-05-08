@@ -4,43 +4,12 @@ const helper = require('../routes/login_route_helper.js');
 const s3Access = require('../models/s3_access.js'); 
 const { uploadEmbeddingsForPost } = require('../routes/friend_routes_helper.js');
 
-/*
-const { RecursiveCharacterTextSplitter } = require("langchain/text_splitter");
-*/
-const { OpenAIEmbeddings } = require("@langchain/openai");
-/*
-const { MemoryVectorStore } = require("langchain/vectorstores/memory");
-const { createStuffDocumentsChain } = require("langchain/chains/combine_documents");
-const { Document } = require("@langchain/core/documents");
-const { createRetrievalChain } = require("langchain/chains/retrieval");
 
-const { formatDocumentsAsString } = require("langchain/util/document");
-const {
-    RunnableSequence,
-    RunnablePassthrough,
-  } = require("@langchain/core/runnables");
- */ 
-const { Chroma } = require("@langchain/community/vectorstores/chroma");
 
 //const PORT = config.serverPort;
 const db = dbsingleton;
 db.get_db_connection();
 const PORT = config.serverPort;
-
-var getVectorStore = async function(req) {
-    if (vectorStore == null) {
-        const embeddings = new OpenAIEmbeddings({
-          apiKey: process.env.OPENAI_API_KEY, // In Node.js defaults to process.env.OPENAI_API_KEY
-          batchSize: 512, // Default value if omitted is 512. Max is 2048
-          model: "text-embedding-3-small",
-        });
-        vectorStore = await Chroma.fromExistingCollection(embeddings, {
-            collectionName: "posts_new",
-            url: "http://localhost:8000", // Optional, will default to this value
-            });
-    }
-    return vectorStore;
-  }
 
 
   // GET /feed
@@ -71,24 +40,33 @@ var getVectorStore = async function(req) {
         const users =await db.send_sql(getLinkedId);
         const user = users[0];
         const feedQuery = `
-          SELECT outer_post.post_id AS post_id, users.username AS username, outer_post.parent_post AS parent_post, 
-          outer_post.title AS title, outer_post.content AS content
-          FROM posts AS outer_post
-          INNER JOIN users ON outer_post.author_id = users.id
-          WHERE outer_post.author_id IN (
-              SELECT followed
-              FROM friends
-              WHERE follower = '${user.linked_id}'
-          )
-          OR outer_post.author_id = ${req.session.user_id}
-          OR outer_post.post_id IN (
-            SELECT post_to_hashtags.post_id
-            FROM post_to_hashtags 
-            INNER JOIN hashtagInterests ON hashtagInterests.hashtagID = post_to_hashtags.hashtag_id
-            WHERE hashtagInterests.userID = outer_post.author_id
-          )
-          ORDER BY post_id DESC;
-        `;
+        SELECT outer_post.post_id AS post_id, users.username AS username, outer_post.parent_post AS parent_post, 
+        outer_post.title AS title, outer_post.content AS content
+        FROM posts AS outer_post
+        INNER JOIN users ON outer_post.author_id = users.id
+        WHERE outer_post.author_id IN (
+            SELECT followed
+            FROM friends
+            WHERE follower = '${user.linked_id}'
+        )
+        OR outer_post.author_id = ${req.session.user_id}
+        OR outer_post.post_id IN (
+          SELECT post_to_hashtags.post_id
+          FROM post_to_hashtags 
+          INNER JOIN hashtagInterests ON hashtagInterests.hashtagID = post_to_hashtags.hashtag_id
+          WHERE hashtagInterests.userID = outer_post.author_id
+        )
+        OR outer_post.post_id IN (
+          SELECT socialNetworkPostRecommendations.postID
+          FROM socialNetworkPostRecommendations 
+          INNER JOIN users ON users.id = socialNetworkPostRecommendations.userLabelID
+          WHERE socialNetworkPostRecommendations.userLabelID = outer_post.author_id 
+          ORDER BY socialNetworkPostRecommendations.weight DESC
+        )
+        OR outer_post.title = 'Federated Post'
+        OR outer_post.title = 'Tweet'
+        ORDER BY post_id DESC;
+      `;
         const posts = await db.send_sql(feedQuery);
 
         // Return the feed posts
@@ -186,8 +164,8 @@ var getVectorStore = async function(req) {
             }
         }
         // use hashtags to upload embeddings
-        if (hashtags) {
-          uploadEmbeddingsForPost(hashtags, author_id, last_id)
+        if (content) {
+          uploadEmbeddingsForPost(content, author_id, last_id, title)
           .then((result) => {
             console.log(result);
             if(!result) {
@@ -495,37 +473,6 @@ var createTweet = async function(req, res) {
     }
 };
   
-  var getPost = async function(req, res) {
-    const vs = await getVectorStore();
-    const retriever = vs.asRetriever();
-    console.log(req.body)
-    const { context, question } = req.body;
-    if (!context || !question) {
-        console.log(question)
-        console.log(context)
-    }
-    //console.log(process.env.OPENAI_API_KEY)
-    const prompt =
-    PromptTemplate.fromTemplate(`Given: ${context}, answer: ${question}`);
-    const llm = new ChatOpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-        model: "gpt-3.5-turbo" 
-    });
-  
-    const ragChain = RunnableSequence.from([
-        {
-            context: retriever.pipe(formatDocumentsAsString),
-            question: new RunnablePassthrough(),
-          },
-      prompt,
-      llm,
-      new StringOutputParser(),
-    ]);
-  
-    result = await ragChain.invoke(req.body.question);
-    console.log(result);
-    res.status(200).json({message:result});
-  }
 
   
   var routes = { 
@@ -541,3 +488,4 @@ var createTweet = async function(req, res) {
   };
   
   module.exports = routes;
+  
