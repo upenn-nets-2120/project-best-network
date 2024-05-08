@@ -2,13 +2,15 @@ const dbsingleton = require('../models/db_access.js');
 const config = require('../config.json'); 
 const process = require('process');
 const s3Access = require('../models/s3_access.js'); 
-const { sendFederatedPost } = require('../kafka/newapp.js'); 
+const { sendFederatedPost } = require('../kafka/twitter.js'); 
 
 const handleFederatedPost = async (req, res) => {
     try {
         // Extract required data from the request body
         const { username, source_site, post_uuid_within_site, post_text, content_type, attach } = req.body;
 
+        console.log("entered the federatedpost section");
+        console.log("attach", attach); 
         // Call the sendFederatedPost function
         await sendFederatedPost({
             username,

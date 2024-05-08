@@ -16,23 +16,37 @@ const kafka = new Kafka({
     },
 });
 
-// Producer setup
+// PRODUCER CODE
 const producer = kafka.producer();
 
-// Example of sending a federated post
-const sendFederatedPost = async (post) => {
+const sendFederatedPost = async (username, source_site, post_uuid_within_site, post_text, content_type, attach) => {
+    console.log("entered federated post section"); 
+
+    // Construct the post object
+    const post = {
+        username,
+        source_site,
+        post_uuid_within_site,
+        post_text,
+        content_type,
+        attach
+    };
+
+    // Convert the post object to JSON
     const jsonMessage = JSON.stringify(post);
 
+    // Send the JSON message to Kafka
     await producer.send({
         topic: 'FederatedPosts',
         messages: [{ value: jsonMessage }]
     });
 };
 
+
 // Run the producer (you can add your own logic to trigger it when needed)
 const runProducer = async () => {
     await producer.connect();
-};
+}
 
 // Run the producer if needed (e.g., for testing)
 runProducer().catch(console.error);
@@ -48,9 +62,9 @@ const handleMessage = async ({ topic, partition, message }) => {
     const value = message.value.toString();
     const parsedMessage = JSON.parse(value);
 
-    // Check the topic of the message and call the appropriate handler function
+    // Check the topic of the message to call the appropriate handler function!
     if (topic === 'FederatedPosts') {
-        await handleIncomingPost(parsedMessage.username, parsedMessage.source_site, parsedMessage.post_uuid_within_site, parsedMessage.post_text, parsedMessage.content_type, parsedMessage.attach);
+        await handleFederatedPost(parsedMessage.username, parsedMessage.source_site, parsedMessage.post_uuid_within_site, parsedMessage.post_text, parsedMessage.content_type, parsedMessage.attach);
     } else if (topic === 'Twitter-Kafka') {
         await handleIncomingTweet(parsedMessage);
     } else {
@@ -58,8 +72,7 @@ const handleMessage = async ({ topic, partition, message }) => {
     }
 };
 
-
-const runConsumer = async (consumer) => {
+const runConsumer = async () => {
     await consumer.connect();
     await consumer.subscribe({ topic: 'FederatedPosts', fromBeginning: true });
     await consumer.subscribe({ topic: 'Twitter-Kafka', fromBeginning: true });
@@ -69,19 +82,20 @@ const runConsumer = async (consumer) => {
     });
 };
 
-
 // Helper function to extract hashtags from text
 const extractHashtags = (text) => {
-    const regex = /#\w+/g; 
-    const hashtags = text.match(regex);
-    return hashtags ? hashtags.map(tag => tag.slice(1)) : [];
+    if (text !== undefined) {
+        const regex = /#\w+/g; 
+        const hashtags = text.match(regex);
+        return hashtags ? hashtags.map(tag => tag.slice(1)) : [];
+    } else {
+        return [];
+    }
 };
 
 // Handler for processing incoming federated posts
-const handleIncomingPost = async (username, source_site, post_uuid_within_site, post_text, content_type, attach) => {
-    // Define the format for the federated username
+const handleFederatedPost = async (username, source_site, post_uuid_within_site, post_text, content_type, attach) => {
     const federatedUsername = `${source_site}-${username}`;
-    console.log(federatedUsername);
 
     // Check if the user exists in the system
     let userExists = false;
@@ -129,10 +143,14 @@ const handleIncomingPost = async (username, source_site, post_uuid_within_site, 
         }
     }
 
-    // Extract hashtags from the post text
-    const hashtags = extractHashtags(post_text);
+    let hashtags = [];
+    if (post_text != undefined) {
+        hashtags = extractHashtags(post_text);
+    }
 
-    // Define the post data for the /createPost route
+    console.log("attach 2", attach); 
+
+    // Define the post data or the /createPost route
     const postData = {
         title: 'Federated Post',
         content: post_text,
@@ -140,30 +158,36 @@ const handleIncomingPost = async (username, source_site, post_uuid_within_site, 
         hashtags: hashtags,
         username: federatedUsername,
         attach: attach,
+        uuid: post_uuid_within_site
     };
-
+    let createPostResponse;
     try {
         // Call the /createPost route to create a new post
-        const createPostResponse = await axios.post(`http://localhost:8080/${federatedUsername}/createPost`, postData);
+        createPostResponse = await axios.post(`http://localhost:8080/${federatedUsername}/createPost`, postData);
         console.log(`Post created successfully for user ${federatedUsername}:`, createPostResponse.data);
     } catch (error) {
         console.error(`Failed to create post for user ${federatedUsername}:`, error);
     }
 
+    const postId = createPostResponse.data.post_id;
+
     // Log the incoming post details
     console.log(`Received post from ${username} on site ${source_site}: ${post_text}`);
     console.log(`Post details - UUID: ${post_uuid_within_site}, Content Type: ${content_type}`);
+    console.log("Attach", attach); 
+
+    if (attach != undefined || attach != null || attach != "") {
+        try {
+            console.log("should be in the uploadPostfromHTML now")
+            // Call the uploadPostFromHTML route to upload the image
+            const uploadResponse = await axios.post(`http://localhost:8080/${username}/uploadPostFromHTML`, { attach, post_id: postId });
+            console.log('Image uploaded successfully:', uploadResponse.data);
+        } catch (error) {
+            console.error('Error uploading image:', error.response ? error.response.data : error.message);
+        }
+    }    
 };
 
-if (attach) {
-    try {
-        // Call the uploadPostFromHTML route to upload the image
-        const uploadResponse = await axios.post(`http://your_api_url/${username}/uploadPostFromHTML`, { attach });
-        console.log('Image uploaded successfully:', uploadResponse.data);
-    } catch (error) {
-        console.error('Error uploading image:', error.response ? error.response.data : error.message);
-    }
-}
 
 // Handler for processing incoming tweets
 const handleIncomingTweet = async (tweet) => {
@@ -274,10 +298,9 @@ const handleIncomingTweet = async (tweet) => {
     }
 };
 
-// Start both consumers
 const startConsumers = async () => {
     try {
-        await Promise.all([runConsumer()]);
+        await runConsumer();
     } catch (error) {
         console.error('Error starting consumers:', error);
     }

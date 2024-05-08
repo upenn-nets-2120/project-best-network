@@ -46,32 +46,39 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
       if (image) {
         const formData = new FormData();
         formData.append('post', image);
-
+  
         // Upload the image and get the public URL
-        const imageResponse = await axios.post(`${rootURL}/${username}/uploadPost`, formData, {
+        console.log('Uploading image...');
+        const imageResponse = await axios.post(`${rootURL}/${username}/uploadFederatedPost`, formData, {
           withCredentials: true,
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
-
+  
         console.log('Image uploaded successfully:', imageResponse.data);
-
-        imageUrl = imageResponse.data.url;
+  
+        imageUrl = imageResponse.data.photoURL;
       }
-
+  
+      console.log('Image URL:', imageUrl);
+  
       const attachLink = imageUrl ? `<img src="${imageUrl}" alt="Image" />` : null;
-      
-        // Create the post data
-        const postData = {
-          post_text: content,
-          username,
-          source_site: "g13", 
-          post_uuid_within_site: post_uuid,
-          attach: attachLink,
-          content_type: "text/html"
-        };
-
+  
+      console.log('Attach Link:', attachLink);
+  
+      // Create the post data
+      const postData = {
+        post_text: content,
+        username,
+        source_site: "g13",
+        post_uuid_within_site: post_uuid,
+        attach: attachLink,
+        content_type: "text/html"
+      };
+  
+      console.log('Post Data:', postData);
+  
       // Send the post data to create a federated post
       const response: AxiosResponse<Post> = await axios.post(`http://localhost:8080/${username}/createFederatedPost`, postData, {
         withCredentials: true,
@@ -79,8 +86,10 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
           'Content-Type': 'application/json',
         },
       });
-
-      if (response.status === 201 || 200) {
+  
+      console.log('Post Response:', response.data);
+  
+      if (response.status === 201 || response.status === 200) {
         console.log('Post created successfully:', response.data);
         updatePosts(prevPosts => [...prevPosts, response.data]);
         setTitle('');
@@ -93,50 +102,57 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
       console.error('Error creating post:', error);
       alert('Error creating post.');
     }
-  };
+  };  
 
   return (
-    <div className="w-full max-w-md">
+    <div className="w-screen h-screen flex justify-center">
       <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label htmlFor="title" className="block text-gray-700 font-bold mb-2">Title</label>
-          <input
-            id="title"
-            type="text"
-            className="w-full border rounded-md px-3 py-2 outline-none focus:border-blue-500"
-            value={title}
-            onChange={handleTitleChange}
-            required
-          />
-        </div>
-        <div className="mb-6">
-          <label htmlFor="content" className="block text-gray-700 font-bold mb-2">Content</label>
-          <textarea
-            id="content"
-            className="w-full border rounded-md px-3 py-2 outline-none focus:border-blue-500"
-            placeholder="Content"
-            value={content}
-            onChange={handleContentChange}
-            required
-          />
-        </div>
-        <div className="mb-4">
-          <label htmlFor="image" className="block text-gray-700 font-bold mb-2">Image</label>
-          <input
-            id="image"
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="w-full border rounded-md px-3 py-2 outline-none focus:border-blue-500"
-          />
-        </div>
-        <div className="text-center">
-          <button
-            type="submit"
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Create Post
-          </button>
+        <div className="rounded-md bg-slate-50 p-6 space-y-2 w-full max-w-md">
+          <div className="font-bold flex w-full justify-center text-2xl mb-4">
+            Create Federated Post
+          </div>
+          <div className="flex flex-col space-y-4">
+            <div>
+              <label htmlFor="title" className="block text-gray-700 font-bold mb-2">Title</label>
+              <input
+                id="title"
+                type="text"
+                className="w-full border rounded-md px-3 py-2 outline-none focus:border-blue-500"
+                value={title}
+                onChange={handleTitleChange}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="content" className="block text-gray-700 font-bold mb-2">Content</label>
+              <textarea
+                id="content"
+                className="w-full border rounded-md px-3 py-2 outline-none focus:border-blue-500"
+                placeholder="Content"
+                value={content}
+                onChange={handleContentChange}
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="image" className="block text-gray-700 font-bold mb-2">Image</label>
+              <input
+                id="image"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full border rounded-md px-3 py-2 outline-none focus:border-blue-500"
+              />
+            </div>
+            <div className="text-center">
+              <button
+                type="submit"
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              >
+                Create Post
+              </button>
+            </div>
+          </div>
         </div>
       </form>
     </div>

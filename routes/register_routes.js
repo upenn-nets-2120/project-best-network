@@ -75,5 +75,6 @@ function register_routes(app) {
 
     // federated post routes
     app.post('/:username/createFederatedPost', kafka_routes.create_federated_post); 
+    app.post('/:username/uploadFederatedPost', upload.single('post'), feed_routes.upload_federated_post);
   }
   

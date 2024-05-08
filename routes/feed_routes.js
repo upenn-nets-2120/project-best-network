@@ -201,7 +201,7 @@ var getVectorStore = async function(req) {
         }
       
         // Return successful response
-        return res.status(201).json({ message: 'Post created.' });
+        return res.status(201).json({ message: 'Post created.', post_id: last_id });
     } catch (error) {
         // Handle database query errors
         console.error('Error querying database:', error);
@@ -256,24 +256,82 @@ var uploadPost = async function(req, res) {
 
 };
 
+//POST uploadfederatedpost
 
-var uploadImageFromHtmlTag = async function(imgTag) {
+var uploadFederatedPost = async function(req, res) {
+  const username = req.params.username;
+  const federatedUsername = "g13-" + username;
+
+  // Query to get the user ID based on the username
+  const getUserIdQuery = `SELECT id FROM users WHERE username = ?;`;
   try {
+    const userResult = await db.send_sql(getUserIdQuery, [federatedUsername]);
+    if (userResult.length === 0) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    const userID = userResult[0].id;
+
+    // Query to get the last post ID for the user
+    const getLastPost = `SELECT * FROM posts WHERE author_id = '${userID}' ORDER BY post_id DESC;`;
+    const last_post = await db.send_sql(getLastPost);
+
+    // Initialize last_id to 0 if there are no previous posts
+    let last_id = 0;
+
+    // Check if there are any previous posts
+    if (last_post.length > 0) {
+      // Get the last post ID
+      last_id = last_post[0].post_id;
+    }
+
+    // Increment the last post ID by 1
+    const new_post_id = last_id + 1;
+
+    const post = req.file;
+    const filenameWithExtension = req.file.originalname;
+    const filenameWithoutExtension = filenameWithExtension.replace(/\.[^/.]+$/, '');
+
+    console.log(post);
+
+    if (!post) {
+      return res.status(400).json({ error: 'No post uploaded.' });
+    }
+
+    try {
+      // Upload the post to S3 with the incremented post ID
+      await s3Access.put_by_key("best-network-nets212-sp24", "/posts/" + new_post_id, post.buffer, post.mimetype);
+      // Get the photo URL from S3
+      const photoURL = `https://best-network-nets212-sp24.s3.amazonaws.com//posts/${new_post_id}`;
+
+      // Return the photo URL as response
+      return res.status(200).json({ photoURL });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: 'Error uploading photo.' });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+var uploadImageFromHtmlTag = async function(req, res) {
+
+  const { attach, post_id } = req.body;
+  try {
+    console.log("entered upload image from HTMl");
     // Extract the image URL from the HTML <img> tag
     const srcRegex = /src="([^"]*)"/;
-    const match = imgTag.match(srcRegex);
+    const match = attach.match(srcRegex);
     if (!match || match.length < 2) {
       throw new Error('Invalid HTML <img> tag');
     }
     const imageUrl = match[1];
 
-    // Upload the image to the posts table
-    const getLastPost = `SELECT * FROM posts ORDER BY post_id DESC LIMIT 1;`;
-    const lastPost = await db.send_sql(getLastPost);
-    const lastId = lastPost[0].post_id + 1;
+    console.log("postID:", post_id);
 
     // Update the posts table with the image URL
-    const updatePostQuery = `INSERT INTO posts (post_id, photo) VALUES (${lastId}, '${imageUrl}');`;
+    const updatePostQuery = `UPDATE posts SET photo = '${imageUrl}' WHERE post_id = '${post_id}';`;
     await db.send_sql(updatePostQuery);
 
     console.log('Image uploaded successfully:', imageUrl);
@@ -282,6 +340,7 @@ var uploadImageFromHtmlTag = async function(imgTag) {
     throw error;
   }
 };
+
 
 // POST /like
 var sendLike = async function(req, res) {
@@ -474,6 +533,7 @@ var createTweet = async function(req, res) {
     create_tweet: createTweet,
     get_feed: feed,
     upload_post: uploadPost,
+    upload_federated_post: uploadFederatedPost,
     send_like: sendLike,
     get_likes: getLikes, 
     get_comments: getComments,

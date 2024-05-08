@@ -47,11 +47,12 @@ export default function FederatedPostsPage() {
       <div className='w-full h-16 bg-slate-50 flex justify-center mb-2'>
         <div className='text-2xl max-w-[1800px] w-full flex items-center'>
           Pennstagram - {username} &nbsp;
+          <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white' onClick={home}>Home</button>
+          <div style={{ width: '5px' }} />
           <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white' onClick={friends}>Friends</button>&nbsp;
           <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white' onClick={chat}>Chat</button>&nbsp;
           <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white' onClick={logout}>Logout</button>&nbsp;
           <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white' onClick={profile}>Profile</button>&nbsp;
-          <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white' onClick={home}>Home</button>
         </div>
       </div>
       

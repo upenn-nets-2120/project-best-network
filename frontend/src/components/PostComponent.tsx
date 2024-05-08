@@ -31,7 +31,6 @@ export default function PostComponent({
       }
     } catch (error) {
       console.error('Error fetching initial likes:', error);
-      alert('Error fetching initial likes.');
     }
   };
 
@@ -52,7 +51,6 @@ export default function PostComponent({
       }
     } catch (error) {
       console.error('Error fetching comments:', error);
-      alert('Error fetching comments.');
     }
   };
 
@@ -71,7 +69,6 @@ export default function PostComponent({
       }
     } catch (error) {
       console.error('Error liking post:', error);
-      alert('Error liking post.');
     }
   };
 
@@ -132,7 +129,7 @@ export default function PostComponent({
 
       {/* Display the image using the constructed S3 image URL */}
       <div className="image-container mt-2">
-        <img src={s3ImageUrl} style={{ maxWidth: '100%' }} />
+        <img src={s3ImageUrl} style={{ maxWidth: '100%' }} alt="Post" />
       </div>
 
       {/* Likes and comments */}
@@ -157,8 +154,8 @@ export default function PostComponent({
       {/* Render comments */}
       <div className="mt-2">
         <ul>
-          {comments.map((comment) => (
-            <li key={comment.post_id} className="border-b p-2">
+          {comments.map((comment, index) => (
+            <li key={index} className="border-b p-2">
               <strong>@{comment.username}</strong>: {comment.content}
             </li>
           ))}
