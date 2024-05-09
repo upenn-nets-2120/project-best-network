@@ -20,7 +20,6 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
   const rootURL = config.serverRootURL;
   const [content, setContent] = useState('');
   const [image, setImage] = useState<File | null>(null); // State to hold the image file
-  const navigate = useNavigate();
   const handleContentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(event.target.value);
   };
@@ -62,7 +61,6 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
   
       console.log('Attach Link:', attachLink);
   
-      // Create the post data
       const postData = {
         post_text: content,
         username,
@@ -74,7 +72,6 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
   
       console.log('Post Data:', postData);
   
-      // Send the post data to create a federated post
       const response: AxiosResponse<Post> = await axios.post(`http://localhost:8080/${username}/createFederatedPost`, postData, {
         withCredentials: true,
         headers: {

@@ -6,12 +6,11 @@ const { sendFederatedPost } = require('../kafka/updatedapp.js');
 
 const handleFederatedPost = async (req, res) => {
     try {
-        // Extract required data from the request body
         const { username, source_site, post_uuid_within_site, post_text, content_type, attach } = req.body;
 
         console.log("entered the federatedpost section");
         console.log("attach", attach); 
-        // Call the sendFederatedPost function
+
         await sendFederatedPost({
             username,
             source_site,
@@ -21,10 +20,9 @@ const handleFederatedPost = async (req, res) => {
             attach
         });
 
-        // Send a success response
+        
         res.status(200).json({ message: 'Federated post sent successfully' });
     } catch (error) {
-        // Handle errors
         console.error('Error sending federated post:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }

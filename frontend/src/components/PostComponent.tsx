@@ -24,7 +24,6 @@ export default function PostComponent({
       });
 
       if (response.status === 200) {
-        // Set the likes state with the initial likes from the response
         setLikes(response.data.likes);
       } else {
         console.error('Failed to fetch initial likes.');
@@ -34,10 +33,10 @@ export default function PostComponent({
     }
   };
 
-  // Fetch comments for the post
+
   const fetchComments = async () => {
     try {
-      // Use the URL query string to pass the post_id parameter
+    
       const response = await axios.get(`${config.serverRootURL}/${username}/getComment`, {
         params: { post_id },
         withCredentials: true,
@@ -59,7 +58,7 @@ export default function PostComponent({
     fetchComments();
   }, [post_id, username]);
 
-  // Handle liking a post
+ 
   const handleLike = async () => {
     try {
       const response = await axios.post(`${config.serverRootURL}/${username}/sendLike`, { post_id }, { withCredentials: true });
@@ -71,15 +70,14 @@ export default function PostComponent({
     }
   };
 
-  // Handle adding a new comment to the post
   const handleAddComment = async () => {
-    // Validate the new comment
+    // validate comment first
     if (!newComment.trim()) {
       alert('Please enter a valid comment.');
       return;
     }
 
-    // Prepare the payload for adding a comment
+
     const payload = {
       title: 'Comment',
       content: newComment,
@@ -89,15 +87,13 @@ export default function PostComponent({
     };
 
     try {
-      // Make a POST request to the createPost API to add a comment
       const response = await axios.post(`${config.serverRootURL}/${username}/createPost`, payload, {
         withCredentials: true,
       });
 
       if (response.status === 201) {
-        // If the comment is added successfully, fetch the updated comments
+        // if the comment is added successfully, fetch the updated comments
         fetchComments();
-        // Clear the new comment input field
         setNewComment('');
       } else {
         console.error('Failed to add comment.');
@@ -109,37 +105,37 @@ export default function PostComponent({
     }
   };
 
-  // Construct the S3 image URL based on post_id
+
   const s3ImageUrl = `https://best-network-nets212-sp24.s3.amazonaws.com//posts/${post_id}`;
 
-  // Skip rendering if the post title is "Comment"
+  // skip rendering if the post title is "Comment"
   if (title === 'Comment') {
     return null; 
   }
 
   return (
     <div className="rounded-md bg-slate-50 p-6 w-full max-w-md space-y-2">
-      {/* Post user and title */}
+      {/* post user and title */}
       <div className="text-slate-800 mb-2">
         <span className="font-semibold">@{user}</span> posted
       </div>
       <div className="text-2xl font-bold">{title}</div>
       <div>{description}</div>
 
-      {/* Display the image using the constructed S3 image URL */}
+      {/* display the image using the constructed S3 image URL */}
       {s3ImageUrl && s3ImageUrl.trim() !== "" && (
       <div className="image-container mt-2">
         <img src={s3ImageUrl} style={{ maxWidth: '100%' }} />
       </div>
     )}
 
-      {/* Likes and comments */}
+      {/* ;ikes and comments */}
       <div className="flex space-x-4 mt-2">
         <button onClick={handleLike} className="px-2 py-1 rounded-md bg-blue-500 text-white">Like</button>
         <span>Likes: {likes}</span>
       </div>
 
-      {/* Add comment */}
+      {/* add comment */}
       <div className="flex flex-col space-y-2 mt-2">
         <textarea
           value={newComment}
@@ -152,7 +148,7 @@ export default function PostComponent({
         </button>
       </div>
 
-      {/* Render comments */}
+      {/* render comments */}
       <div className="mt-2">
         <ul>
           {comments.map((comment, index) => (
