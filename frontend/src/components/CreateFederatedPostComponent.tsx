@@ -18,18 +18,13 @@ interface CreateFederatedPostComponentProps {
 function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostComponentProps) {
   const { username } = useParams();
   const rootURL = config.serverRootURL;
-  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [image, setImage] = useState<File | null>(null); // State to hold the image file
   const navigate = useNavigate();
-
-  const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(event.target.value);
-  };
-
   const handleContentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(event.target.value);
   };
+
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files && event.target.files[0];
@@ -92,7 +87,6 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
       if (response.status === 201 || response.status === 200) {
         console.log('Post created successfully:', response.data);
         updatePosts(prevPosts => [...prevPosts, response.data]);
-        setTitle('');
         setContent('');
       } else {
         console.error('Failed to create post:', response);
@@ -112,17 +106,6 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
             Create Federated Post
           </div>
           <div className="flex flex-col space-y-4">
-            <div>
-              <label htmlFor="title" className="block text-gray-700 font-bold mb-2">Title</label>
-              <input
-                id="title"
-                type="text"
-                className="w-full border rounded-md px-3 py-2 outline-none focus:border-blue-500"
-                value={title}
-                onChange={handleTitleChange}
-                required
-              />
-            </div>
             <div>
               <label htmlFor="content" className="block text-gray-700 font-bold mb-2">Content</label>
               <textarea

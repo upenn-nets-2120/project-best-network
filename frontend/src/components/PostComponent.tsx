@@ -44,7 +44,6 @@ export default function PostComponent({
       });
 
       if (response.status === 200) {
-        // Set the comments state with the comments from the response
         setComments(response.data.results);
       } else {
         console.error('Failed to fetch comments.');
@@ -128,9 +127,11 @@ export default function PostComponent({
       <div>{description}</div>
 
       {/* Display the image using the constructed S3 image URL */}
+      {s3ImageUrl && s3ImageUrl.trim() !== "" && (
       <div className="image-container mt-2">
-        <img src={s3ImageUrl} style={{ maxWidth: '100%' }} alt="Post" />
+        <img src={s3ImageUrl} style={{ maxWidth: '100%' }} />
       </div>
+    )}
 
       {/* Likes and comments */}
       <div className="flex space-x-4 mt-2">
