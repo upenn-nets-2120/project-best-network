@@ -14,6 +14,7 @@ export default function Home() {
   const profile = () => navigate(`/${username}/ProfilePage`);
   const chat = () => navigate(`/${username}/chat`);
   const federatedPosts = () => navigate(`/${username}/federated_posts`);
+  const search = () => navigate(`/${username}/search`);
   
   const logout = async () => {
     try {
@@ -62,6 +63,8 @@ export default function Home() {
                 <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white' onClick={profile}>Profile</button>
                 <div style={{ width: '5px' }} />
                 <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white' onClick={federatedPosts}>Federated Posts</button>
+                <div style={{ width: '5px' }} />
+                <button type="button" className='px-2 py-2 rounded-md bg-gray-500 outline-none text-white' onClick={search}>Search</button>
             </div>
         </div>
         
