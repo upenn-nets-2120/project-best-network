@@ -1,7 +1,7 @@
 const express = require('express');
 const { Kafka, CompressionTypes, CompressionCodecs } = require('kafkajs');
 const SnappyCodec = require('kafkajs-snappy');
-const config = require('./config.json');
+const config = require('../config.json');
 const axios = require('axios');
 
 // Setting up Snappy compression codec
@@ -109,7 +109,7 @@ const handleFederatedPost = async (username, source_site, post_uuid_within_site,
 
     try {
         const checkRegistrationResponse = await axios.get(
-            `http://localhost:8080/checkRegistration`,
+            `$${config.ec2}:8080/checkRegistration`,
             {
                 params: {
                     federatedUsername: federatedUsername,
@@ -142,7 +142,7 @@ const handleFederatedPost = async (username, source_site, post_uuid_within_site,
             };
 
             // create new user
-            const registerResponse = await axios.post('http://localhost:8080/register', registrationData);
+            const registerResponse = await axios.post(`${config.ec2}:8080/register`, registrationData);
             console.log('User registered successfully:', registerResponse.data);
         } catch (error) {
             console.error('Failed to register user:', error);
@@ -171,7 +171,7 @@ const handleFederatedPost = async (username, source_site, post_uuid_within_site,
     let createPostResponse;
     try {
         // create new post
-        createPostResponse = await axios.post(`http://localhost:8080/${federatedUsername}/createPost`, postData);
+        createPostResponse = await axios.post(`$${config.ec2}:8080/${federatedUsername}/createPost`, postData);
         console.log(`Post created successfully for user ${federatedUsername}:`, createPostResponse.data);
     } catch (error) {
         console.error(`Failed to create post for user ${federatedUsername}:`, error);
@@ -188,7 +188,7 @@ const handleFederatedPost = async (username, source_site, post_uuid_within_site,
         try {
             console.log("should be in the uploadPostfromHTML now")
             // upload image from attach
-            const uploadResponse = await axios.post(`http://localhost:8080/${username}/uploadPostFromHTML`, { attach, post_id: postId });
+            const uploadResponse = await axios.post(`${config.ec2}:8080/${username}/uploadPostFromHTML`, { attach, post_id: postId });
             console.log('Image uploaded successfully:', uploadResponse.data);
         } catch (error) {
             console.error('Error uploading image:', error.response ? error.response.data : error.message);
@@ -223,7 +223,7 @@ const handleIncomingTweet = async (tweet) => {
 
     try {
         const checkRegistrationResponse = await axios.get(
-            `http://localhost:8080/checkRegistration`,
+            `${config.ec2}:8080/checkRegistration`,
             {
                 params: {
                     federatedUsername: federatedUsername,
@@ -255,7 +255,7 @@ const handleIncomingTweet = async (tweet) => {
             };
 
             // create new user
-            const registerResponse = await axios.post('http://localhost:8080/register', registrationData);
+            const registerResponse = await axios.post(`${config.ec2}/register`, registrationData);
             console.log('User registered successfully:', registerResponse.data);
         } catch (error) {
             console.error('Failed to register user:', error);
@@ -276,7 +276,7 @@ const handleIncomingTweet = async (tweet) => {
 
     try {
         // create post with tweet data
-        const url = `http://localhost:8080/${federatedUsername}/createPost`;
+        const url = `${config.ec2}:8080/${federatedUsername}/createPost`;
         const response = await axios.post(url, tweetData, {
             headers: {
                 'Content-Type': 'application/json',
