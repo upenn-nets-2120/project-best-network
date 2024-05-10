@@ -8,10 +8,11 @@ const http = require('http');
 const socketIo = require('socket.io');
 const socketHandler = require('./routes/socketHandlers.js'); 
 const server = http.createServer(app);
+const config = require('./config.json'); 
 
 const io = socketIo(server, {
   cors: {
-      origin: "http://localhost:4567", // Specify allowed origins
+      origin: config.ec2+":4567", // Specify allowed origins
       methods: ["GET", "POST"], // Specify allowed methods
       credentials: true // Optional: Allow credentials
   }
@@ -22,7 +23,7 @@ socketHandler.socketHandler(io);
 
 
 app.use(cors({
-  origin: 'http://localhost:4567', // Ensure this matches your front-end URL
+  origin: config.ec2+':4567', // Ensure this matches your front-end URL
   methods: ['POST', 'PUT', 'GET', 'OPTIONS', 'HEAD'],
   credentials: true
 }));
