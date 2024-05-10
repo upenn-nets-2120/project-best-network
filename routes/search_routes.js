@@ -18,12 +18,6 @@ const {
 
 const { Chroma } = require("@langchain/community/vectorstores/chroma");
 
-//const PORT = config.serverPort;
-/*
-const db = dbsingleton;
-db.get_db_connection();
-const PORT = config.serverPort;
-*/
 let vectorStore = null;
 
 var getVectorStore = async function(req) {
@@ -33,7 +27,7 @@ var getVectorStore = async function(req) {
         apiKey: process.env.OPENAI_API_KEY, // In Node.js defaults to process.env.OPENAI_API_KEY
         batchSize: 512, // Default value if omitted is 512. Max is 2048
         model: "text-embedding-3-small",
-        request_timeout: 10000000000
+        request_timeout: 10000
       });
       
       vectorStore = await Chroma.fromExistingCollection(embeddings, {
@@ -56,7 +50,7 @@ var getPost = async function(req, res) {
   const llm = new ChatOpenAI({
     apiKey: process.env.OPENAI_API_KEY,
     model: "gpt-3.5-turbo",
-    request_timeout: 100000000
+    request_timeout: 10000
   });
   const ragChain = RunnableSequence.from([
       {
@@ -69,14 +63,6 @@ var getPost = async function(req, res) {
   ]);
   result = await ragChain.invoke(input);
   console.log(result);
-  /*
-  const model = new OpenAI({temperature: 0});
-  
-  const toolkit = new SqlToolKit(db, model);
-  const executer = createSqlAgent(model, toolkit);
-  const input2 = `Find the posts that are ${result}`;
-  const result2 = await executer.invoke({input2});
-  */
   res.status(200).json({message:result});
 }
 
