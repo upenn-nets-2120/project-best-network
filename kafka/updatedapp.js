@@ -165,7 +165,8 @@ const handleFederatedPost = async (username, source_site, post_uuid_within_site,
         hashtags: hashtags,
         username: federatedUsername,
         attach: attach,
-        uuid: post_uuid_within_site
+        uuid: post_uuid_within_site,
+        content_type: 'text/html'
     };
     let createPostResponse;
     try {
