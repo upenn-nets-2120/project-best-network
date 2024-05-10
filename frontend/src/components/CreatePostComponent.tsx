@@ -5,7 +5,7 @@ import config from '../../config.json';
 import { v4 as uuidv4 } from 'uuid';
 import PostCompoennt from "../components/PostComponent"
 
-function CreatePostComponent({ updatePosts }) {
+function CreatePostComponent({  onPostCreation  }) {
     const { username } = useParams();
     const rootURL = config.serverRootURL;
     const navigate = useNavigate(); 
@@ -86,10 +86,8 @@ function CreatePostComponent({ updatePosts }) {
                     console.log('Image uploaded successfully:', imageResponse.data);
                 }
 
-                // Update posts to refresh the feed
-                updatePosts((prevPosts) => [response.data, ...prevPosts]);
-
-
+                console.log(response.data);
+                onPostCreation();
 
                 setTitle('');
                 setContent('');

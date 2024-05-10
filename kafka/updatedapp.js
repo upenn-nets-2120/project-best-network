@@ -20,9 +20,8 @@ const kafka = new Kafka({
 const producer = kafka.producer();
 
 const sendFederatedPost = async (username, source_site, post_uuid_within_site, post_text, content_type, attach) => {
-    console.log("entered federated post section"); 
+    console.log("entered federated post producer section"); 
 
-    // Construct the post object
     const post = {
         username,
         source_site,
@@ -32,10 +31,9 @@ const sendFederatedPost = async (username, source_site, post_uuid_within_site, p
         attach
     };
 
-    // Convert the post object to JSON
     const jsonMessage = JSON.stringify(post);
 
-    // Send the JSON message to Kafka
+    // send json to kafka
     await producer.send({
         topic: 'FederatedPosts',
         messages: [{ value: jsonMessage }]
@@ -43,7 +41,7 @@ const sendFederatedPost = async (username, source_site, post_uuid_within_site, p
 };
 
 
-// Run the producer (you can add your own logic to trigger it when needed)
+// Run the producer
 const runProducer = async () => {
     await producer.connect();
 }
@@ -60,7 +58,15 @@ const consumer = kafka.consumer({
 
 const handleMessage = async ({ topic, partition, message }) => {
     const value = message.value.toString();
-    const parsedMessage = JSON.parse(value);
+    let parsedMessage;
+
+    // Check if the value is a valid JSON string
+    try {
+        parsedMessage = JSON.parse(value);
+    } catch (error) {
+        console.error(`Message is not a JSON: ${error}`);
+        return;
+    }
 
     // Check the topic of the message to call the appropriate handler function!
     if (topic === 'FederatedPosts') {
@@ -71,6 +77,7 @@ const handleMessage = async ({ topic, partition, message }) => {
         console.error(`Received message from unknown topic: ${topic}`);
     }
 };
+
 
 const runConsumer = async () => {
     await consumer.connect();
@@ -134,7 +141,7 @@ const handleFederatedPost = async (username, source_site, post_uuid_within_site,
                 hashtagInterests: [],
             };
 
-            // Call the /register route to create a new user
+            // create new user
             const registerResponse = await axios.post('http://localhost:8080/register', registrationData);
             console.log('User registered successfully:', registerResponse.data);
         } catch (error) {
@@ -162,7 +169,7 @@ const handleFederatedPost = async (username, source_site, post_uuid_within_site,
     };
     let createPostResponse;
     try {
-        // Call the /createPost route to create a new post
+        // create new post
         createPostResponse = await axios.post(`http://localhost:8080/${federatedUsername}/createPost`, postData);
         console.log(`Post created successfully for user ${federatedUsername}:`, createPostResponse.data);
     } catch (error) {
@@ -171,15 +178,15 @@ const handleFederatedPost = async (username, source_site, post_uuid_within_site,
 
     const postId = createPostResponse.data.post_id;
 
-    // Log the incoming post details
-    console.log(`Received post from ${username} on site ${source_site}: ${post_text}`);
-    console.log(`Post details - UUID: ${post_uuid_within_site}, Content Type: ${content_type}`);
-    console.log("Attach", attach); 
+    // log for debugging
+    // console.log(`Received post from ${username} on site ${source_site}: ${post_text}`);
+    // console.log(`Post details - UUID: ${post_uuid_within_site}, Content Type: ${content_type}`);
+    // console.log("Attach", attach); 
 
     if (attach != undefined || attach != null || attach != "") {
         try {
             console.log("should be in the uploadPostfromHTML now")
-            // Call the uploadPostFromHTML route to upload the image
+            // upload image from attach
             const uploadResponse = await axios.post(`http://localhost:8080/${username}/uploadPostFromHTML`, { attach, post_id: postId });
             console.log('Image uploaded successfully:', uploadResponse.data);
         } catch (error) {
@@ -189,9 +196,8 @@ const handleFederatedPost = async (username, source_site, post_uuid_within_site,
 };
 
 
-// Handler for processing incoming tweets
+// process tweets
 const handleIncomingTweet = async (tweet) => {
-    // Extract fields from the tweet
     const tweetId = tweet.id;
     const authorId = tweet.author_id;
     const tweetText = tweet.text;
@@ -211,7 +217,7 @@ const handleIncomingTweet = async (tweet) => {
     const federatedUsername = `TwitterUser-${authorId}`;
     console.log(federatedUsername);
 
-    // Check if the user exists in the system
+    // check if user exists
     let userExists = false;
 
     try {
@@ -233,7 +239,6 @@ const handleIncomingTweet = async (tweet) => {
         return;
     }
 
-    // If the user does not exist, register a new user
     if (!userExists) {
         try {
             // Define the user registration data - filled with dummy variables
@@ -248,7 +253,7 @@ const handleIncomingTweet = async (tweet) => {
                 hashtagInterests: [],
             };
 
-            // Call the /register route to create a new user
+            // create new user
             const registerResponse = await axios.post('http://localhost:8080/register', registrationData);
             console.log('User registered successfully:', registerResponse.data);
         } catch (error) {
@@ -257,7 +262,7 @@ const handleIncomingTweet = async (tweet) => {
         }
     }
 
-    // Define the tweet data
+    // tweet
     const tweetData = {
         username: federatedUsername,
         parent_id: null,
@@ -269,7 +274,7 @@ const handleIncomingTweet = async (tweet) => {
     console.log(`Received tweet from author ID ${tweet.author_id}: ${tweet.text}`);
 
     try {
-        // Call the /createPost route to create a new post with tweet data
+        // create post with tweet data
         const url = `http://localhost:8080/${federatedUsername}/createPost`;
         const response = await axios.post(url, tweetData, {
             headers: {
@@ -285,14 +290,11 @@ const handleIncomingTweet = async (tweet) => {
         }
     } catch (error) {
         if (error.response) {
-            // The request was made and the server responded with a status code outside of the range of 2xx
             console.error(`Server responded with status code: ${error.response.status}`);
             console.error('Response data:', error.response.data);
         } else if (error.request) {
-            // The request was made but no response was received
             console.error('No response received from server:', error.request);
         } else {
-            // Something happened in setting up the request that triggered an error
             console.error('Error setting up request:', error.message);
         }
     }

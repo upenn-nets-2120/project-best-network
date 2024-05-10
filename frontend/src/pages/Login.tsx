@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, ChangeEvent, useRef } from 'react';
 import axios from 'axios'; // Import Axios
 import config from '../../config.json';
 import { useNavigate } from 'react-router-dom';
@@ -11,7 +11,6 @@ export default function Login() {
   const rootURL = config.serverRootURL;
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-
   // POST /register 
 /*  Example body: 
     {
@@ -25,7 +24,8 @@ export default function Login() {
       "hashtagInterests": ["hello", "bye"] -> this should be in list format, can be null
     }
 
-*/
+*/  
+
 
   const handleLogin = async () => {
     // TODO: check username and password using /login route 

@@ -25,7 +25,7 @@ const ChatPage = () => {
     const [currentMessage, setCurrentMessage] = useState(''); //updates when user inputs something into chatbox
     const [inviteUsername, setInviteUsername] = useState(''); //updates when user selects person to invite from dropdown
     const { username } = useParams();
-    
+
     const navigate = useNavigate(); 
     const home = () => {
         navigate("/" + username + "/home");
@@ -159,6 +159,8 @@ const ChatPage = () => {
                 })
             );
         });
+
+       
 
 
 

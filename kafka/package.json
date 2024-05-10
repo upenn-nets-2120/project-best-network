@@ -2,9 +2,9 @@
     "name": "kafka-app",
     "version": "1.0.0",
     "description": "A basic Express.js application",
-    "main": "newapp.js",
+    "main": "updatedapp.js",
     "scripts": {
-        "start": "node twitter.js"
+        "start": "node updatedapp.js"
     },
     "keywords": [
         "express"

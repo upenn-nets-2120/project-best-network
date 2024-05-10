@@ -28,8 +28,11 @@ export default function Home() {
     }
   }
   
+
+
   // State variable for posts
   const [posts, setPosts] = useState<Post[]>([]);
+  const [shouldRefetchFeed, setShouldRefetchFeed] = useState(false); 
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,7 +44,12 @@ export default function Home() {
       }
     };
     fetchData();
-  }, []);
+  }, [shouldRefetchFeed]);
+
+  const handlePostCreation = () => {
+    // Set the state variable to true to trigger feed refetch
+    setShouldRefetchFeed(true);
+  };
 
   return (
     <div className='w-screen h-screen'>
@@ -58,7 +66,7 @@ export default function Home() {
         </div>
         
         <div className='h-full w-full mx-auto max-w-[1800px] flex flex-col items-center space-y-4'>
-           <CreatePostComponent updatePosts={setPosts} />
+        <CreatePostComponent onPostCreation={handlePostCreation} />
           {
             // Map each post to a PostComponent
             posts.map(post => (

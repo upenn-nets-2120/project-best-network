@@ -296,26 +296,28 @@ var uploadFederatedPost = async function(req, res) {
 var uploadImageFromHtmlTag = async function(req, res) {
 
   const { attach, post_id } = req.body;
-  try {
-    console.log("entered upload image from HTMl");
-    // Extract the image URL from the HTML <img> tag
-    const srcRegex = /src="([^"]*)"/;
-    const match = attach.match(srcRegex);
-    if (!match || match.length < 2) {
-      throw new Error('Invalid HTML <img> tag');
+  if (attach) {
+    try {
+      console.log("entered upload image from HTMl");
+      // Extract the image URL from the HTML <img> tag
+      const srcRegex = /src="([^"]*)"/;
+      const match = attach.match(srcRegex);
+      if (!match || match.length < 2) {
+        throw new Error('Invalid HTML <img> tag');
+      }
+      const imageUrl = match[1];
+  
+      console.log("postID:", post_id);
+  
+      // Update the posts table with the image URL
+      const updatePostQuery = `UPDATE posts SET photo = '${imageUrl}' WHERE post_id = '${post_id}';`;
+      await db.send_sql(updatePostQuery);
+  
+      console.log('Image uploaded successfully:', imageUrl);
+    } catch (error) {
+      console.error('Error uploading image from HTML tag:', error);
+      throw error;
     }
-    const imageUrl = match[1];
-
-    console.log("postID:", post_id);
-
-    // Update the posts table with the image URL
-    const updatePostQuery = `UPDATE posts SET photo = '${imageUrl}' WHERE post_id = '${post_id}';`;
-    await db.send_sql(updatePostQuery);
-
-    console.log('Image uploaded successfully:', imageUrl);
-  } catch (error) {
-    console.error('Error uploading image from HTML tag:', error);
-    throw error;
   }
 };
 
