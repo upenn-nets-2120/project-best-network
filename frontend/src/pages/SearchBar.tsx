@@ -15,7 +15,8 @@ const MessageComponent = ({ sender, message }: { sender: string, message: string
 }
 
 export default function ChatInterface() {
-    const [messages, setMessages] = useState([{ sender: 'chatbot', message: 'Hi there! What movie review questions do you have?' }]);
+    console.log("chat!")
+    const [messages, setMessages] = useState([{ sender: 'chatbot', message: 'Hi there! What post questions do you have?' }]);
     const [input, setInput] = useState<string>('');
     const { username } = useParams();
     const navigate = useNavigate(); 
@@ -32,7 +33,7 @@ export default function ChatInterface() {
     const sendMessage = async () => {
         // TODO: add the user's message to the messages state 
         const prevMessages = messages.map(m => `${m.sender}: ${m.message}`).join('\n');
-
+        console.log("sending!")
 
         setMessages(prevMessages => [
             ...prevMessages,
@@ -41,7 +42,7 @@ export default function ChatInterface() {
         
         try {
             // TODO: make a call to the getMovies route 
-            const response = await axios.post(`${rootURL}/${username}/getPost`, { context : prevMessages, question: input }, { withCredentials: true });
+            const response = await axios.post(`${rootURL}/:username/search`, { input: input }, { withCredentials: true });
 
              // TODO: add the chatbot's response to the messages state
             if (response.data && response.data.message) {

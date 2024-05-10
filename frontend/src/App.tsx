@@ -18,7 +18,7 @@ function App() {
         <Route path='/signup' element={<Signup />} />
         <Route path='/:username/home' element={<Home />} />
         <Route path='/:username/friends' element={<Friends />} />
-        <Route path="/:username/chat_nlp" element={<SearchBar />} />
+        <Route path="/:username/search" element={<SearchBar />} />
         <Route path="/:username/chat" element={<ChatPage />} />
         <Route path="/:username/setProfilePhoto" element={<ProfilePhoto />} />
         <Route path="/:username/ProfilePage" element={<ProfilePage />} />
