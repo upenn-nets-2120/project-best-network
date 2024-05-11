@@ -87,12 +87,11 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
         setContent('');
       } else {
         console.error('Failed to create post:', response);
-        alert('Failed to create post.');
       }
     } catch (error) {
       console.error('Error creating post:', error);
-      alert('Error creating post.');
     }
+    alert('Post successfully created');
   };  
 
   return (
