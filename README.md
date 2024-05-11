@@ -49,6 +49,7 @@ SEAS emails: jsusser@seas.upenn.edu, vavali@seas.upenn.edu, kimliang@seas.upenn.
 - Run `npm create_tables`.
 
 **ChromaDB:**
+<br>
 Run Commands below
 - `apt update`
 - `apt install -y libhdf5-serial-dev pkg-config`
@@ -60,6 +61,7 @@ Make sure you have chroma running in a separate terminal with
 Then finally, to start chroma run `chroma run --host 0.0.0.0`
 
 **OpenAI/NLP**
+<br>
 Make sure to add openai key to .env file!
 
 ### Kafka: 
