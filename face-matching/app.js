@@ -194,16 +194,16 @@ initializeFaceModels()
     .then(async (results) => {
       console.info("All images indexed.");
   
-      /** 
-        const search = 'query.jpg';
+      // /** 
+      //   const search = 'query.jpg';
     
-        console.log('\nTop-k indexed matches to ' + search + ':');
-        for (var item of await findTopKMatches(collection, search, 5)) {
-          for (var i = 0; i < item.ids[0].length; i++) {
-            console.log(item.ids[0][i] + " (Euclidean distance = " + Math.sqrt(item.distances[0][i]) + ") in " + item.documents[0][i]);
-          }
-        }
-      ** (/)
+      //   console.log('\nTop-k indexed matches to ' + search + ':');
+      //   for (var item of await findTopKMatches(collection, search, 5)) {
+      //     for (var i = 0; i < item.ids[0].length; i++) {
+      //       console.log(item.ids[0][i] + " (Euclidean distance = " + Math.sqrt(item.distances[0][i]) + ") in " + item.documents[0][i]);
+      //     }
+      //   }
+      // ** (/)
     
     })
     .catch((err) => {
