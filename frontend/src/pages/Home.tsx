@@ -45,6 +45,23 @@ export default function Home() {
     }
   };
   useEffect(() => {
+    axios.get(`${rootURL}/${username}/isLoggedIn`, { withCredentials: true })
+    .then((response) => {
+        //setIsLoggedIn(response.data.isLoggedIn);
+        console.log(response)
+        if (!response.data.isLoggedIn){
+          navigate("/");
+        }
+
+    })
+    .catch((error) => {
+      navigate("/");
+        console.error('Error checking login status:', error);
+    });
+    fetchData();
+  }, []);
+
+  useEffect(() => {
     
     fetchData();
   }, [currentPage, pageSize, username]);

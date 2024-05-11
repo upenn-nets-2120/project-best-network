@@ -103,7 +103,6 @@ var post_add_hashtag = async function(req, res) {
     const { hashtag } = req.body
     const userID = req.session.user_id;
     console.log(userID);
-    console.log(username);
 
     var hashtagQuery = `SELECT hashtags.text 
             FROM users

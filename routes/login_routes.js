@@ -321,12 +321,12 @@ var postLogout = async function(req, res) {
 //this is required for chatRoom
 var is_logged_in = async function(req, res) {
   var username = req.params.username;
-  // if (username == null){
-  //     return res.status(403).json({ error: 'Not logged in.' });
-  //   }
-  // if (!helper.isLoggedIn(req,username)) {
-  //     return res.status(403).json({ error: 'Not logged in.' });
-  // }
+  if (username == null){
+      return res.status(403).json({ error: 'Not logged in.' });
+    }
+  if (!helper.isLoggedIn(req,username)) {
+      return res.status(403).json({ error: 'Not logged in.' });
+  }
   res.status(200).json({ isLoggedIn : true });
 };
 
