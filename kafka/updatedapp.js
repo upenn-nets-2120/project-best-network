@@ -109,7 +109,7 @@ const handleFederatedPost = async (username, source_site, post_uuid_within_site,
 
     try {
         const checkRegistrationResponse = await axios.get(
-            `$${config.ec2}:8080/checkRegistration`,
+            `${config.ec2}:8080/checkRegistration`,
             {
                 params: {
                     federatedUsername: federatedUsername,
@@ -171,7 +171,7 @@ const handleFederatedPost = async (username, source_site, post_uuid_within_site,
     let createPostResponse;
     try {
         // create new post
-        createPostResponse = await axios.post(`$${config.ec2}:8080/${federatedUsername}/createPost`, postData);
+        createPostResponse = await axios.post(`${config.ec2}:8080/${federatedUsername}/createPost`, postData);
         console.log(`Post created successfully for user ${federatedUsername}:`, createPostResponse.data);
     } catch (error) {
         console.error(`Failed to create post for user ${federatedUsername}:`, error);
