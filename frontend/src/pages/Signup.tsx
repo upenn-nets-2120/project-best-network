@@ -60,9 +60,14 @@ export default function Signup() {
             } else {
                 alert('Registration failed.');
             }
-        } catch (error) {
-            if (error.response && error.response.data && error.response.data.error) {
-                alert(`Registration failed: ${error.response.data.error}`);
+        } catch (error: unknown) {
+            if (typeof error === 'object' && error !== null) {
+                const typedError = error as { response?: { data?: { error?: string } } };
+                if (typedError.response?.data?.error) {
+                    alert(`Registration failed: ${typedError.response.data.error}`);
+                } else {
+                    alert('Registration failed: An unknown error occurred.');
+                }
             } else {
                 alert('Registration failed: An unknown error occurred.');
             }
