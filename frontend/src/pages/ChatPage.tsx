@@ -38,7 +38,7 @@ const ChatPage = () => {
         axios.get(`${rootURL}/${username}/isLoggedIn`, { withCredentials: true })
             .then((response) => {
                 //setIsLoggedIn(response.data.isLoggedIn);
-                setISLoggedIn(true);
+                setIsLoggedIn(true);
             })
             .catch((error) => {
                 console.error('Error checking login status:', error);
