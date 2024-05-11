@@ -9,12 +9,18 @@ export default function Home() {
   const { username } = useParams();
   const rootURL = config.serverRootURL;
   const navigate = useNavigate(); 
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
   const friends = () => navigate(`/${username}/friends`);
   const profile = () => navigate(`/${username}/ProfilePage`);
   const chat = () => navigate(`/${username}/chat`);
   const federatedPosts = () => navigate(`/${username}/federated_posts`);
   const search = () => navigate(`/${username}/search`);
+
+  
   
   const logout = async () => {
     try {
@@ -29,27 +35,50 @@ export default function Home() {
     }
   }
   
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(`${rootURL}/${username}/feed?page=${currentPage}&pageSize=${pageSize}`, { withCredentials: true });
+      setPosts(response.data.results);
+      setTotalPages(Math.ceil(response.data.totalPosts / pageSize));
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    }
+  };
+  useEffect(() => {
+    axios.get(`${rootURL}/${username}/isLoggedIn`, { withCredentials: true })
+    .then((response) => {
+        //setIsLoggedIn(response.data.isLoggedIn);
+        console.log(response)
+        if (!response.data.isLoggedIn){
+          navigate("/");
+        }
 
-
-  // State variable for posts
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [shouldRefetchFeed, setShouldRefetchFeed] = useState(false); 
+    })
+    .catch((error) => {
+      navigate("/");
+        console.error('Error checking login status:', error);
+    });
+    fetchData();
+  }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get(`${rootURL}/${username}/feed`, { withCredentials: true });
-        setPosts(response.data.results);  
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-      }
-    };
+    
     fetchData();
-  }, [shouldRefetchFeed]);
+  }, [currentPage, pageSize, username]);
 
   const handlePostCreation = () => {
-    // Set the state variable to true to trigger feed refetch
-    setShouldRefetchFeed(true);
+    // Refresh posts when a new post is created
+    fetchData();
+  };
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
   };
 
   return (
@@ -76,6 +105,10 @@ export default function Home() {
                 <PostComponent key={post.post_id} title={post.title} post_id={post.post_id} user={post.username} description={post.content} />
             ))
           }
+          <div>
+            {currentPage > 1 && <button onClick={() => goToPage(currentPage - 1)}>Previous Page</button>}
+            {currentPage < totalPages && <button onClick={nextPage}>Next Page</button>}
+          </div>
         </div>
     </div>
   )
