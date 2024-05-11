@@ -72,7 +72,7 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
   
       console.log('Post Data:', postData);
   
-      const response: AxiosResponse<Post> = await axios.post(`http://localhost:8080/${username}/createFederatedPost`, postData, {
+      const response: AxiosResponse<Post> = await axios.post(`${rootURL}/${username}/createFederatedPost`, postData, {
         withCredentials: true,
         headers: {
           'Content-Type': 'application/json',
