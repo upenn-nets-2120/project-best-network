@@ -37,12 +37,13 @@ const ChatPage = () => {
         // Check if logged in 
         axios.get(`${rootURL}/${username}/isLoggedIn`, { withCredentials: true })
             .then((response) => {
-                //setIsLoggedIn(response.data.isLoggedIn);
-                setIsLoggedIn(true);
+                // setIsLoggedIn(response.data.isLoggedIn);
+               
             })
             .catch((error) => {
                 console.error('Error checking login status:', error);
             });
+         setIsLoggedIn(true);
 
 
         // send username for server upon connection with socket
