@@ -1,6 +1,6 @@
 {
     "database": {
-      "host": "localhost",
+      "host": "best-network-rdd.cltsivkjdhkr.us-east-1.rds.amazonaws.com",
       "port": "3306",
       "name": "bestnetworkDB"
     },
@@ -8,5 +8,5 @@
       "bucketName": "best-network-nets212-sp24"
     },
     "serverPort": "8080",
-    "ec2":"http://localhost"
+    "ec2":"http://ec2-35-153-232-6.compute-1.amazonaws.com"
   }
