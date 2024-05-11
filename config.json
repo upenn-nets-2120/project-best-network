@@ -8,5 +8,7 @@
       "bucketName": "best-network-nets212-sp24"
     },
     "serverPort": "8080",
-    "ec2":"http://localhost"
+    "ec2":"http://localhost",
+    "groupId": "g13",
+    "bootstrapServers": ["localhost:9092"]
   }

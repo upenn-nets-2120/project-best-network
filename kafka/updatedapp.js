@@ -1,7 +1,7 @@
 const express = require('express');
 const { Kafka, CompressionTypes, CompressionCodecs } = require('kafkajs');
 const SnappyCodec = require('kafkajs-snappy');
-const config = require('../config.json');
+const config = require('./config.json');
 const axios = require('axios');
 
 // Setting up Snappy compression codec
