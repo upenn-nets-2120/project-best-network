@@ -92,7 +92,7 @@ export default function Signup() {
     };
 
     return (
-        <div className='w-screen h-screen flex items-center justify-center'>
+        <div className='w-screen flex items-center justify-center overflow-auto pt-4'>
             <div className="w-full max-w-lg flex flex-col items-center"> {/* Container */}
 
             <form onSubmit={handleSubmit}>
@@ -203,17 +203,17 @@ export default function Signup() {
 
             {/* Display top hashtags */}
             {topHashtags.length > 0 && (
-                <div>
-                    <h2>Trending Hashtags</h2>
-                    <ul>
+                <div className='rounded-md bg-slate-50 p-6 mt-4 w-full pb-4'> {/* Added pb-4 for padding below */}
+                    <h2 className='font-bold text-xl mb-2 text-center'>Trending Hashtags</h2>
+                    <ul className='list-disc pl-5 space-y-1'>
                         {topHashtags.map((hashtag, index) => (
-                            <li key={index}>{hashtag}</li>
+                            <li key={index} className='text-gray-800'>{hashtag}</li>
                         ))}
                     </ul>
                 </div>
             )}
+         <div className='p-4'></div> {/* Additional div with padding */}
         </div>
-
         </div>
     );
 }
