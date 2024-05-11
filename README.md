@@ -85,7 +85,7 @@ ssh -i ~/.ssh/nets2120-project.pem -4 -L 9092:ip-172-31-29-52.ec2.internal:9092 
    mvn clean
     ```
 
-#### We created separate branch (ec2) for hosting on cloud where the localhost root urls for server are replaced with ec2 instance public ip via config.json in frontend, backend and kafka (since kafka calls backend server to create post).
+#### We created separate branch (ec2) for hosting on cloud where the localhost root urls for server are replaced with ec2 instance public ip via config.json in frontend, backend, spark java, and kafka (since kafka calls backend server to create post).
 
 ## Declaration:
 All code submitted was written by us or inspired by previous homework assignments in this course. 
