@@ -178,7 +178,7 @@ initializeFaceModels()
 
   // START COMMENT BELOW WITH /**
 
-  /**
+  
   fs.readdir("./face-matching/images", function (err, files) {
     if (err) {
       console.error("Could not list the directory.", err);
@@ -210,7 +210,7 @@ initializeFaceModels()
       console.error("Error indexing images:", err);
     });
     });
-    **/
+  
 
     //ADD **/ Above this line for block comment
     console.log("done");
