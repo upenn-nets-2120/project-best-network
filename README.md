@@ -38,6 +38,10 @@ SEAS emails: jsusser@seas.upenn.edu, vavali@seas.upenn.edu, kimliang@seas.upenn.
    export RDS_USER="admin"
    export RDS_PWD="best-network"
    export OPENAI_API_KEY=""
+   export AWS_ACCESS_KEY_ID=""
+   export AWS_SECRET_ACCESS_KEY=""
+   export AUTH_TOKEN=""
+
    ```
 6. Run `source .env`.
 
