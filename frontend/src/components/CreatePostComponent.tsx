@@ -98,6 +98,7 @@ function CreatePostComponent({ onPostCreation }: CreatePostProps) {
                 setTitle('');
                 setContent('');
                 setImage(null);
+                window.location.reload();
                 navigate("/" + username + "/home");
             } else {
                 console.error('Failed to create post:', response);

@@ -122,7 +122,7 @@ const handleIncomingPost = async (username, source_site, post_uuid_within_site, 
 
 // Helper to extract hashtags from text
 const extractHashtags = (text) => {
-    const regex = /#\w+/g; // Matches words starting with '#'
+    const regex = /#\w+/g; 
     const hashtags = text.match(regex);
     return hashtags ? hashtags.map(tag => tag.slice(1)) : [];
 };

@@ -85,6 +85,7 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
         console.log('Post created successfully:', response.data);
         updatePosts(prevPosts => [...prevPosts, response.data]);
         setContent('');
+        setImage(null);
       } else {
         console.error('Failed to create post:', response);
       }
