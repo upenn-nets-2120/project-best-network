@@ -19,7 +19,7 @@ function CreateFederatedPostComponent({ updatePosts }: CreateFederatedPostCompon
   const { username } = useParams();
   const rootURL = config.serverRootURL;
   const [content, setContent] = useState('');
-  const [image, setImage] = useState<File | null>(null); // State to hold the image file
+  const [image, setImage] = useState<File | null>(null); 
   const handleContentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(event.target.value);
   };

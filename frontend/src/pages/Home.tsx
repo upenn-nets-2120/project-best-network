@@ -5,6 +5,16 @@ import config from '../../config.json';
 import PostComponent from '../components/PostComponent'
 import CreatePostComponent from '../components/CreatePostComponent';
 
+
+interface Post {
+  post_id: number;
+  title: string;
+  username: string;
+  content?: string;
+  initialLikes?: number;
+}
+
+
 export default function Home() {
   const { username } = useParams();
   const rootURL = config.serverRootURL;
@@ -49,10 +59,16 @@ export default function Home() {
     fetchData();
   }, [currentPage, pageSize, username]);
 
-  const handlePostCreation = () => {
-    // Refresh posts when a new post is created
-    fetchData();
+  const handlePostCreation = async () => {
+    try {
+      const response = await axios.get(`${rootURL}/${username}/feed?page=${currentPage}&pageSize=${pageSize}`, { withCredentials: true });
+      setPosts(response.data.results);
+      setTotalPages(Math.ceil(response.data.totalPosts / pageSize));
+    } catch (error) {
+      console.error('Error fetching posts after post creation:', error);
+    }
   };
+  
 
   const goToPage = (page: number) => {
     setCurrentPage(page);
