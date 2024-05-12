@@ -3,17 +3,30 @@ import axios from 'axios';
 import config from '../../config.json';
 import { useParams } from 'react-router-dom';
 
-export default function PostComponent({
-  post_id,
-  title = 'Post title',
-  user = 'arnavchopra',
-  description = 'Lorem ipsum dolor sit amet consectetur adipisicing elit.',
-  initialLikes = 0,
-}) {
-  const [likes, setLikes] = useState(initialLikes);
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState('');
-  const { username } = useParams();
+interface Comment {
+    username: string;
+    content: string;
+}
+
+interface PostComponentProps {
+    post_id: number;
+    title?: string;
+    user?: string;
+    description?: string;
+    initialLikes?: number;
+}
+  
+  export default function PostComponent({
+    post_id,
+    title = '',
+    user = '',
+    description = '',
+    initialLikes = 0,
+  }: PostComponentProps) {
+    const [likes, setLikes] = useState(initialLikes);
+    const [comments, setComments] = useState<Comment[]>([]);
+    const [newComment, setNewComment] = useState('');
+    const { username } = useParams();
 
   // Fetch initial likes for the post
   const fetchInitialLikes = async () => {

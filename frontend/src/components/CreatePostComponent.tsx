@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import config from '../../config.json';
 import { v4 as uuidv4 } from 'uuid';
-import PostCompoennt from "../components/PostComponent"
+import PostComponent from "../components/PostComponent"
 
-function CreatePostComponent({  onPostCreation  }) {
+interface CreatePostProps {
+    onPostCreation: () => void;
+  }
+
+function CreatePostComponent({ onPostCreation }: CreatePostProps) {
     const { username } = useParams();
     const rootURL = config.serverRootURL;
     const navigate = useNavigate(); 
@@ -15,20 +19,22 @@ function CreatePostComponent({  onPostCreation  }) {
     const [image, setImage] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleFileChange = (event) => {
+    const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files && event.target.files[0];
-        setImage(file);
-    };
+        if (file) {
+          setImage(file);
+        }
+      };
 
-    const handleTitleChange = (event) => {
+    const handleTitleChange = (event: { target: { value: React.SetStateAction<string>; }; }) => {
         setTitle(event.target.value);
     };
 
-    const handleContentChange = (event) => {
+    const handleContentChange = (event: { target: { value: React.SetStateAction<string>; }; }) => {
         setContent(event.target.value);
     };
 
-    const parseHashtags = (content) => {
+    const parseHashtags = (content: string) => {
         const hashtagPattern = /#\w+/g;
         const hashtagsArray = content.match(hashtagPattern) || [];
         return hashtagsArray.map(tag => tag.slice(1));
@@ -36,7 +42,7 @@ function CreatePostComponent({  onPostCreation  }) {
 
     const post_uuid = uuidv4();
 
-    const handleSubmit = async (event) => {
+    const handleSubmit = async (event: { preventDefault: () => void; }) => {
         event.preventDefault();
 
         if (isSubmitting) {
@@ -92,6 +98,7 @@ function CreatePostComponent({  onPostCreation  }) {
                 setTitle('');
                 setContent('');
                 setImage(null);
+                window.location.reload();
                 navigate("/" + username + "/home");
             } else {
                 console.error('Failed to create post:', response);

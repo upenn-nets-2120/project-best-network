@@ -5,6 +5,14 @@ import config from '../../config.json';
 import CreateFederatedPostComponent from '../components/CreateFederatedPostComponent.tsx';
 import PostComponent from '../components/PostComponent';
 
+interface Post {
+  title: string;
+  username: string;
+  content: string;
+  post_id: number;
+}
+
+
 export default function FederatedPostsPage() {
   const { username } = useParams();
   const rootURL = config.serverRootURL;
@@ -28,7 +36,7 @@ export default function FederatedPostsPage() {
     }
   };
 
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<Post[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {

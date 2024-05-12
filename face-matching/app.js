@@ -210,7 +210,7 @@ initializeFaceModels()
       console.error("Error indexing images:", err);
     });
     });
-  
+
 
     //ADD **/ Above this line for block comment
     console.log("done");

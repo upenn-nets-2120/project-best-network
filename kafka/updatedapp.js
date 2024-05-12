@@ -19,6 +19,26 @@ const kafka = new Kafka({
 // PRODUCER CODE
 const producer = kafka.producer();
 
+
+// Run the producer
+const runProducer = async () => {
+    await producer.connect();
+    
+    try {
+        const username = 'testUser';
+        const source_site = 'testSite';
+        const post_uuid_within_site = 'dummyUUID';
+        const post_text = 'This is a dummy post text';
+        const content_type = 'text/plain';
+        const attach = '<img src="dummyImage.jpg" alt="Dummy Image" />';
+    
+        await sendFederatedPost(username, source_site, post_uuid_within_site, post_text, content_type, attach);
+        console.log('Dummy post sent successfully!');
+      } catch (error) {
+        console.error('Error creating dummy post:', error);
+      }
+}
+
 const sendFederatedPost = async (username, source_site, post_uuid_within_site, post_text, content_type, attach) => {
     console.log("entered federated post producer section"); 
 
@@ -32,6 +52,7 @@ const sendFederatedPost = async (username, source_site, post_uuid_within_site, p
     };
 
     const jsonMessage = JSON.stringify(post);
+    console.log(jsonMessage); 
 
     // send json to kafka
     await producer.send({
@@ -39,12 +60,6 @@ const sendFederatedPost = async (username, source_site, post_uuid_within_site, p
         messages: [{ value: jsonMessage }]
     });
 };
-
-
-// Run the producer
-const runProducer = async () => {
-    await producer.connect();
-}
 
 // Run the producer if needed (e.g., for testing)
 runProducer().catch(console.error);
