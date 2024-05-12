@@ -8,7 +8,7 @@ const feed_routes = require('./feed_routes.js');
 const search_routes = require('./search_routes');
 const kafka_routes = require('./kafka_routes.js'); 
 
-// const actor_routes = require('./actor_routes.js');
+const actor_routes = require('./actor_routes.js');
 const { ChromaClient } = require("chromadb");
 
 
@@ -79,8 +79,8 @@ function register_routes(app) {
     //actor routes
     
     app.post('/:username/search', search_routes.get_post)
-    // app.get('/:username/getActors', actor_routes.get_actors);
-    // app.post('/:username/setActor', actor_routes.set_actor);
+    app.get('/:username/getActors', actor_routes.get_actors);
+    app.post('/:username/setActor', actor_routes.set_actor);
     // federated post routes
     
     app.post('/:username/createFederatedPost', kafka_routes.create_federated_post); 

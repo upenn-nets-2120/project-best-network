@@ -45,17 +45,34 @@ export default function Home() {
     }
   }
   
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(`${rootURL}/${username}/feed?page=${currentPage}&pageSize=${pageSize}`, { withCredentials: true });
+      setPosts(response.data.results);
+      setTotalPages(Math.ceil(response.data.totalPosts / pageSize));
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    }
+  };
+  useEffect(() => {
+    axios.get(`${rootURL}/${username}/isLoggedIn`, { withCredentials: true })
+    .then((response) => {
+        //setIsLoggedIn(response.data.isLoggedIn);
+        console.log(response)
+        if (!response.data.isLoggedIn){
+          navigate("/");
+        }
+
+    })
+    .catch((error) => {
+      navigate("/");
+        console.error('Error checking login status:', error);
+    });
+    fetchData();
+  }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get(`${rootURL}/${username}/feed?page=${currentPage}&pageSize=${pageSize}`, { withCredentials: true });
-        setPosts(response.data.results);
-        setTotalPages(Math.ceil(response.data.totalPosts / pageSize));
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-      }
-    };
+    
     fetchData();
   }, [currentPage, pageSize, username]);
 
