@@ -545,7 +545,7 @@ public class runSocialNetwork {
 
         // Run the adsorption propagation algorithm
         JavaPairRDD<Tuple2<Integer, String>,Tuple2<Integer, Double>> vertexLabelRankings = adsorptionPropagation(edgeRDD, usersRDD);
-
+        
         logger.info("*** Finished Adsorption! ***");
 
         sendResultsToDatabase(vertexLabelRankings);
