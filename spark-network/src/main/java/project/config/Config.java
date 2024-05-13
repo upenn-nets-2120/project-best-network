@@ -11,7 +11,7 @@ package project.config;
  */
 public class Config {
 
-    public static final String DATABASE_CONNECTION = "jdbc:mysql://localhost:3306/bestnetworkDB";
+    public static final String DATABASE_CONNECTION = "jdbc:mysql://best-network-rdd.cltsivkjdhkr.us-east-1.rds.amazonaws.com:3306/bestnetworkDB";
     public static final String DATABASE_USERNAME = "admin";
     public static final String DATABASE_PASSWORD = "best-network";
 
