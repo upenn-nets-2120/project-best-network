@@ -72,7 +72,7 @@ Make sure to add openai key to .env file!
 ```
 ssh -i ~/.ssh/nets2120-project.pem -4 -L 9092:ip-172-31-29-52.ec2.internal:9092 ubuntu@ec2-44-203-65-104.compute-1.amazonaws.com
 ```
-
+5. cd kafka and run npm run start
 ### Frontend:
 - cd frontend then npm install
 - Execute `npm run dev --host`.
