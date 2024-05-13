@@ -40,7 +40,6 @@
     "axios": "^0.28.1",
     "bcrypt": "^5.1.1",
     "cheerio": "^1.0.0-rc.12",
-    "chromadb": "1.8.1",
     "cors": "^2.8.5",
     "csv-parser": "^3.0.0",
     "esbuild": "^0.19.11",

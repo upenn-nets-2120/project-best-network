@@ -3,5 +3,5 @@
     "bootstrapServers": ["localhost:9092"],
     "topic": "sample-topic",
     "port": 3000,
-    "ec2":"http://localhost"
+    "ec2":"http://ec2-35-153-232-6.compute-1.amazonaws.com"
 }
