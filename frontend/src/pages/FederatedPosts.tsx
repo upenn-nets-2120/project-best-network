@@ -6,10 +6,11 @@ import CreateFederatedPostComponent from '../components/CreateFederatedPostCompo
 import PostComponent from '../components/PostComponent';
 
 interface Post {
+  post_id: number;
   title: string;
   username: string;
   content: string;
-  post_id: number;
+  
 }
 
 
@@ -48,7 +49,7 @@ export default function FederatedPostsPage() {
       }
     };
     fetchData();
-  }, []);
+  }, [username, rootURL]);
 
   return (
     <div className='w-screen h-screen'>
@@ -66,9 +67,6 @@ export default function FederatedPostsPage() {
       
       <div className='h-full w-full mx-auto max-w-[1800px] flex flex-col items-center space-y-4'>
         <CreateFederatedPostComponent updatePosts={setPosts} />
-        {posts.map(post => (
-        <PostComponent key={post.post_id} title={post.title} post_id={post.post_id} user={post.username} description={post.content} />
-        ))}
       </div>
     </div>
   );

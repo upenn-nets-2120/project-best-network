@@ -25,8 +25,8 @@ const runProducer = async () => {
     await producer.connect();
     
     try {
-        const username = 'testUser';
-        const source_site = 'testSite';
+        const username = 'testuser';
+        const source_site = 'g13';
         const post_uuid_within_site = 'dummyUUID';
         const post_text = 'This is a dummy post text';
         const content_type = 'text/plain';
@@ -61,7 +61,7 @@ const sendFederatedPost = async (username, source_site, post_uuid_within_site, p
     });
 };
 
-// Run the producer if needed (e.g., for testing)
+
 runProducer().catch(console.error);
 
 // CONSUMER CODE
@@ -195,9 +195,9 @@ const handleFederatedPost = async (username, source_site, post_uuid_within_site,
     const postId = createPostResponse.data.post_id;
 
     // log for debugging
-    // console.log(`Received post from ${username} on site ${source_site}: ${post_text}`);
-    // console.log(`Post details - UUID: ${post_uuid_within_site}, Content Type: ${content_type}`);
-    // console.log("Attach", attach); 
+    console.log(`Received post from ${username} on site ${source_site}: ${post_text}`);
+    console.log(`Post details - UUID: ${post_uuid_within_site}, Content Type: ${content_type}`);
+    console.log("Attach", attach); 
 
     if (attach != undefined || attach != null || attach != "") {
         try {

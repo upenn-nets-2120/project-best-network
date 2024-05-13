@@ -13,64 +13,155 @@ const PORT = config.serverPort;
 
 
   // GET /feed
-var feed = async function(req, res) {
-  // Check if a user is logged in
-  console.log(req.session.user_id);
-  if (req.session.user_id === null) {
-      return res.status(403).json({ error: 'Not logged in.' });
-  }
 
-  try {
-      // pagination requirements 
+  var feed = async function(req, res) {
+    // Check if a user is logged in
+    console.log(req.session.user_id);
+    if (req.session.user_id === null) {
+      return res.status(403).json({ error: 'Not logged in.' });
+    }
+  
+    try {
+      // Pagination requirements 
       const page = req.query.page ? parseInt(req.query.page) : 1;
       const pageSize = req.query.pageSize ? parseInt(req.query.pageSize) : 10;
       const offset = (page - 1) * pageSize;
-
-      // posts for the current user's feed
+  
+      // Posts for the current user's feed
       const getLinkedId = `SELECT * FROM users WHERE id = ${req.session.user_id}`;
       const users = await db.send_sql(getLinkedId);
       const user = users[0];
-
+  
       const feedQuery = `
-      SELECT outer_post.post_id AS post_id, users.username AS username, outer_post.parent_post AS parent_post, 
-      outer_post.title AS title, outer_post.content AS content
-      FROM posts AS outer_post
-      INNER JOIN users ON outer_post.author_id = users.id
-      WHERE outer_post.author_id IN (
+        SELECT outer_post.post_id AS post_id, users.username AS username, outer_post.parent_post AS parent_post, 
+        outer_post.title AS title, outer_post.content AS content
+        FROM posts AS outer_post
+        INNER JOIN users ON outer_post.author_id = users.id
+        WHERE outer_post.author_id IN (
           SELECT followed
           FROM friends
           WHERE follower = '${user.linked_id}'
-      )
-      OR outer_post.author_id = ${req.session.user_id}
-      OR outer_post.post_id IN (
-        SELECT post_to_hashtags.post_id
-        FROM post_to_hashtags 
-        INNER JOIN hashtagInterests ON hashtagInterests.hashtagID = post_to_hashtags.hashtag_id
-        WHERE hashtagInterests.userID = outer_post.author_id
-      )
-      OR outer_post.post_id IN (
-        SELECT socialNetworkPostRecommendations.postID
-        FROM socialNetworkPostRecommendations 
-        INNER JOIN users ON users.id = socialNetworkPostRecommendations.userLabelID
-        WHERE socialNetworkPostRecommendations.userLabelID = outer_post.author_id 
-        ORDER BY socialNetworkPostRecommendations.weight DESC
-      )
-      OR outer_post.title = 'Federated Post'
-      OR outer_post.title = 'Tweet'
-      ORDER BY post_id DESC
-      LIMIT ${pageSize} OFFSET ${offset};
-    `;
-
+        )
+        OR outer_post.author_id = ${req.session.user_id}
+        OR outer_post.post_id IN (
+          SELECT post_to_hashtags.post_id
+          FROM post_to_hashtags 
+          INNER JOIN hashtagInterests ON hashtagInterests.hashtagID = post_to_hashtags.hashtag_id
+          WHERE hashtagInterests.userID = outer_post.author_id
+        )
+        OR outer_post.post_id IN (
+          SELECT socialNetworkPostRecommendations.postID
+          FROM socialNetworkPostRecommendations 
+          INNER JOIN users ON users.id = socialNetworkPostRecommendations.userLabelID
+          WHERE socialNetworkPostRecommendations.userLabelID = outer_post.author_id 
+          ORDER BY socialNetworkPostRecommendations.weight DESC
+        )
+        OR outer_post.title = 'Federated Post'
+        OR outer_post.title = 'Tweet'
+        ORDER BY post_id DESC
+        LIMIT ${pageSize} OFFSET ${offset};
+      `;
+  
       const posts = await db.send_sql(feedQuery);
-
-      // Return the feed posts
-      return res.status(200).json({ results: posts, page, pageSize });
-  } catch (error) {
+  
+      // Query to get the total number of posts
+      const countQuery = `
+        SELECT COUNT(*) AS totalPosts
+        FROM posts AS outer_post
+        INNER JOIN users ON outer_post.author_id = users.id
+        WHERE outer_post.author_id IN (
+          SELECT followed
+          FROM friends
+          WHERE follower = '${user.linked_id}'
+        )
+        OR outer_post.author_id = ${req.session.user_id}
+        OR outer_post.post_id IN (
+          SELECT post_to_hashtags.post_id
+          FROM post_to_hashtags 
+          INNER JOIN hashtagInterests ON hashtagInterests.hashtagID = post_to_hashtags.hashtag_id
+          WHERE hashtagInterests.userID = outer_post.author_id
+        )
+        OR outer_post.post_id IN (
+          SELECT socialNetworkPostRecommendations.postID
+          FROM socialNetworkPostRecommendations 
+          INNER JOIN users ON users.id = socialNetworkPostRecommendations.userLabelID
+          WHERE socialNetworkPostRecommendations.userLabelID = outer_post.author_id 
+          ORDER BY socialNetworkPostRecommendations.weight DESC
+        )
+        OR outer_post.title = 'Federated Post'
+        OR outer_post.title = 'Tweet';
+      `;
+  
+      const countResult = await db.send_sql(countQuery);
+      const totalPosts = countResult[0].totalPosts;
+  
+      // Return the feed posts along with totalPosts
+      return res.status(200).json({ results: posts, page, pageSize, totalPosts });
+    } catch (error) {
       // Handle database query errors
       console.error("Error querying database:", error);
       return res.status(500).json({ error: 'Error querying database.' });
-  }
-};
+    }
+  };
+  
+// var feed = async function(req, res) {
+//   // Check if a user is logged in
+//   console.log(req.session.user_id);
+//   if (req.session.user_id === null) {
+//       return res.status(403).json({ error: 'Not logged in.' });
+//   }
+
+//   try {
+//       // pagination requirements 
+//       const page = req.query.page ? parseInt(req.query.page) : 1;
+//       const pageSize = req.query.pageSize ? parseInt(req.query.pageSize) : 10;
+//       const offset = (page - 1) * pageSize;
+
+//       // posts for the current user's feed
+//       const getLinkedId = `SELECT * FROM users WHERE id = ${req.session.user_id}`;
+//       const users = await db.send_sql(getLinkedId);
+//       const user = users[0];
+
+//       const feedQuery = `
+//       SELECT outer_post.post_id AS post_id, users.username AS username, outer_post.parent_post AS parent_post, 
+//       outer_post.title AS title, outer_post.content AS content
+//       FROM posts AS outer_post
+//       INNER JOIN users ON outer_post.author_id = users.id
+//       WHERE outer_post.author_id IN (
+//           SELECT followed
+//           FROM friends
+//           WHERE follower = '${user.linked_id}'
+//       )
+//       OR outer_post.author_id = ${req.session.user_id}
+//       OR outer_post.post_id IN (
+//         SELECT post_to_hashtags.post_id
+//         FROM post_to_hashtags 
+//         INNER JOIN hashtagInterests ON hashtagInterests.hashtagID = post_to_hashtags.hashtag_id
+//         WHERE hashtagInterests.userID = outer_post.author_id
+//       )
+//       OR outer_post.post_id IN (
+//         SELECT socialNetworkPostRecommendations.postID
+//         FROM socialNetworkPostRecommendations 
+//         INNER JOIN users ON users.id = socialNetworkPostRecommendations.userLabelID
+//         WHERE socialNetworkPostRecommendations.userLabelID = outer_post.author_id 
+//         ORDER BY socialNetworkPostRecommendations.weight DESC
+//       )
+//       OR outer_post.title = 'Federated Post'
+//       OR outer_post.title = 'Tweet'
+//       ORDER BY post_id DESC
+//       LIMIT ${pageSize} OFFSET ${offset};
+//     `;
+
+//       const posts = await db.send_sql(feedQuery);
+
+//       // Return the feed posts
+//       return res.status(200).json({ results: posts, page, pageSize });
+//   } catch (error) {
+//       // Handle database query errors
+//       console.error("Error querying database:", error);
+//       return res.status(500).json({ error: 'Error querying database.' });
+//   }
+// };
 
   // var feed = async function(req, res) {
   //   // Implementation to fetch feed data
@@ -377,6 +468,8 @@ var uploadImageFromHtmlTag = async function(req, res) {
       console.error('Error uploading image from HTML tag:', error);
       throw error;
     }
+  } else {
+    return;
   }
 };
 

@@ -34,9 +34,10 @@ const runConsumer = async () => {
                 const post_uuid_within_site = jsonMessage.post_uuid_within_site;
                 const post_text = jsonMessage.post_text;
                 const content_type = jsonMessage.content_type;
+                const attach = jsonMessage.attach; 
             
                 // Call handle to log what to do with the posts
-                handleIncomingPost(username, source_site, post_uuid_within_site, post_text, content_type);
+                handleIncomingPost(username, source_site, post_uuid_within_site, post_text, content_type, attach);
             } catch (error) {
                 console.error('Failed to process message:', error);
             }
@@ -44,7 +45,7 @@ const runConsumer = async () => {
     });
 };
 // Define handler for processing incoming federated posts
-const handleIncomingPost = async (username, source_site, post_uuid_within_site, post_text, content_type) => {
+const handleIncomingPost = async (username, source_site, post_uuid_within_site, post_text, content_type, attach) => {
     // Define the format for the federated username
     const federatedUsername = `${source_site}-${username}`;
     console.log(federatedUsername); 
@@ -118,13 +119,32 @@ const handleIncomingPost = async (username, source_site, post_uuid_within_site, 
     // Log the incoming post details
     console.log(`Received post from ${username} on site ${source_site}: ${post_text}`);
     console.log(`Post details - UUID: ${post_uuid_within_site}, Content Type: ${content_type}`);
+
+    if (attach && attach.trim() !== '') {
+        await updatePhotoAttachment(federatedUsername, attach, createPostResponse.data.post_id);
+    }
 };
 
 // Helper to extract hashtags from text
 const extractHashtags = (text) => {
-    const regex = /#\w+/g; 
-    const hashtags = text.match(regex);
-    return hashtags ? hashtags.map(tag => tag.slice(1)) : [];
+    if (text !== undefined) {
+        const regex = /#\w+/g; 
+        const hashtags = text.match(regex);
+        return hashtags ? hashtags.map(tag => tag.slice(1)) : [];
+    } else {
+        return [];
+    }  
+};
+
+// updating the photo to match
+const updatePhotoAttachment = async (username, attach, postId) => {
+    try {
+        // Make a POST request to the photo attachment update endpoint
+        const response = await axios.post(`http://localhost:8080/${username}/updatePhotoAttachment`, { attach, post_id: postId });
+        console.log('Photo attachment updated successfully:', response.data);
+    } catch (error) {
+        console.error('Error updating photo attachment:', error.response ? error.response.data : error.message);
+    }
 };
 
 runConsumer().catch(console.error);
@@ -148,17 +168,17 @@ const sendFederatedPost = async (post) => {
 const runProducer = async () => {
     await producer.connect();
 
-    // Example post structure
-    const post = {
-        username: 'hello',
-        source_site: config.groupId,
-        post_uuid_within_site: 'uuid_1234',
-        post_text: 'code',
-        content_type: 'text/plain'
-    };
+    // // Example post structure
+    // const post = {
+    //     username: 'hello',
+    //     source_site: config.groupId,
+    //     post_uuid_within_site: 'uuid_1234',
+    //     post_text: 'code',
+    //     content_type: 'text/plain'
+    // };
 
-    // Send a federated post
-    await sendFederatedPost(post);
+    // // Send a federated post
+    // await sendFederatedPost(post);
 };
 
 // Run the producer if needed (e.g., for testing)
@@ -166,7 +186,7 @@ runProducer().catch(console.error);
 
 // Express server for other functionality
 const app = express();
-app.listen(config.port, () => {
+app.listen(8998, () => {
     console.log(`Server is listening on port ${config.port}`);
 });
 
